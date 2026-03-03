@@ -3992,3 +3992,24 @@ class ComplianceCheck(models.Model):
             models.Index(fields=["status"], name="compliance_status_idx"),
             models.Index(fields=["organization", "status"], name="compliance_org_status_idx"),
         ]
+
+
+class GeoIPCache(models.Model):
+    ip_address = models.GenericIPAddressField(unique=True, db_index=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    country_code = models.CharField(max_length=10, blank=True)
+    isp = models.CharField(max_length=255, blank=True)
+    resolved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "GeoIP cache entry"
+        verbose_name_plural = "GeoIP cache entries"
+        indexes = [
+            models.Index(fields=["country"], name="geoip_country_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.ip_address} -> {self.city}, {self.country}"

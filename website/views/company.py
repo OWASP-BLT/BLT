@@ -7,6 +7,7 @@ import uuid
 from collections import Counter
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.request import Request, urlopen
 
 import requests
 from django.conf import settings as django_settings
@@ -30,6 +31,7 @@ from website.models import (
     ComplianceCheck,
     DailyStatusReport,
     Domain,
+    GeoIPCache,
     Hunt,
     HuntPrize,
     Integration,
@@ -3049,6 +3051,55 @@ def job_detail(request, pk):
     return render(request, "jobs/job_detail.html", context)
 
 
+def _resolve_geoip_batch(ip_list):
+    """Batch-resolve IPs via ip-api.com free endpoint. Caches results in GeoIPCache."""
+    public_ips = []
+    for ip_str in ip_list:
+        try:
+            addr = ipaddress.ip_address(ip_str)
+            if not addr.is_private and not addr.is_loopback and not addr.is_reserved:
+                public_ips.append(ip_str)
+        except ValueError:
+            continue
+
+    if not public_ips:
+        return []
+
+    cached = {c.ip_address: c for c in GeoIPCache.objects.filter(ip_address__in=public_ips)}
+    uncached = [ip for ip in public_ips if ip not in cached]
+
+    newly_resolved = []
+    for i in range(0, len(uncached), 100):
+        batch = uncached[i : i + 100]
+        payload = json.dumps([{"query": ip, "fields": "status,lat,lon,city,country,countryCode,isp"} for ip in batch])
+        req = Request(
+            "http://ip-api.com/batch",
+            data=payload.encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urlopen(req, timeout=5) as resp:
+                results = json.loads(resp.read())
+            for r in results:
+                if r.get("status") == "success":
+                    obj, _ = GeoIPCache.objects.update_or_create(
+                        ip_address=r["query"],
+                        defaults={
+                            "latitude": r.get("lat"),
+                            "longitude": r.get("lon"),
+                            "city": r.get("city", ""),
+                            "country": r.get("country", ""),
+                            "country_code": r.get("countryCode", ""),
+                            "isp": r.get("isp", ""),
+                        },
+                    )
+                    newly_resolved.append(obj)
+        except Exception:
+            pass  # Graceful degradation — map shows cached data only
+
+    return list(cached.values()) + newly_resolved
+
+
 class OrganizationSecurityDashboardView(View):
     """Org-scoped security monitoring dashboard."""
 
@@ -3349,17 +3400,28 @@ class OrganizationSecurityDashboardView(View):
 
         # Top subnets (/24)
         subnet_counter = Counter()
-        ip_events = (
+        subnet_failed_counter = Counter()
+        ip_events_qs = (
             UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=seven_days_ago)
             .exclude(ip_address__isnull=True)
-            .values_list("ip_address", flat=True)
+            .values_list("ip_address", "event_type")
         )
-        for ip_addr in ip_events:
+        for ip_addr, evt_type in ip_events_qs:
             if ip_addr and "." in ip_addr:
                 parts = ip_addr.split(".")
                 if len(parts) == 4:
-                    subnet_counter[f"{parts[0]}.{parts[1]}.{parts[2]}.0/24"] += 1
+                    subnet_key = f"{parts[0]}.{parts[1]}.{parts[2]}.0/24"
+                    subnet_counter[subnet_key] += 1
+                    if evt_type and "fail" in evt_type.lower():
+                        subnet_failed_counter[subnet_key] += 1
         top_subnets = subnet_counter.most_common(5)
+
+        # Subnet data for radar minimap (top 12)
+        minimap_subnet_list = []
+        for subnet_key, total in subnet_counter.most_common(12):
+            minimap_subnet_list.append(
+                {"subnet": subnet_key, "total": total, "failed": subnet_failed_counter.get(subnet_key, 0)}
+            )
 
         # Failed login origin concentration
         failed_ip_qs = list(
@@ -3369,6 +3431,49 @@ class OrganizationSecurityDashboardView(View):
             .annotate(count=Count("id"))
             .order_by("-count")[:5]
         )
+
+        # ── World Map GeoIP Data ──
+        unique_ips = list(
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=thirty_days_ago)
+            .exclude(ip_address__isnull=True)
+            .values_list("ip_address", flat=True)
+            .distinct()[:200]
+        )
+
+        ip_event_counts = {}
+        for ip_addr, evt_type in ip_events_qs:
+            if ip_addr not in ip_event_counts:
+                ip_event_counts[ip_addr] = {"total": 0, "failed": 0}
+            ip_event_counts[ip_addr]["total"] += 1
+            if evt_type and "fail" in evt_type.lower():
+                ip_event_counts[ip_addr]["failed"] += 1
+
+        geo_cache = _resolve_geoip_batch(unique_ips)
+
+        map_markers = []
+        for geo in geo_cache:
+            if geo.latitude and geo.longitude:
+                counts = ip_event_counts.get(geo.ip_address, {"total": 0, "failed": 0})
+                map_markers.append(
+                    {
+                        "lat": float(geo.latitude),
+                        "lng": float(geo.longitude),
+                        "city": geo.city,
+                        "country": geo.country,
+                        "isp": geo.isp,
+                        "total": counts["total"],
+                        "failed": counts["failed"],
+                    }
+                )
+
+        country_counts = {}
+        for m in map_markers:
+            c = m["country"]
+            if c not in country_counts:
+                country_counts[c] = {"total": 0, "failed": 0}
+            country_counts[c]["total"] += m["total"]
+            country_counts[c]["failed"] += m["failed"]
+        top_countries = sorted(country_counts.items(), key=lambda x: x[1]["total"], reverse=True)[:10]
 
         # ── Vulnerability Management ──
         org_vulns = Vulnerability.objects.filter(organization_id=id)
@@ -3500,6 +3605,12 @@ class OrganizationSecurityDashboardView(View):
             "daily_traffic_counts": daily_traffic_counts,
             "top_subnets": top_subnets,
             "failed_ip_origins": failed_ip_qs,
+            "minimap_subnets": minimap_subnet_list,
+            # World Map
+            "map_markers": map_markers,
+            "top_countries": [
+                {"country": c, "total": d["total"], "failed": d["failed"]} for c, d in top_countries
+            ],
             # Vulnerability Management
             "vuln_total": vuln_total,
             "vuln_open": vuln_open,

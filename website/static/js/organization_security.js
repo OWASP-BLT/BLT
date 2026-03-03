@@ -1,3 +1,44 @@
+/* Cybersecurity neon color palette for dashboard charts */
+var CYBER = {
+    cyan: "#00FFFF",
+    green: "#00FF88",
+    red: "#FF3366",
+    amber: "#FFD700",
+    blue: "#0080FF",
+    purple: "#A855F7",
+    orange: "#FF8C00",
+    grid: "rgba(0, 255, 255, 0.06)",
+    gridStrong: "rgba(0, 255, 255, 0.12)",
+    axis: "#475569",
+    text: "#94A3B8",
+    textMuted: "#64748B",
+    bg: "#0D1321",
+    bgDeep: "#0A0E1A",
+    border: "rgba(0, 255, 255, 0.15)",
+    critical: "#FF3366",
+    high: "#FF8C00",
+    medium: "#FFD700",
+    low: "#0080FF",
+    open: "#FF3366",
+    investigating: "#FFD700",
+    resolved: "#00FF88",
+    successBg: "rgba(0, 255, 136, 0.15)",
+    failBg: "rgba(255, 51, 102, 0.15)",
+    cyanBg: "rgba(0, 255, 255, 0.1)",
+    purpleBg: "rgba(168, 85, 247, 0.15)",
+    blueBg: "rgba(0, 128, 255, 0.15)",
+    amberBg: "rgba(255, 215, 0, 0.15)",
+};
+
+/* Shared tooltip configuration for consistent neon styling */
+var cyberTooltip = {
+    backgroundColor: "#0D1321",
+    titleColor: "#E2E8F0",
+    bodyColor: "#94A3B8",
+    borderColor: "rgba(0,255,255,0.2)",
+    borderWidth: 1,
+};
+
 document.addEventListener("DOMContentLoaded", function () {
     if (typeof Chart === "undefined") {
         return;
@@ -6,7 +47,11 @@ document.addEventListener("DOMContentLoaded", function () {
     var config = window.ORG_SECURITY_CONFIG;
     if (!config) return;
 
-    Chart.defaults.font.size = 11;
+    Chart.defaults.color = CYBER.text;
+    Chart.defaults.font.family = "ui-monospace, 'Cascadia Code', 'Fira Code', monospace";
+    Chart.defaults.font.size = 10;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.pointStyleWidth = 8;
 
     initRiskGauge(config.riskScore);
     initSeverityChart(config.severityLabels, config.severityCounts);
@@ -17,8 +62,11 @@ document.addEventListener("DOMContentLoaded", function () {
     initDailyFailedChart(config.dailyFailedLabels, config.dailyFailedCounts);
     initResolutionGauge(config.anomalyResolutionRate);
 
-    // New dashboard components
-    initMonthlyIncidentChart(config.monthlyIncidentLabels, config.monthlyIncidentTotals, config.monthlyIncidentCriticals);
+    initMonthlyIncidentChart(
+        config.monthlyIncidentLabels,
+        config.monthlyIncidentTotals,
+        config.monthlyIncidentCriticals,
+    );
     initAffectedSystemsChart(config.affectedSystemsLabels, config.affectedSystemsCounts);
     initThreatTypeChart(config.threatTypeLabels, config.threatTypeCounts);
     initThreatSeverityChart(config.threatSevCounts);
@@ -27,6 +75,8 @@ document.addEventListener("DOMContentLoaded", function () {
     initVulnSeverityChart(config.vulnSeverityLabels, config.vulnSeverityCounts);
     initVulnStatusChart(config.vulnStatusLabels, config.vulnStatusCounts);
     initComplianceGauge(config.overallCompliancePct);
+    initRadarMinimap();
+    initWorldMap(config.mapMarkers || [], config.topCountries || []);
 });
 
 /* ── Gauge Charts ── */
@@ -36,12 +86,7 @@ function initRiskGauge(riskScore) {
     if (!ctx) return;
 
     var score = Math.max(0, Math.min(100, riskScore || 0));
-    var color =
-        score >= 70
-            ? "#e74c3c"
-            : score >= 40
-              ? "#f59e0b"
-              : "#22c55e";
+    var color = score >= 70 ? CYBER.red : score >= 40 ? CYBER.amber : CYBER.green;
 
     new Chart(ctx, {
         type: "doughnut",
@@ -49,7 +94,7 @@ function initRiskGauge(riskScore) {
             datasets: [
                 {
                     data: [score, 100 - score],
-                    backgroundColor: [color, "#e5e7eb"],
+                    backgroundColor: [color, "rgba(0,255,255,0.08)"],
                     borderWidth: 0,
                 },
             ],
@@ -71,12 +116,7 @@ function initResolutionGauge(rate) {
     if (!ctx) return;
 
     var val = Math.max(0, Math.min(100, rate || 0));
-    var color =
-        val >= 70
-            ? "#22c55e"
-            : val >= 40
-              ? "#f59e0b"
-              : "#e74c3c";
+    var color = val >= 70 ? CYBER.green : val >= 40 ? CYBER.amber : CYBER.red;
 
     new Chart(ctx, {
         type: "doughnut",
@@ -84,7 +124,7 @@ function initResolutionGauge(rate) {
             datasets: [
                 {
                     data: [val, 100 - val],
-                    backgroundColor: [color, "#e5e7eb"],
+                    backgroundColor: [color, "rgba(0,255,255,0.08)"],
                     borderWidth: 0,
                 },
             ],
@@ -108,7 +148,7 @@ function initSeverityChart(labels, counts) {
     if (!ctx) return;
     if (!Array.isArray(labels) || !Array.isArray(counts)) return;
 
-    var colors = ["#e74c3c", "#f97316", "#f59e0b", "#3b82f6"];
+    var colors = [CYBER.critical, CYBER.high, CYBER.medium, CYBER.low];
 
     new Chart(ctx, {
         type: "bar",
@@ -118,6 +158,8 @@ function initSeverityChart(labels, counts) {
                 {
                     data: counts,
                     backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1,
                     borderRadius: 4,
                     barThickness: 14,
                 },
@@ -129,15 +171,16 @@ function initSeverityChart(labels, counts) {
             indexAxis: "y",
             plugins: {
                 legend: { display: false },
+                tooltip: cyberTooltip,
             },
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
                     grid: { display: false },
                 },
             },
@@ -170,7 +213,10 @@ function initHourlyChart(hourlyData) {
             datasets: [
                 {
                     data: counts,
-                    backgroundColor: "#3b82f6",
+                    backgroundColor: CYBER.blue,
+                    borderColor: CYBER.blue,
+                    borderWidth: 1,
+                    hoverBackgroundColor: CYBER.cyan,
                     borderRadius: 2,
                     barThickness: 5,
                 },
@@ -179,23 +225,26 @@ function initHourlyChart(hourlyData) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
                     ticks: {
-                        color: "#9ca3af",
+                        color: CYBER.textMuted,
                         maxRotation: 0,
                         font: { size: 8 },
                         callback: function (val, index) {
                             return index % 6 === 0 ? this.getLabelForValue(val) : "";
                         },
                     },
-                    grid: { display: false },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 8 } },
-                    grid: { color: "#f3f4f6" },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 8 } },
+                    grid: { color: CYBER.grid },
                 },
             },
         },
@@ -214,11 +263,11 @@ function initDailyTrendChart(labels, counts) {
             datasets: [
                 {
                     data: counts,
-                    borderColor: "#6366f1",
-                    backgroundColor: "rgba(99,102,241,0.12)",
+                    borderColor: CYBER.cyan,
+                    backgroundColor: CYBER.cyanBg,
                     borderWidth: 2,
                     pointRadius: 3,
-                    pointBackgroundColor: "#6366f1",
+                    pointBackgroundColor: CYBER.cyan,
                     fill: true,
                     tension: 0.3,
                 },
@@ -227,16 +276,19 @@ function initDailyTrendChart(labels, counts) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { color: "#f3f4f6" },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
             },
         },
@@ -255,11 +307,11 @@ function initDailyFailedChart(labels, counts) {
             datasets: [
                 {
                     data: counts,
-                    borderColor: "#e74c3c",
-                    backgroundColor: "rgba(231,76,60,0.12)",
+                    borderColor: CYBER.red,
+                    backgroundColor: CYBER.failBg,
                     borderWidth: 2,
                     pointRadius: 3,
-                    pointBackgroundColor: "#e74c3c",
+                    pointBackgroundColor: CYBER.red,
                     fill: true,
                     tension: 0.3,
                 },
@@ -268,16 +320,19 @@ function initDailyFailedChart(labels, counts) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { color: "#f3f4f6" },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
             },
         },
@@ -296,8 +351,9 @@ function initLoginTypeChart(labels, counts) {
             datasets: [
                 {
                     data: counts,
-                    backgroundColor: ["#22c55e", "#9ca3af", "#e74c3c"],
-                    borderWidth: 0,
+                    backgroundColor: [CYBER.green, CYBER.textMuted, CYBER.red],
+                    borderColor: CYBER.bg,
+                    borderWidth: 1,
                 },
             ],
         },
@@ -307,13 +363,13 @@ function initLoginTypeChart(labels, counts) {
             maintainAspectRatio: true,
             plugins: {
                 legend: { display: false },
-                tooltip: {
+                tooltip: Object.assign({}, cyberTooltip, {
                     callbacks: {
                         label: function (context) {
                             return context.label + ": " + context.parsed;
                         },
                     },
-                },
+                }),
             },
         },
     });
@@ -324,6 +380,8 @@ function initAnomalyTypeChart(labels, counts) {
     if (!ctx) return;
     if (!Array.isArray(labels) || !Array.isArray(counts)) return;
 
+    var colors = [CYBER.cyan, CYBER.purple, CYBER.amber, CYBER.red];
+
     new Chart(ctx, {
         type: "bar",
         data: {
@@ -331,7 +389,9 @@ function initAnomalyTypeChart(labels, counts) {
             datasets: [
                 {
                     data: counts,
-                    backgroundColor: ["#f59e0b", "#8b5cf6", "#06b6d4", "#e74c3c"],
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1,
                     borderRadius: 4,
                     barThickness: 14,
                 },
@@ -340,23 +400,26 @@ function initAnomalyTypeChart(labels, counts) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
-                    ticks: { color: "#9ca3af", font: { size: 8 }, maxRotation: 0 },
-                    grid: { display: false },
+                    ticks: { color: CYBER.textMuted, font: { size: 8 }, maxRotation: 0 },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 8 } },
-                    grid: { color: "#f3f4f6" },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 8 } },
+                    grid: { color: CYBER.grid },
                 },
             },
         },
     });
 }
 
-/* ── New Dashboard Component Charts ── */
+/* ── Dashboard Component Charts ── */
 
 function initMonthlyIncidentChart(labels, totalCounts, criticalCounts) {
     var ctx = document.getElementById("monthlyIncidentChart");
@@ -371,14 +434,18 @@ function initMonthlyIncidentChart(labels, totalCounts, criticalCounts) {
                 {
                     label: "Total",
                     data: totalCounts,
-                    backgroundColor: "#3b82f6",
+                    backgroundColor: CYBER.blueBg,
+                    borderColor: CYBER.blue,
+                    borderWidth: 1,
                     borderRadius: 4,
                     barThickness: 14,
                 },
                 {
                     label: "Critical",
                     data: criticalCounts || [],
-                    backgroundColor: "#e74c3c",
+                    backgroundColor: CYBER.red,
+                    borderColor: CYBER.red,
+                    borderWidth: 1,
                     borderRadius: 4,
                     barThickness: 14,
                 },
@@ -391,18 +458,24 @@ function initMonthlyIncidentChart(labels, totalCounts, criticalCounts) {
                 legend: {
                     display: true,
                     position: "top",
-                    labels: { font: { size: 9 }, boxWidth: 10, padding: 8 },
+                    labels: {
+                        color: CYBER.text,
+                        font: { size: 9 },
+                        boxWidth: 10,
+                        padding: 8,
+                    },
                 },
+                tooltip: cyberTooltip,
             },
             scales: {
                 x: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { color: "#f3f4f6" },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
             },
         },
@@ -421,7 +494,10 @@ function initAffectedSystemsChart(labels, counts) {
             datasets: [
                 {
                     data: counts,
-                    backgroundColor: "#f97316",
+                    backgroundColor: CYBER.purple,
+                    borderColor: CYBER.purple,
+                    borderWidth: 1,
+                    hoverBackgroundColor: CYBER.cyan,
                     borderRadius: 4,
                     barThickness: 14,
                 },
@@ -431,15 +507,18 @@ function initAffectedSystemsChart(labels, counts) {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
                     grid: { display: false },
                 },
             },
@@ -452,7 +531,12 @@ function initThreatTypeChart(labels, counts) {
     if (!ctx) return;
     if (!Array.isArray(labels) || !Array.isArray(counts)) return;
 
-    var colors = ["#8b5cf6", "#6366f1", "#a78bfa", "#c084fc", "#7c3aed", "#5b21b6", "#4c1d95", "#ddd6fe"];
+    var colors = [CYBER.red, CYBER.orange, CYBER.amber, CYBER.purple, CYBER.blue];
+    var slicedColors = colors.slice(0, labels.length);
+    /* Cycle colors for labels exceeding the palette length */
+    while (slicedColors.length < labels.length) {
+        slicedColors.push(colors[slicedColors.length % colors.length]);
+    }
 
     new Chart(ctx, {
         type: "bar",
@@ -461,7 +545,9 @@ function initThreatTypeChart(labels, counts) {
             datasets: [
                 {
                     data: counts,
-                    backgroundColor: colors.slice(0, labels.length),
+                    backgroundColor: slicedColors,
+                    borderColor: slicedColors,
+                    borderWidth: 1,
                     borderRadius: 4,
                     barThickness: 14,
                 },
@@ -471,15 +557,18 @@ function initThreatTypeChart(labels, counts) {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
                     grid: { display: false },
                 },
             },
@@ -499,8 +588,9 @@ function initThreatSeverityChart(counts) {
             datasets: [
                 {
                     data: counts,
-                    backgroundColor: ["#e74c3c", "#f97316", "#f59e0b", "#3b82f6"],
-                    borderWidth: 0,
+                    backgroundColor: [CYBER.critical, CYBER.high, CYBER.medium, CYBER.low],
+                    borderColor: CYBER.bg,
+                    borderWidth: 1,
                 },
             ],
         },
@@ -510,13 +600,13 @@ function initThreatSeverityChart(counts) {
             maintainAspectRatio: true,
             plugins: {
                 legend: { display: false },
-                tooltip: {
+                tooltip: Object.assign({}, cyberTooltip, {
                     callbacks: {
                         label: function (context) {
                             return context.label + ": " + context.parsed;
                         },
                     },
-                },
+                }),
             },
         },
     });
@@ -534,11 +624,11 @@ function initIpDiversityChart(labels, counts) {
             datasets: [
                 {
                     data: counts,
-                    borderColor: "#06b6d4",
-                    backgroundColor: "rgba(6,182,212,0.12)",
+                    borderColor: CYBER.cyan,
+                    backgroundColor: CYBER.cyanBg,
                     borderWidth: 2,
                     pointRadius: 3,
-                    pointBackgroundColor: "#06b6d4",
+                    pointBackgroundColor: CYBER.cyan,
                     fill: true,
                     tension: 0.3,
                 },
@@ -547,16 +637,19 @@ function initIpDiversityChart(labels, counts) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { color: "#f3f4f6" },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
             },
         },
@@ -575,11 +668,12 @@ function initDailyTrafficChart(labels, counts) {
             datasets: [
                 {
                     data: counts,
-                    borderColor: "#6366f1",
-                    backgroundColor: "rgba(99,102,241,0.12)",
+                    borderColor: CYBER.green,
+                    backgroundColor: CYBER.successBg,
                     borderWidth: 2,
                     pointRadius: 3,
-                    pointBackgroundColor: "#6366f1",
+                    pointBackgroundColor: CYBER.green,
+                    hoverPointBackgroundColor: CYBER.cyan,
                     fill: true,
                     tension: 0.3,
                 },
@@ -588,16 +682,19 @@ function initDailyTrafficChart(labels, counts) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { color: "#f3f4f6" },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
             },
         },
@@ -609,9 +706,14 @@ function initVulnSeverityChart(labels, counts) {
     if (!ctx) return;
     if (!Array.isArray(labels) || !Array.isArray(counts)) return;
 
-    var colorMap = { Critical: "#e74c3c", High: "#f97316", Medium: "#f59e0b", Low: "#3b82f6" };
+    var colorMap = {
+        Critical: CYBER.critical,
+        High: CYBER.high,
+        Medium: CYBER.medium,
+        Low: CYBER.low,
+    };
     var colors = labels.map(function (l) {
-        return colorMap[l] || "#9ca3af";
+        return colorMap[l] || CYBER.textMuted;
     });
 
     new Chart(ctx, {
@@ -622,6 +724,8 @@ function initVulnSeverityChart(labels, counts) {
                 {
                     data: counts,
                     backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1,
                     borderRadius: 4,
                     barThickness: 14,
                 },
@@ -631,15 +735,18 @@ function initVulnSeverityChart(labels, counts) {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: cyberTooltip,
+            },
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af", font: { size: 9 } },
-                    grid: { display: false },
+                    ticks: { precision: 0, color: CYBER.textMuted, font: { size: 9 } },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
-                    ticks: { color: "#9ca3af", font: { size: 9 } },
+                    ticks: { color: CYBER.textMuted, font: { size: 9 } },
                     grid: { display: false },
                 },
             },
@@ -653,14 +760,14 @@ function initVulnStatusChart(labels, counts) {
     if (!Array.isArray(labels) || !Array.isArray(counts)) return;
 
     var colorMap = {
-        Open: "#e74c3c",
-        "In Progress": "#f59e0b",
-        Remediated: "#22c55e",
-        "Accepted Risk": "#6366f1",
-        "False Positive": "#9ca3af",
+        Open: CYBER.red,
+        "In Progress": CYBER.amber,
+        Remediated: CYBER.green,
+        "Accepted Risk": CYBER.purple,
+        "False Positive": CYBER.textMuted,
     };
     var colors = labels.map(function (l) {
-        return colorMap[l] || "#9ca3af";
+        return colorMap[l] || CYBER.textMuted;
     });
 
     new Chart(ctx, {
@@ -671,7 +778,8 @@ function initVulnStatusChart(labels, counts) {
                 {
                     data: counts,
                     backgroundColor: colors,
-                    borderWidth: 0,
+                    borderColor: CYBER.bg,
+                    borderWidth: 1,
                 },
             ],
         },
@@ -681,13 +789,13 @@ function initVulnStatusChart(labels, counts) {
             maintainAspectRatio: true,
             plugins: {
                 legend: { display: false },
-                tooltip: {
+                tooltip: Object.assign({}, cyberTooltip, {
                     callbacks: {
                         label: function (context) {
                             return context.label + ": " + context.parsed;
                         },
                     },
-                },
+                }),
             },
         },
     });
@@ -698,12 +806,7 @@ function initComplianceGauge(pct) {
     if (!ctx) return;
 
     var val = Math.max(0, Math.min(100, pct || 0));
-    var color =
-        val >= 80
-            ? "#22c55e"
-            : val >= 50
-              ? "#f59e0b"
-              : "#e74c3c";
+    var color = val >= 80 ? CYBER.green : val >= 50 ? CYBER.amber : CYBER.red;
 
     new Chart(ctx, {
         type: "doughnut",
@@ -711,7 +814,7 @@ function initComplianceGauge(pct) {
             datasets: [
                 {
                     data: [val, 100 - val],
-                    backgroundColor: [color, "#e5e7eb"],
+                    backgroundColor: [color, "rgba(0,255,255,0.08)"],
                     borderWidth: 0,
                 },
             ],
@@ -728,6 +831,188 @@ function initComplianceGauge(pct) {
     });
 }
 
+/* ── Radar Minimap ── */
+
+function initRadarMinimap() {
+    var container = document.getElementById("radar-dots");
+    if (!container) return;
+
+    var config = window.ORG_SECURITY_CONFIG;
+    var subnets = config.minimapSubnets || [];
+    if (!subnets.length) return;
+
+    var maxTotal = Math.max.apply(
+        null,
+        subnets.map(function (s) {
+            return s.total;
+        }),
+    );
+    var cx = 90,
+        cy = 90;
+    var radius = 65;
+
+    subnets.forEach(function (subnet, i) {
+        var angle = (i / subnets.length) * 2 * Math.PI - Math.PI / 2;
+        var x = cx + radius * Math.cos(angle);
+        var y = cy + radius * Math.sin(angle);
+        var size = Math.max(6, Math.min(16, (subnet.total / maxTotal) * 16));
+        var failRatio = subnet.total > 0 ? subnet.failed / subnet.total : 0;
+        var color = failRatio > 0.5 ? "#FF3366" : failRatio > 0.2 ? "#FFD700" : "#00FF88";
+
+        var dot = document.createElement("div");
+        dot.className = "radar-dot";
+        dot.style.width = size + "px";
+        dot.style.height = size + "px";
+        dot.style.backgroundColor = color;
+        dot.style.boxShadow = "0 0 " + size / 2 + "px " + color;
+        dot.style.left = x - size / 2 + "px";
+        dot.style.top = y - size / 2 + "px";
+        dot.title =
+            subnet.subnet + " (" + subnet.total + " events, " + subnet.failed + " failed)";
+        container.appendChild(dot);
+    });
+}
+
+/* ── World Map (Leaflet) ── */
+
+function initWorldMap(markers, topCountries) {
+    var mapEl = document.getElementById("world-map");
+    if (!mapEl || typeof L === "undefined") return;
+
+    var map = L.map("world-map", {
+        center: [20, 0],
+        zoom: 2,
+        minZoom: 2,
+        maxZoom: 10,
+        zoomControl: true,
+        attributionControl: false,
+        scrollWheelZoom: true,
+        worldCopyJump: true,
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd",
+        maxZoom: 20,
+    }).addTo(map);
+
+    if (markers.length > 0 && L.heatLayer) {
+        var heatData = markers.map(function (m) {
+            return [m.lat, m.lng, m.total];
+        });
+        L.heatLayer(heatData, {
+            radius: 25,
+            blur: 20,
+            maxZoom: 8,
+            gradient: {
+                0.2: "#0080FF",
+                0.4: "#00FF88",
+                0.6: "#FFD700",
+                0.8: "#FF3366",
+                1.0: "#FF0040",
+            },
+        }).addTo(map);
+    }
+
+    markers.forEach(function (m) {
+        var isFailed = m.failed > m.total * 0.3;
+        var color = isFailed ? "#FF3366" : "#00FF88";
+        var size = Math.max(6, Math.min(20, m.total * 2));
+        var half = size / 2;
+
+        var icon = L.divIcon({
+            className: "",
+            html:
+                '<div style="position:relative;width:' +
+                size +
+                "px;height:" +
+                size +
+                'px">' +
+                '<div style="position:absolute;inset:0;border-radius:50%;background:' +
+                color +
+                ';opacity:0.3;animation:map-ping 2s cubic-bezier(0,0,0.2,1) infinite"></div>' +
+                '<div style="width:' +
+                size +
+                "px;height:" +
+                size +
+                "px;border-radius:50%;background:" +
+                color +
+                ';border:1px solid rgba(255,255,255,0.3)"></div>' +
+                "</div>",
+            iconSize: [size, size],
+            iconAnchor: [half, half],
+        });
+
+        var popupHtml =
+            '<div style="font-family:ui-monospace,monospace;font-size:11px;color:#E2E8F0;' +
+            "background:#0D1321;padding:8px;border:1px solid rgba(0,255,255,0.3);" +
+            'border-radius:6px;min-width:160px">' +
+            '<div style="font-weight:700;color:#00FFFF;margin-bottom:4px">' +
+            escapeHtml(m.city || "Unknown") +
+            ", " +
+            escapeHtml(m.country || "Unknown") +
+            "</div>" +
+            "<div>ISP: " +
+            escapeHtml(m.isp || "N/A") +
+            "</div>" +
+            '<div style="color:#00FF88">Logins: ' +
+            m.total +
+            "</div>" +
+            '<div style="color:#FF3366">Failed: ' +
+            m.failed +
+            "</div>" +
+            "</div>";
+
+        L.marker([m.lat, m.lng], { icon: icon })
+            .addTo(map)
+            .bindPopup(popupHtml, { className: "cyber-popup" });
+    });
+
+    var statsEl = document.getElementById("country-stats");
+    if (statsEl && topCountries && topCountries.length > 0) {
+        var maxCount = topCountries[0].total || 1;
+        statsEl.innerHTML = topCountries
+            .map(function (c) {
+                var pct = Math.round((c.total / maxCount) * 100);
+                var failPct = c.total > 0 ? Math.round((c.failed / c.total) * 100) : 0;
+                var barColor = failPct > 30 ? "#FF3366" : "#00FF88";
+                return (
+                    '<div class="flex flex-col gap-0.5">' +
+                    '<div class="flex justify-between">' +
+                    '<span class="text-[#E2E8F0] cyber-mono">' +
+                    escapeHtml(c.country) +
+                    "</span>" +
+                    '<span class="text-[#00FFFF] cyber-mono">' +
+                    c.total +
+                    "</span>" +
+                    "</div>" +
+                    '<div class="h-1 bg-[rgba(0,255,255,0.1)] rounded overflow-hidden">' +
+                    '<div class="h-full rounded" style="width:' +
+                    pct +
+                    "%;background:linear-gradient(90deg,#0080FF," +
+                    barColor +
+                    ')"></div>' +
+                    "</div>" +
+                    "</div>"
+                );
+            })
+            .join("");
+    }
+
+    var uniqueCountries = {};
+    var totalFailed = 0;
+    markers.forEach(function (m) {
+        if (m.country) uniqueCountries[m.country] = true;
+        totalFailed += m.failed;
+    });
+
+    var locEl = document.getElementById("map-total-locations");
+    var countryEl = document.getElementById("map-total-countries");
+    var failedEl = document.getElementById("map-total-failed");
+    if (locEl) locEl.textContent = markers.length;
+    if (countryEl) countryEl.textContent = Object.keys(uniqueCountries).length;
+    if (failedEl) failedEl.textContent = totalFailed;
+}
+
 /* ── Expand / Collapse KPI Panels ── */
 
 function toggleExpand(cardId) {
@@ -738,28 +1023,22 @@ function toggleExpand(cardId) {
     var isHidden = panel.classList.contains("hidden");
 
     if (isHidden) {
-        // Remove transition BEFORE removing hidden to prevent display:none->block
-        // from causing the browser to attempt transitioning max-height from "none"
         panel.classList.remove("transition-all", "duration-300");
 
-        // Make visible and measure content height
         panel.classList.remove("hidden", "overflow-hidden");
         panel.style.maxHeight = "none";
         var targetHeight = panel.scrollHeight;
 
-        // Set starting position (height 0) without transition
         panel.classList.add("overflow-hidden");
         panel.style.maxHeight = "0px";
         void panel.offsetHeight;
 
-        // Re-add transition classes now that element is visible at height 0
         panel.classList.add("transition-all", "duration-300");
         void panel.offsetHeight;
 
         if (cardId === "logins" || cardId === "failed" || cardId === "anomalies-card") {
             loadExpandContent(cardId);
         }
-        // Animate to measured height
         setTimeout(function () {
             panel.style.maxHeight = targetHeight + "px";
         }, 10);
@@ -946,7 +1225,7 @@ function openChartModal(chartId, title) {
                             ? sourceChart.config.options.plugins.legend.display
                             : false,
                 },
-                tooltip: { enabled: true },
+                tooltip: Object.assign({ enabled: true }, cyberTooltip),
             },
         };
         if (
@@ -965,13 +1244,13 @@ function openChartModal(chartId, title) {
         if (chartType !== "doughnut") {
             modalOptions.scales = {
                 x: {
-                    ticks: { color: "#9ca3af" },
-                    grid: { display: false },
+                    ticks: { color: CYBER.textMuted },
+                    grid: { color: CYBER.grid },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: "#9ca3af" },
-                    grid: { color: "#f3f4f6" },
+                    ticks: { precision: 0, color: CYBER.textMuted },
+                    grid: { color: CYBER.grid },
                 },
             };
         }
