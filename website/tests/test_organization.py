@@ -432,6 +432,27 @@ class OrganizationSocialRedirectViewTests(TestCase):
         org.refresh_from_db()
         self.assertEqual(org.social_clicks.get("github", 0), 0)
 
+    def test_redirect_strips_query_and_fragment(self):
+        """Redirect should remove query params and fragments from configured social URL."""
+        org = Organization.objects.create(
+            name="Query Org",
+            slug="query-org",
+            url="https://query-org.com",
+            twitter="https://twitter.com/testorg?next=https://evil.com#payload",
+            social_clicks={},
+        )
+
+        url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "twitter"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 302)
+        # Verify query params and fragment are stripped
+        self.assertEqual(response.url, "https://twitter.com/testorg")
+
+        # Verify click was tracked for valid redirect
+        org.refresh_from_db()
+        self.assertEqual(org.social_clicks.get("twitter", 0), 1)
+
 
 class OrganizationProfileEditViewTests(TestCase):
     """Tests for the OrganizationProfileEditView - profile editing functionality"""

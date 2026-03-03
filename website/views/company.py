@@ -926,8 +926,8 @@ class OrganizationSocialRedirectView(View):
         # Validate target URL domain to prevent open redirect attacks
         parsed = urlparse(target_url)
 
-        # Validate scheme
-        if parsed.scheme not in ["http", "https"]:
+        # Validate scheme - only HTTPS to prevent downgrade attacks
+        if parsed.scheme != "https":
             messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
