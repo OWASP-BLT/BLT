@@ -17,6 +17,12 @@ from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES
 
 logger = logging.getLogger(__name__)
 
+
+def _sanitize_log(value):
+    """Strip newlines and control characters from values before logging to prevent log injection."""
+    return re.sub(r"[\r\n\x00-\x1f\x7f-\x9f]", "", str(value))
+
+
 CACHE_TIMEOUT = 3600
 MIN_LANGUAGE_PERCENTAGE = 5  # Minimum language percentage (0-100 scale) to include
 MAX_REQUEST_SIZE = 1024 * 10
@@ -186,7 +192,7 @@ def get_github_data(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_github_data: {e}", exc_info=True)
+            logger.error("Error in get_github_data: %s", _sanitize_log(e), exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -223,8 +229,8 @@ def preprocess_user_data(user_data):
             if (bytes_count / total_bytes * 100) >= MIN_LANGUAGE_PERCENTAGE
         }
 
-    logger.debug(f"User tags: {user_tags}")
-    logger.debug(f"Language weights: {language_weights}")
+    logger.debug("User tags: %s", _sanitize_log(user_tags))
+    logger.debug("Language weights: %s", _sanitize_log(language_weights))
     return user_tags, language_weights
 
 
@@ -297,7 +303,7 @@ def get_recommended_repos(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_repos: {e}", exc_info=True)
+            logger.error("Error in get_recommended_repos: %s", _sanitize_log(e), exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -378,7 +384,7 @@ def get_recommended_communities(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_communities: {e}", exc_info=True)
+            logger.error("Error in get_recommended_communities: %s", _sanitize_log(e), exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -455,7 +461,7 @@ def get_recommended_discussion_channels(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_discussion_channels: {e}", exc_info=True)
+            logger.error("Error in get_recommended_discussion_channels: %s", _sanitize_log(e), exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -526,7 +532,7 @@ def get_recommended_articles(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_articles: {e}", exc_info=True)
+            logger.error("Error in get_recommended_articles: %s", _sanitize_log(e), exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
