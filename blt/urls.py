@@ -18,7 +18,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
-import comments.views
+import website.comments.views as comments_views
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -177,7 +177,6 @@ from website.views.issue import (
     GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
-    GsocView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -224,6 +223,7 @@ from website.views.organization import (
     Listbounties,
     OngoingHunts,
     OrganizationDetailView,
+    OrganizationListModeView,
     OrganizationListView,
     OrganizationSettings,
     PreviousHunts,
@@ -260,6 +260,7 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    refresh_organization_repos_api,
     room_messages_api,
     send_message_api,
     sizzle,
@@ -742,7 +743,6 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
-    path("gsoc/", GsocView.as_view(), name="gsoc"),
     path("gsoc/refresh/", refresh_gsoc_project, name="refresh_gsoc_project"),
     re_path(
         r"^privacypolicy/$",
@@ -760,17 +760,17 @@ urlpatterns = [
     re_path(r"^status/run-command/$", run_management_command, name="run_management_command"),
     re_path(r"^status/commands/$", management_commands, name="management_commands"),
     path(r"website_stats/", website_stats, name="website_stats"),
-    re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
-    re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
-    re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
+    re_path(r"^issue/comment/add/$", comments_views.add_comment, name="add_comment"),
+    re_path(r"^issue/comment/delete/$", comments_views.delete_comment, name="delete_comment"),
+    re_path(r"^comment/autocomplete/$", comments_views.autocomplete, name="autocomplete"),
     re_path(
         r"^issue/(?P<pk>\d+)/comment/edit/$",
-        comments.views.edit_comment,
+        comments_views.edit_comment,
         name="edit_comment",
     ),
     re_path(
         r"^issue/(?P<pk>\d+)/comment/reply/$",
-        comments.views.reply_comment,
+        comments_views.reply_comment,
         name="reply_comment",
     ),
     re_path(r"^social/$", queue_social_view, name="social"),
@@ -1019,6 +1019,7 @@ urlpatterns = [
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("organizations/", OrganizationListView.as_view(), name="organizations"),
+    path("organizations/list/", OrganizationListModeView.as_view(), name="organizations_list_mode"),
     path("map/", MapView.as_view(), name="map"),
     path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
@@ -1151,6 +1152,9 @@ urlpatterns = [
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
     path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
+    path(
+        "api/organization/<int:org_id>/refresh/", refresh_organization_repos_api, name="refresh_organization_repos_api"
+    ),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),

@@ -7,7 +7,7 @@ license = "AGPLv3"
 
 [tool.poetry.dependencies]
 python = ">=3.11.2,<3.14"
-python-dotenv = "^1.1.0"
+python-dotenv = "^1.2.2"
 Django = "^5.2.11"
 dj-database-url = "^3.1.2"
 django-allauth = "^65.14.3"
@@ -43,7 +43,7 @@ django-environ = "^0.13.0"
 django-simple-captcha = "^0.6.2"
 django-filter = "^25.2"
 pillow = "^12.1.1"
-sentry-sdk = "^2.53.0"
+sentry-sdk = "^2.54.0"
 bitcash = "^1.0.2"
 pydantic = "^2.10.6"
 pydantic_core = "^2.18.4"
@@ -58,7 +58,7 @@ uvicorn = "^0.41.0"
 channels = "^4.2.2"
 channels-redis = "^4.2.1"
 aiohttp = "^3.12.9"
-drf-yasg = "^1.21.14"
+drf-yasg = "^1.21.15"
 slack-bolt = "^1.27.0"
 slack-sdk = "^3.40.1"
 tld = "0.13"
@@ -71,12 +71,12 @@ better-profanity = "^0.7.0"
 django-bleach = "^3.1.0"
 pyjwt = {extras = ["crypto"], version = "^2.0.0"}
 tblib = "^3.2.2"
-opencv-python-headless = "^4.10.0.84"
+opencv-python-headless = "^4.13.0.92"
 
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.12.0"
-isort = "^8.0.0"
+isort = "^8.0.1"
 ruff = "^0.15.4"
 pre-commit = "^4.5.0"
 selenium = "^4.41.0"
@@ -106,7 +106,7 @@ select = ["E4", "E7", "E9", "F", "T"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 # CLI tools and scripts where print is appropriate for user output
-"pre-commit-hooks/check_style_tags.py" = ["T201"]
+"scripts/check_style_tags.py" = ["T201"]
 ".github/scripts/auto_fix.py" = ["T201"]
 # Settings file - print statements used for startup debugging
 "blt/settings.py" = ["T201"]
