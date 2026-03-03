@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from website.models import Domain, GitHubIssue, Repo, UserProfile
@@ -302,3 +302,97 @@ class SitemapTests(TestCase):
         self.assertIn("domain", content)
         # Check that follow_user URL is present
         self.assertIn("follow", content)
+
+
+_SIMPLE_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+
+@override_settings(STORAGES=_SIMPLE_STORAGES)
+class HomeCachingTests(TestCase):
+    """Tests for homepage full-page caching behaviour."""
+
+    def setUp(self):
+        from django.core.cache import cache
+
+        self.client = Client()
+        cache.clear()
+
+    def tearDown(self):
+        from django.core.cache import cache
+
+        cache.clear()
+
+    def test_anonymous_response_is_cached_by_session(self):
+        """First anonymous request populates the per-session cache entry."""
+        from django.core.cache import cache
+
+        self.client.get(reverse("home"))
+
+        session_key = self.client.session.session_key
+        cache_key = f"home_page_session_{session_key}"
+        self.assertIsNotNone(cache.get(cache_key), "Home page should be cached after first request")
+
+    def test_different_sessions_have_separate_cache_entries(self):
+        """Two anonymous clients (different sessions) must not share a cache entry."""
+        from django.core.cache import cache
+
+        client_a = Client()
+        client_b = Client()
+
+        client_a.get(reverse("home"))
+        client_b.get(reverse("home"))
+
+        key_a = f"home_page_session_{client_a.session.session_key}"
+        key_b = f"home_page_session_{client_b.session.session_key}"
+
+        self.assertNotEqual(key_a, key_b, "Different sessions must produce different cache keys")
+        self.assertIsNotNone(cache.get(key_a))
+        self.assertIsNotNone(cache.get(key_b))
+
+    def test_cache_bypassed_when_messages_present(self):
+        """Response with pending flash messages must not be served from or written to cache."""
+        from unittest.mock import MagicMock, patch
+
+        from django.core.cache import cache
+
+        user = User.objects.create_user(username="msguser", password="testpass")
+        self.client.login(username="msguser", password="testpass")
+
+        # Prime the session and manually populate cache with stale sentinel content.
+        self.client.get(reverse("home"))
+        session_key = self.client.session.session_key
+        cache_key = f"home_page_session_{session_key}"
+        cache.set(cache_key, "<html>stale</html>", timeout=300)
+
+        # Simulate one pending flash message.
+        mock_storage = MagicMock()
+        mock_storage.__len__ = MagicMock(return_value=1)
+
+        with patch("website.views.core.get_messages", return_value=mock_storage):
+            response = self.client.get(reverse("home"))
+
+        # Should return a fresh response, not the stale cached content.
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(b"stale", response.content)
+        # And the stale cache entry must not have been overwritten with message-bearing content.
+        self.assertEqual(cache.get(cache_key), "<html>stale</html>")
+
+    def test_authenticated_user_cache_key_uses_session(self):
+        """Authenticated user cache key must be session-based, not user-id-based."""
+        from django.core.cache import cache
+
+        user = User.objects.create_user(username="cacheuser", password="testpass")
+        self.client.login(username="cacheuser", password="testpass")
+
+        self.client.get(reverse("home"))
+        session_key = self.client.session.session_key
+        cache_key = f"home_page_session_{session_key}"
+
+        self.assertIsNone(
+            cache.get(f"home_page_user_{user.id}"),
+            "Cache must NOT use user-id as key",
+        )
+        self.assertIsNotNone(cache.get(cache_key), "Cache must use session key")

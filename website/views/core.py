@@ -25,6 +25,7 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.messages import get_messages
 from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -1542,16 +1543,21 @@ def home(request):
 
     from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
 
-    # Full-page caching keyed by user session: one entry per authenticated user,
-    # one shared entry for all anonymous visitors.
-    if request.user.is_authenticated:
-        cache_key = f"home_page_user_{request.user.id}"
-    else:
-        cache_key = "home_page_anonymous"
+    # Full-page caching keyed by session key so each session gets its own CSRF
+    # token embedded in the cached HTML.  Ensure the session exists before reading
+    # the key (Django creates it lazily).
+    if not request.session.session_key:
+        request.session.save()
+    cache_key = f"home_page_session_{request.session.session_key}"
 
-    cached_content = cache.get(cache_key)
-    if cached_content is not None:
-        return HttpResponse(cached_content)
+    # Bypass the cache entirely when there are pending flash messages so they are
+    # rendered and consumed correctly rather than being silently discarded.
+    has_messages = len(get_messages(request)) > 0
+
+    if not has_messages:
+        cached_content = cache.get(cache_key)
+        if cached_content is not None:
+            return HttpResponse(cached_content)
 
     # Get last commit date
     try:
@@ -1754,7 +1760,8 @@ def home(request):
     }
 
     rendered = render_to_string("home.html", context, request=request)
-    cache.set(cache_key, rendered, timeout=HOME_PAGE_CACHE_TTL)
+    if not has_messages:
+        cache.set(cache_key, rendered, timeout=HOME_PAGE_CACHE_TTL)
     return HttpResponse(rendered)
 
 
