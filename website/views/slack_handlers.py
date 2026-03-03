@@ -66,7 +66,11 @@ def get_slack_username(workspace_client, user_id):
 def fetch_project_from_db():
     """Fetch project with least members using Django ORM."""
     return (
-        Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
+        Project.objects.filter(
+            slack_channel__isnull=False,
+            slack_channel__gt="",
+            slack_user_count__gt=0,
+        )
         .exclude(slack_channel="project-blt")
         .order_by("slack_user_count")
         .first()
