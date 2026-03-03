@@ -63,12 +63,7 @@ def get_slack_username(workspace_client, user_id):
 
 
 def fetch_project_from_db():
-    """
-    Fetch project with least members using Django ORM.
-
-    This is the current implementation and may be replaced
-    with API-based fetching in the future.
-    """
+    """Fetch project with least members using Django ORM."""
     return (
         Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
         .exclude(slack_channel="project-blt")
@@ -77,29 +72,36 @@ def fetch_project_from_db():
     )
 
 
-def fetch_project_data(source: str = "db"):
-    """
-    Fetch project data from configurable source.
+def fetch_project_from_api():
+    """Placeholder for future API-based fetching."""
+    raise NotImplementedError("API source is not yet implemented.")
 
-    NOTE:
-    Prepares for migration from Django ORM → API (BLT-Next).
+
+def fetch_project_data(source=None):
     """
-    if source == "db":
-        return fetch_project_from_db()
-    else:
-        raise ValueError(f"Unsupported source: {source}")
+    Dispatcher for project data. Defaults to settings.PROJECT_DATA_SOURCE.
+    """
+    if source is None:
+        source = getattr(settings, "PROJECT_DATA_SOURCE", "db")
+
+    fetchers = {
+        "db": fetch_project_from_db,
+        "api": fetch_project_from_api,
+    }
+
+    if source not in fetchers:
+        raise ValueError(f"Unsupported data source: {source}")
+
+    return fetchers[source]()
 
 
 def get_project_with_least_members():
-    """Return Slack channel of project with least members (excluding project-blt)."""
+    """Return Slack channel of project with least members."""
     try:
-        project = fetch_project_data(source="db")
+        project = fetch_project_data()
         return project.slack_channel if project else None
     except Exception as e:
-        logger.error(
-            f"Failed to fetch project with least members: {str(e)}",
-            exc_info=True,
-        )
+        logger.error(f"Error fetching project: {str(e)}", exc_info=True)
         return None
     
 
