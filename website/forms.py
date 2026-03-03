@@ -620,13 +620,18 @@ class OrganizationProfileForm(forms.ModelForm):
     def _validate_social_url(self, url, allowed_domains, platform_name):
         """Helper to validate social URLs to prevent open redirect vulnerabilities"""
         if url:
-            from urllib.parse import urlparse
+            from urllib.parse import urlparse, urlunparse
 
             parsed = urlparse(url)
 
-            # Validate scheme
+            # Validate scheme - normalize http to https for security
             if parsed.scheme not in ["http", "https"]:
                 raise forms.ValidationError(f"{platform_name} URL must use http or https")
+
+            # Normalize http:// to https:// to align with redirect view requirements
+            if parsed.scheme == "http":
+                parsed = parsed._replace(scheme="https")
+                url = urlunparse(parsed)
 
             hostname = (parsed.hostname or "").lower()
             # Only allow specified domains and their subdomains (prevent suffix attacks)
@@ -683,9 +688,9 @@ class OrganizationProfileForm(forms.ModelForm):
         if github_org:
             # GitHub usernames can only contain alphanumeric characters and hyphens
             # Cannot start or end with hyphen, no consecutive hyphens
-            if not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$", github_org):
+            if not re.match(r"^(?!.*--)[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$", github_org):
                 raise forms.ValidationError(
-                    "Invalid GitHub organization handle. Use only letters, numbers, and hyphens."
+                    "Invalid GitHub organization handle. Use only letters, numbers, and hyphens (no consecutive hyphens)."
                 )
         return github_org
 

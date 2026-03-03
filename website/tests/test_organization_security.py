@@ -772,3 +772,128 @@ class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
         org.refresh_from_db()
         # Should have incremented to 10 if atomic operations work correctly
         self.assertEqual(org.social_clicks.get("twitter", 0), num_clicks)
+
+
+class OrganizationProfileFormHTTPSNormalizationTests(TestCase):
+    """Test HTTP to HTTPS normalization in OrganizationProfileForm"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+        self.organization = Organization.objects.create(
+            name="Test Org",
+            slug="test-org",
+            url="https://test-org.com",
+            admin=self.user,
+        )
+
+    def test_http_twitter_url_normalized_to_https(self):
+        """Test that HTTP Twitter URLs are automatically normalized to HTTPS"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "twitter": "http://twitter.com/testorg",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        # Check that the URL was normalized to HTTPS
+        self.assertEqual(form.cleaned_data["twitter"], "https://twitter.com/testorg")
+
+    def test_http_facebook_url_normalized_to_https(self):
+        """Test that HTTP Facebook URLs are automatically normalized to HTTPS"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "facebook": "http://facebook.com/testorg",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        self.assertEqual(form.cleaned_data["facebook"], "https://facebook.com/testorg")
+
+    def test_http_linkedin_url_normalized_to_https(self):
+        """Test that HTTP LinkedIn URLs are automatically normalized to HTTPS"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "linkedin": "http://linkedin.com/company/testorg",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        self.assertEqual(form.cleaned_data["linkedin"], "https://linkedin.com/company/testorg")
+
+    def test_https_url_remains_unchanged(self):
+        """Test that HTTPS URLs remain unchanged"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "twitter": "https://twitter.com/testorg",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        self.assertEqual(form.cleaned_data["twitter"], "https://twitter.com/testorg")
+
+
+class OrganizationProfileFormGitHubOrgTests(TestCase):
+    """Test GitHub organization handle validation"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+        self.organization = Organization.objects.create(
+            name="Test Org",
+            slug="test-org",
+            url="https://test-org.com",
+            admin=self.user,
+        )
+
+    def test_valid_github_org_accepted(self):
+        """Test that valid GitHub organization handles are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "test-org",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_github_org_with_consecutive_hyphens_rejected(self):
+        """Test that GitHub org handles with consecutive hyphens are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "test--org",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("github_org", form.errors)
+        self.assertIn("no consecutive hyphens", form.errors["github_org"][0].lower())
+
+    def test_github_org_starting_with_hyphen_rejected(self):
+        """Test that GitHub org handles starting with hyphen are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "-testorg",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("github_org", form.errors)
+
+    def test_github_org_ending_with_hyphen_rejected(self):
+        """Test that GitHub org handles ending with hyphen are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "testorg-",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("github_org", form.errors)
+
+    def test_github_org_with_single_hyphens_accepted(self):
+        """Test that GitHub org handles with single hyphens are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "test-org-name",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")

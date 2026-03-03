@@ -368,6 +368,10 @@ class OrganizationSocialRedirectViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(f"/organization/{org.id}/dashboard/analytics/", response.url)
 
+        # Verify click counter was not incremented for blocked URL
+        org.refresh_from_db()
+        self.assertEqual(org.social_clicks.get("twitter", 0), 0)
+
     def test_prevents_open_redirect_attack_x_domain(self):
         """Test that x.com domain is allowed for twitter"""
         org = Organization.objects.create(
