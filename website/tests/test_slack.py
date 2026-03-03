@@ -513,18 +513,18 @@ class MockedProjectAbstractionTests(TestCase):
         mock_fetch.return_value = mock_project
         result = get_project_with_least_members()
         self.assertEqual(result, "mock-channel")
-        mock_fetch.assert_called_once() # <--- Add this
+        mock_fetch.assert_called_once()
 
     @patch('website.views.slack_handlers.fetch_project_data')
     def test_returns_none_when_no_project(self, mock_fetch):
         mock_fetch.return_value = None
         result = get_project_with_least_members()
         self.assertIsNone(result)
-        mock_fetch.assert_called_once() # <--- Add this
+        mock_fetch.assert_called_once()
 
     @patch('website.views.slack_handlers.fetch_project_data')
     def test_returns_none_on_exception(self, mock_fetch):
         mock_fetch.side_effect = Exception("Abstraction Layer Error")
         result = get_project_with_least_members()
         self.assertIsNone(result)
-        mock_fetch.assert_called_once() # <--- Add this
+        mock_fetch.assert_called_once()

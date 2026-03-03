@@ -83,7 +83,7 @@ def fetch_project_data(source=None):
     Dispatcher for project data. Defaults to settings.PROJECT_DATA_SOURCE.
     """
     if source is None:
-        source = getattr(settings, "PROJECT_DATA_SOURCE", "db")
+        source = str(getattr(settings, "PROJECT_DATA_SOURCE", "db")).strip().lower()
 
     fetchers = {
         "db": fetch_project_from_db,
