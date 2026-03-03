@@ -17,6 +17,7 @@ DAILY_COMMANDS = [
     ("fetch_gsoc_prs", "fetching GSoC PRs"),
     ("fetch_pr_reviews", "fetching PR reviews"),
     ("cron_send_reminders", "sending user reminders"),
+    ("delete_unverified_users", "deleting unverified users", {"days": 30}),
 ]
 
 
@@ -29,9 +30,16 @@ class Command(BaseCommand):
         succeeded = 0
         failed = 0
 
-        for command_name, description in DAILY_COMMANDS:
+        for command_entry in DAILY_COMMANDS:
+            # Handle both 2-tuple and 3-tuple formats
+            if len(command_entry) == 3:
+                command_name, description, command_kwargs = command_entry
+            else:
+                command_name, description = command_entry
+                command_kwargs = {}
+
             try:
-                management.call_command(command_name)
+                management.call_command(command_name, **command_kwargs)
                 succeeded += 1
             except Exception:
                 logger.exception(f"Error {description}")
