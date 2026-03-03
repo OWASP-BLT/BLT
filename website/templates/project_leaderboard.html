@@ -167,7 +167,7 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {% for project in projects|slice:":6" %}
-                                <div class="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-lg transition-shadow">
+                                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg transition-shadow">
                                     <div class="flex items-start mb-3">
                                         <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                                             <svg class="w-6 h-6 text-blue-600"
@@ -410,7 +410,7 @@
                                             <td class="px-4 py-3 whitespace-nowrap">
                                                 <div class="flex items-center">
                                                     {% if project.logo %}
-                                                        <img src="{{ project.logo }}"
+                                                        <img src="{{ project.logo.url }}"
                                                              alt="{{ project.name }}"
                                                              width="32"
                                                              height="32"

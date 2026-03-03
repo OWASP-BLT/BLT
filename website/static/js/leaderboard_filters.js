@@ -94,7 +94,9 @@ class LeaderboardFilters {
         const params = new URLSearchParams();
         Object.entries(this.currentFilters).forEach(([key, value]) => {
             if (value !== null && value !== '') {
-                params.append(key, value);
+                // Convert camelCase to snake_case for API
+                const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+                params.append(snakeKey, value);
             }
         });
 
