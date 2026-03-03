@@ -32,8 +32,16 @@ jobs:
               const permission = permissionData.permission;
               isMaintainer = permission === "admin" || permission === "maintain" || permission === "write";
             } catch (e) {
-              // If the user is not a collaborator, the API returns 404
-              isMaintainer = false;
+              if (e && e.status === 404) {
+                isMaintainer = false;
+              } else {
+                console.error(
+                  `Error checking collaborator permission level for ${author} on ${owner}/${repo}:`,
+                  `status=${e && e.status}, message=${e && e.message}`
+                );
+                // Fail open: skip auto-closing so maintainers aren't accidentally blocked
+                return;
+              }
             }
 
             if (isMaintainer) {
