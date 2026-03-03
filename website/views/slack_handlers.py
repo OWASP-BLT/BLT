@@ -48,19 +48,18 @@ def get_slack_username(workspace_client, user_id):
     Returns None if API call fails.
     """
     try:
-        user_info = workspace_client.users_info(user=user_id)
-        if user_info.get("ok") and user_info.get("user"):
-            user = user_info["user"]
-            # Try to get the best available name
-            real_name = user.get("real_name")
-            display_name = user.get("profile", {}).get("display_name")
-            username = user.get("name")
+    user_info = workspace_client.users_info(user=user_id)
+    if user_info.get("ok") and user_info.get("user"):
+        user = user_info["user"]
+        real_name = user.get("real_name")
+        display_name = user.get("profile", {}).get("display_name")
+        username = user.get("name")
 
-            return real_name or display_name or username or user_id
-    except (SlackApiError, KeyError, AttributeError) as e:
-        logger.warning(f"Failed to fetch username for user_id {user_id}: {str(e)}")
-    return None
-    
+        return real_name or display_name or username or user_id
+except (SlackApiError, KeyError, AttributeError) as e:
+    logger.warning(f"Failed to fetch username for user_id {user_id}: {str(e)}")
+return None
+
 
 def fetch_project_from_db():
     """Fetch project using Django ORM (current implementation)."""
@@ -83,19 +82,25 @@ def fetch_project_data(source="db"):
         return fetch_project_from_db()
     else:
         raise ValueError(f"Unsupported source: {source}")
-        
-        
+
+
 def get_project_with_least_members():
     """Get the project channel name with the least members (excluding project-blt)."""
     try:
-        project = fetch_project_data()  # abstraction only
+        project = fetch_project_data()
         return project.slack_channel if project else None
     except Exception as e:
-        logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
+        logger.error(
+            f"Failed to fetch project with least members: {str(e)}",
+            exc_info=True,
+        )
         return None
-        
+    
+
+
 def _build_owasp_welcome_message(user_id):
     """Build the OWASP Slack welcome message with dynamic project examples."""
+
     least_members_channel = get_project_with_least_members()
     project_examples = "*#project-blt*"
     if least_members_channel:
