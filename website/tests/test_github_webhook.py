@@ -9,7 +9,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from website.models import GitHubIssue, Repo, UserProfile
+from website.models import Contributor, GitHubIssue, Repo, UserProfile
 
 
 def compute_github_signature(secret: str, body: bytes) -> str:
@@ -821,3 +821,209 @@ class GitHubWebhookCommentTestCase(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(GitHubComment.objects.count(), 0)
+
+
+@override_settings(GITHUB_WEBHOOK_SECRET="testsecret", GITHUB_TOKEN="faketoken")
+class GitHubWebhookPRLeaderboardTestCase(TestCase):
+    """Test that a congratulatory comment is posted when a PR merge improves the contributor's rank."""
+
+    def setUp(self):
+        self.client = Client()
+        self.webhook_url = reverse("github-webhook")
+        self.secret = "testsecret"
+
+        self.repo_url = "https://github.com/OWASP-BLT/demo-repo"
+        self.repo = Repo.objects.create(
+            name="demo-repo",
+            repo_url=self.repo_url,
+            # Unique slug to avoid conflicts with repos created in other test cases
+            slug="owasp-blt-demo-repo-leaderboard",
+        )
+
+    def _sign(self, body: bytes) -> str:
+        return compute_github_signature(self.secret, body)
+
+    def _post_merge(self, pr_id, pr_number, user_login, user_html_url, user_gh_id, merged_at):
+        """Helper: POST a closed+merged PR webhook event."""
+        payload = {
+            "action": "closed",
+            "pull_request": {
+                "id": pr_id,
+                "number": pr_number,
+                "state": "closed",
+                "title": "Test PR",
+                "body": "",
+                "html_url": f"{self.repo_url}/pull/{pr_number}",
+                "merged": True,
+                "created_at": merged_at.isoformat().replace("+00:00", "Z"),
+                "updated_at": merged_at.isoformat().replace("+00:00", "Z"),
+                "closed_at": merged_at.isoformat().replace("+00:00", "Z"),
+                "merged_at": merged_at.isoformat().replace("+00:00", "Z"),
+                "user": {
+                    "id": user_gh_id,
+                    "login": user_login,
+                    "html_url": user_html_url,
+                    "avatar_url": "",
+                },
+            },
+            "repository": {
+                "full_name": "OWASP-BLT/demo-repo",
+                "html_url": self.repo_url,
+            },
+        }
+        body = json.dumps(payload).encode("utf-8")
+        return self.client.post(
+            self.webhook_url,
+            data=body,
+            content_type="application/json",
+            HTTP_X_GITHUB_EVENT="pull_request",
+            HTTP_X_HUB_SIGNATURE_256=self._sign(body),
+        )
+
+    def test_congratulatory_comment_posted_when_rank_improves(self):
+        """A congratulatory comment is posted when a merged PR moves the contributor up in rank."""
+        now = timezone.now()
+        contributor_a = Contributor.objects.create(
+            github_id=1001,
+            name="alice",
+            github_url="https://github.com/alice",
+            avatar_url="",
+            contributor_type="User",
+            contributions=0,
+        )
+        contributor_b = Contributor.objects.create(
+            github_id=1002,
+            name="bob",
+            github_url="https://github.com/bob",
+            avatar_url="",
+            contributor_type="User",
+            contributions=0,
+        )
+
+        # contributor_a has 2 existing merged PRs (rank 1)
+        for i in range(2):
+            GitHubIssue.objects.create(
+                issue_id=2000 + i,
+                repo=self.repo,
+                type="pull_request",
+                state="closed",
+                is_merged=True,
+                contributor=contributor_a,
+                merged_at=now,
+                created_at=now,
+                updated_at=now,
+                url=f"{self.repo_url}/pull/{2000 + i}",
+            )
+
+        # contributor_b has 1 existing merged PR (rank 2)
+        GitHubIssue.objects.create(
+            issue_id=3000,
+            repo=self.repo,
+            type="pull_request",
+            state="closed",
+            is_merged=True,
+            contributor=contributor_b,
+            merged_at=now,
+            created_at=now,
+            updated_at=now,
+            url=f"{self.repo_url}/pull/3000",
+        )
+
+        # Merging a second PR for contributor_b gives them 2 PRs = tied with contributor_a
+        # → both move to rank 1, so contributor_b improves from rank 2 → rank 1
+        with patch("website.models.GitHubIssue.add_comment", return_value=True) as mock_comment:
+            response = self._post_merge(
+                pr_id=3001,
+                pr_number=300,
+                user_login="bob",
+                user_html_url="https://github.com/bob",
+                user_gh_id=1002,
+                merged_at=now,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        mock_comment.assert_called_once()
+        comment_text = mock_comment.call_args[0][0]
+        self.assertIn("bob", comment_text)
+        self.assertIn("rank", comment_text.lower())
+
+    def test_no_comment_when_rank_unchanged(self):
+        """No congratulatory comment is posted when the rank does not improve."""
+        now = timezone.now()
+        contributor_a = Contributor.objects.create(
+            github_id=2001,
+            name="carol",
+            github_url="https://github.com/carol",
+            avatar_url="",
+            contributor_type="User",
+            contributions=0,
+        )
+        contributor_b = Contributor.objects.create(
+            github_id=2002,
+            name="dave",
+            github_url="https://github.com/dave",
+            avatar_url="",
+            contributor_type="User",
+            contributions=0,
+        )
+
+        # contributor_a has 5 PRs (rank 1); contributor_b has 3 PRs (rank 2)
+        for i in range(5):
+            GitHubIssue.objects.create(
+                issue_id=4000 + i,
+                repo=self.repo,
+                type="pull_request",
+                state="closed",
+                is_merged=True,
+                contributor=contributor_a,
+                merged_at=now,
+                created_at=now,
+                updated_at=now,
+                url=f"{self.repo_url}/pull/{4000 + i}",
+            )
+        for i in range(3):
+            GitHubIssue.objects.create(
+                issue_id=5000 + i,
+                repo=self.repo,
+                type="pull_request",
+                state="closed",
+                is_merged=True,
+                contributor=contributor_b,
+                merged_at=now,
+                created_at=now,
+                updated_at=now,
+                url=f"{self.repo_url}/pull/{5000 + i}",
+            )
+
+        # contributor_b merges one more PR → 4 PRs, still rank 2 (contributor_a has 5)
+        with patch("website.models.GitHubIssue.add_comment", return_value=True) as mock_comment:
+            response = self._post_merge(
+                pr_id=5003,
+                pr_number=501,
+                user_login="dave",
+                user_html_url="https://github.com/dave",
+                user_gh_id=2002,
+                merged_at=now,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        mock_comment.assert_not_called()
+
+    def test_comment_posted_when_contributor_enters_leaderboard(self):
+        """Congratulatory comment is posted when a contributor earns their first merged PR."""
+        now = timezone.now()
+
+        with patch("website.models.GitHubIssue.add_comment", return_value=True) as mock_comment:
+            response = self._post_merge(
+                pr_id=6001,
+                pr_number=601,
+                user_login="newbie",
+                user_html_url="https://github.com/newbie",
+                user_gh_id=3001,
+                merged_at=now,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        mock_comment.assert_called_once()
+        comment_text = mock_comment.call_args[0][0]
+        self.assertIn("newbie", comment_text)
