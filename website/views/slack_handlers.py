@@ -60,6 +60,7 @@ def get_slack_username(workspace_client, user_id):
     except (SlackApiError, KeyError, AttributeError) as e:
         logger.warning(f"Failed to fetch username for user_id {user_id}: {str(e)}")
     return None
+    
 
 def fetch_project_from_db():
     """Fetch project using Django ORM (current implementation)."""
@@ -69,6 +70,7 @@ def fetch_project_from_db():
         .order_by("slack_user_count")
         .first()
     )
+
 
 def fetch_project_data(source="db"):
     """
@@ -82,7 +84,7 @@ def fetch_project_data(source="db"):
     else:
         raise ValueError(f"Unsupported source: {source}")
         
-
+        
 def get_project_with_least_members():
     """Get the project channel name with the least members (excluding project-blt)."""
     try:
@@ -91,8 +93,7 @@ def get_project_with_least_members():
     except Exception as e:
         logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
         return None
-
-
+        
 def _build_owasp_welcome_message(user_id):
     """Build the OWASP Slack welcome message with dynamic project examples."""
     least_members_channel = get_project_with_least_members()
