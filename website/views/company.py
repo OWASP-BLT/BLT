@@ -140,7 +140,7 @@ def validate_organization_user(func):
         is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
 
         if not is_member:
-            messages.error(request, "You do not have permission to access this organization's integrations.")
+            messages.error(request, "You do not have permission to access this organization.")
             return redirect("/")
 
         return func(self, request, id, *args, **kwargs)
@@ -926,8 +926,10 @@ class OrganizationSocialRedirectView(View):
         # Validate target URL domain to prevent open redirect attacks
         parsed = urlparse(target_url)
 
-        # Validate scheme - only HTTPS to prevent downgrade attacks
-        if parsed.scheme != "https":
+        # Normalize http to https for compatibility with existing data
+        if parsed.scheme == "http":
+            parsed = parsed._replace(scheme="https")
+        elif parsed.scheme != "https":
             messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
