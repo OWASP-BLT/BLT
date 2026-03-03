@@ -91,9 +91,9 @@ def fetch_project_data(source="db"):
 
 
 def get_project_with_least_members():
-    """Return slack channel of project with least members."""
+    """Return slack channel of project with least members (excluding project-blt)."""
     try:
-        project = fetch_project_data()
+        project = fetch_project_data(source="db")
         return project.slack_channel if project else None
     except Exception as e:
         logger.error(
