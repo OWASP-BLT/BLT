@@ -58,7 +58,7 @@ def notify_receiver_on_kudos(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=UserBadge)
-def notify_user_on_badge_recieved(sender, instance, created, **kwargs):
+def notify_user_on_badge_received(sender, instance, created, **kwargs):
     """
     Signal to notify users when they receive a new badge.
     """

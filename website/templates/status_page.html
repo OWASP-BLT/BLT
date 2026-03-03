@@ -290,7 +290,12 @@
                                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                         {% for activity in status.slack_bot.recent_activities %}
                                             <tr class="hover:bg-gray-50">
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ activity.activity_type|title }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                    {{ activity.activity_type|title }}
+                                                    {% if activity.activity_type == "team_join" and activity.details.slack_integration_id %}
+                                                        (ID: {{ activity.details.slack_integration_id }})
+                                                    {% endif %}
+                                                </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{ activity.created|date:"M d, H:i" }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                     <span class="inline-flex items-center">
