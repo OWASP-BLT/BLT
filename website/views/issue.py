@@ -2642,8 +2642,8 @@ def generate_github_issue(description):
     try:
         openai_api_key = os.getenv("OPENAI_API_KEY")
         if not openai_api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is not set")
-
+            logger.error("OPENAI_API_KEY is not set")
+            return {"error": "OpenAI integration not configured"}
         client = OpenAI(api_key=openai_api_key)
 
         # Call the OpenAI API with the gpt-4o-mini model

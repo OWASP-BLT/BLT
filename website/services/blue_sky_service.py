@@ -12,9 +12,12 @@ class BlueSkyService:
         self.client = Client()
         # Only attempt login if credentials are configured
         if settings.BLUESKY_USERNAME and settings.BLUESKY_PASSWORD:
-            self.client.login(settings.BLUESKY_USERNAME, settings.BLUESKY_PASSWORD)
+            try:
+                self.client.login(settings.BLUESKY_USERNAME, settings.BLUESKY_PASSWORD)
+            except Exception:
+                logger.exception("Failed to login to BlueSky")
         else:
-            logger.warning("BlueSky credentials not configured, service will not be able to post")
+            logger.warning("BlueSky credentials not configured")
 
     def post_text(self, text):
         """Post plain text to BlueSky."""
