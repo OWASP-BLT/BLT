@@ -27,11 +27,13 @@
             mobileDropdownButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                mobileDropdownMenu.classList.toggle('hidden');
+                const isHidden = mobileDropdownMenu.classList.toggle('hidden');
+                mobileDropdownButton.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
             });
             document.addEventListener('click', (e) => {
                 if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
                     mobileDropdownMenu.classList.add('hidden');
+                    mobileDropdownButton.setAttribute('aria-expanded', 'false');
                 }
             });
         }
@@ -44,6 +46,9 @@
             <div>
                 <button id="dropdown-toggle-mobile"
                         type="button"
+                        aria-label="Toggle mobile menu"
+                        aria-expanded="false"
+                        aria-controls="dropdown-mobile"
                         class="hover:no-underline lg:hidden bg-transparent border-0 cursor-pointer">
                     <i class="fa fa-bars !text-5xl text-red-500 z-50"></i>
                 </button>

@@ -202,5 +202,8 @@ def refresh_project_stats(request, project_id):
         )
 
     except Exception as e:
-        logger.error(f"Error refreshing project stats: {e}")
-        return JsonResponse({"status": "error", "message": "Failed to refresh stats"}, status=500)
+        logger.error(f"Error refreshing project stats: {e}", exc_info=True)
+        return JsonResponse(
+            {"status": "error", "message": "Unable to refresh project statistics. Please try again later."},
+            status=500,
+        )

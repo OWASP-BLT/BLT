@@ -202,14 +202,19 @@ class RefreshStatsAPIView(View):
             github_service = GitHubService()
 
             updated_repos = []
+            failed_repos = []
             for repo in project.repos.all():
                 # Parse owner/repo from URL with strict validation
                 try:
-                    # Extract owner/repo from GitHub URL using regex
+                    # Extract owner/repo from GitHub URL using regex with strict validation
                     # Expected format: https://github.com/owner/repo or git@github.com:owner/repo
-                    match = re.search(r"github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?(?:/|$)", repo.repo_url)
+                    match = re.search(
+                        r"github\.com[:/](?P<owner>[A-Za-z0-9_.-]+)/(?P<repo>[A-Za-z0-9_.-]+)(?:\.git)?(?:/|$|\?|#)",
+                        repo.repo_url,
+                    )
                     if match:
-                        owner, repo_name = match.group(1), match.group(2)
+                        owner = match.group("owner")
+                        repo_name = match.group("repo")
 
                         # Fetch fresh data
                         stats = github_service.refresh_repo_cache(owner, repo_name)
@@ -225,17 +230,27 @@ class RefreshStatsAPIView(View):
                             repo.save()
 
                             updated_repos.append(repo.name)
+                        else:
+                            failed_repos.append(repo.name)
+                    else:
+                        failed_repos.append(repo.name)
+                        logger.warning(f"Invalid GitHub URL format for repo {repo.id}: {repo.repo_url}")
                 except Exception as e:
-                    logger.warning(f"Failed to parse GitHub URL for repo {repo.id}: {e}")
+                    failed_repos.append(repo.name)
+                    logger.warning(f"Failed to update repo {repo.id} ({repo.name}): {e}")
                     continue
 
-            return JsonResponse(
-                {
-                    "success": True,
-                    "message": f"Refreshed stats for {len(updated_repos)} repositories",
-                    "updated_repos": updated_repos,
-                }
-            )
+            response_data = {
+                "success": True,
+                "message": f"Refreshed stats for {len(updated_repos)} repositories",
+                "updated_repos": updated_repos,
+            }
+            
+            if failed_repos:
+                response_data["warning"] = f"{len(failed_repos)} repositories could not be updated"
+                response_data["failed_repos"] = failed_repos
+
+            return JsonResponse(response_data)
 
         except Project.DoesNotExist:
             return JsonResponse({"success": False, "error": "Project not found"}, status=404)

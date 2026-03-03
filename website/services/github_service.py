@@ -156,8 +156,6 @@ class GitHubService:
     def _parse_total_count(self, link_header: str) -> int:
         """Parse total count from Link header"""
         if "last" in link_header:
-            import re
-
             match = re.search(r'page=(\d+)>; rel="last"', link_header)
             if match:
                 return int(match.group(1))

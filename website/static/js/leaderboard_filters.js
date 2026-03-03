@@ -152,6 +152,8 @@ class LeaderboardFilters {
             const escapedDesc = project.description ? this.escapeHtml(project.description) : 'OWASP Project';
             const escapedSlug = this.escapeHtml(project.slug);
             const escapedRepoUrl = this.escapeHtml(project.repo_url);
+            // Encode slug for URL context
+            const encodedSlug = encodeURIComponent(project.slug);
 
             return `
                 <div class="leaderboard-item ${rankClass} bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" data-rank="${rank}">
@@ -162,7 +164,7 @@ class LeaderboardFilters {
                             </div>
                             <div class="flex-1">
                                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                                    <a href="/project/${escapedSlug}/" class="hover:text-red-500 transition-colors">
+                                    <a href="/project/${encodedSlug}/" class="hover:text-red-500 transition-colors">
                                         ${escapedName}
                                     </a>
                                 </h3>
