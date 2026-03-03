@@ -50,9 +50,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-def _sanitize_log(value):
-    """Strip newlines and control characters from values before logging to prevent log injection."""
-    return re.sub(r"[\r\n\x00-\x1f\x7f-\x9f]", "", str(value))
+def _sanitize_log(value, max_length=1000):
+    """Strip newlines, control characters, and Unicode line separators from values before logging.
+
+    Prevents log injection/forging while keeping output readable.
+    Truncates to max_length to guard against log flooding.
+    """
+    sanitized = re.sub(r"[\r\n\x00-\x1f\x7f-\x9f\u2028\u2029]", "", str(value))
+    if len(sanitized) > max_length:
+        return sanitized[:max_length] + "...(truncated)"
+    return sanitized
 
 
 GITHUB_API_TOKEN = settings.GITHUB_TOKEN
@@ -774,12 +781,14 @@ def fetch_github_user_data(username):
 
             # Validate the URL belongs to github.com
             if parsed_repo_url.hostname not in ("github.com", "www.github.com"):
-                logging.warning("Skipping non-GitHub repo URL for language fetch: %s", parsed_repo_url.hostname)
+                logging.warning(
+                    "Skipping non-GitHub repo URL for language fetch: %s", _sanitize_log(parsed_repo_url.hostname)
+                )
                 continue
 
             path_parts = [p for p in parsed_repo_url.path.strip("/").split("/") if p]
             if len(path_parts) < 2:
-                logging.warning("Skipping malformed repo URL path: %s", parsed_repo_url.path)
+                logging.warning("Skipping malformed repo URL path: %s", _sanitize_log(parsed_repo_url.path))
                 continue
 
             repo_owner = path_parts[0]
@@ -787,7 +796,9 @@ def fetch_github_user_data(username):
 
             # Validate owner and name contain only safe characters
             if not re.match(r"^[a-zA-Z0-9._-]+$", repo_owner) or not re.match(r"^[a-zA-Z0-9._-]+$", repo_name):
-                logging.warning("Skipping repo with unsafe owner/name: %s/%s", repo_owner, repo_name)
+                logging.warning(
+                    "Skipping repo with unsafe owner/name: %s/%s", _sanitize_log(repo_owner), _sanitize_log(repo_name)
+                )
                 continue
 
             repo_languages_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/languages"
