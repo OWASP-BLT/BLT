@@ -903,61 +903,11 @@ class OrganizationSocialRedirectView(View):
         if platform not in valid_platforms:
             return HttpResponseBadRequest("Invalid social platform")
 
-        # Increment the click counter atomically to prevent race conditions.
-        # Note: Click counting is non-critical and is treated as best-effort; failures
-        # won't prevent the redirect.
-        organization = None
+        # Fetch organization first to get target URL
         try:
-            with transaction.atomic():
-                # Lock the row to ensure atomic update and validate organization exists
-                # This combines validation + locking into a single query
-                try:
-                    organization = Organization.objects.select_for_update().get(id=org_id)
-                except Organization.DoesNotExist as exc:
-                    raise Http404("Organization not found") from exc
-
-                # Get current clicks dict (handle None case)
-                clicks = organization.social_clicks or {}
-
-                # Increment the counter for this platform
-                clicks[platform] = clicks.get(platform, 0) + 1
-
-                # Use atomic database update to prevent race conditions
-                # This ensures the JSON update happens at the database level
-                Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
-        except Http404:
-            raise  # Re-raise 404 immediately
-        except OperationalError as e:
-            # Log the error but don't fail the redirect - click counting is non-critical
-            logger.warning(
-                "Failed to update social clicks for organization %s on platform %s: %s",
-                org_id,
-                platform,
-                str(e),
-                exc_info=True,
-            )
-            # Need to fetch organization for redirect if click update failed
-            if organization is None:
-                try:
-                    organization = Organization.objects.get(id=org_id)
-                except Organization.DoesNotExist as exc:
-                    raise Http404("Organization not found") from exc
-        except Exception as e:
-            # Catch all other database errors (IntegrityError, DatabaseError, etc.)
-            # to ensure redirect always works even if click tracking fails
-            logger.warning(
-                "Unexpected error updating social clicks for organization %s on platform %s: %s",
-                org_id,
-                platform,
-                str(e),
-                exc_info=True,
-            )
-            # Need to fetch organization for redirect if click update failed
-            if organization is None:
-                try:
-                    organization = Organization.objects.get(id=org_id)
-                except Organization.DoesNotExist as exc:
-                    raise Http404("Organization not found") from exc
+            organization = Organization.objects.get(id=org_id)
+        except Organization.DoesNotExist as exc:
+            raise Http404("Organization not found") from exc
 
         # Get the actual URL based on platform
         url_mapping = {
@@ -988,6 +938,43 @@ class OrganizationSocialRedirectView(View):
         if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured")
             return redirect("organization_analytics", id=org_id)
+
+        # Only increment click counter after all validations pass
+        # Note: Click counting is non-critical and is treated as best-effort; failures
+        # won't prevent the redirect.
+        try:
+            with transaction.atomic():
+                # Lock the row to ensure atomic update
+                org_locked = Organization.objects.select_for_update().get(id=org_id)
+
+                # Get current clicks dict (handle None case)
+                clicks = org_locked.social_clicks or {}
+
+                # Increment the counter for this platform
+                clicks[platform] = clicks.get(platform, 0) + 1
+
+                # Use atomic database update to prevent race conditions
+                # This ensures the JSON update happens at the database level
+                Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
+        except OperationalError as e:
+            # Log the error but don't fail the redirect - click counting is non-critical
+            logger.warning(
+                "Failed to update social clicks for organization %s on platform %s: %s",
+                org_id,
+                platform,
+                str(e),
+                exc_info=True,
+            )
+        except Exception as e:
+            # Catch all other database errors (IntegrityError, DatabaseError, etc.)
+            # to ensure redirect always works even if click tracking fails
+            logger.warning(
+                "Unexpected error updating social clicks for organization %s on platform %s: %s",
+                org_id,
+                platform,
+                str(e),
+                exc_info=True,
+            )
 
         # Strip query parameters, fragments, and userinfo before redirect to prevent parameter injection attacks
         safe_netloc = parsed.hostname or ""

@@ -411,6 +411,10 @@ class OrganizationSocialRedirectViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(f"/organization/{org.id}/dashboard/analytics/", response.url)
 
+        # Verify click counter was NOT incremented for missing URL
+        org.refresh_from_db()
+        self.assertEqual(org.social_clicks.get("linkedin", 0), 0)
+
     def test_missing_github_org_shows_error(self):
         """Test that missing github_org field shows error"""
         org = Organization.objects.create(
@@ -423,6 +427,10 @@ class OrganizationSocialRedirectViewTests(TestCase):
         # Should redirect back to dashboard
         self.assertEqual(response.status_code, 302)
         self.assertIn(f"/organization/{org.id}/dashboard/analytics/", response.url)
+
+        # Verify click counter was NOT incremented for missing github_org
+        org.refresh_from_db()
+        self.assertEqual(org.social_clicks.get("github", 0), 0)
 
 
 class OrganizationProfileEditViewTests(TestCase):
