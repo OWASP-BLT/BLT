@@ -1402,60 +1402,6 @@ def github_webhook(request):
         return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
 
 
-def get_contributor_pr_rank(contributor, since_date):
-    """
-    Return the 1-based rank of *contributor* on the BLT PR leaderboard.
-
-    The leaderboard counts merged pull requests for OWASP-BLT repositories
-    within the rolling 6-month window defined by *since_date*.  Rank 1 means
-    the most merged PRs; ties share the same rank.
-
-    Returns ``None`` when the contributor has no qualifying merged PRs.
-    """
-    bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
-    bot_exclusions = Q()
-    for bot in bots:
-        bot_exclusions |= Q(contributor__name__icontains=bot)
-
-    owasp_blt_filter = Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/") | Q(
-        repo__repo_url__startswith="https://github.com/owasp-blt/"
-    )
-
-    # How many qualifying merged PRs does this contributor have?
-    contributor_count = (
-        GitHubIssue.objects.filter(
-            type="pull_request",
-            is_merged=True,
-            contributor=contributor,
-            merged_at__gte=since_date,
-        )
-        .filter(owasp_blt_filter)
-        .count()
-    )
-
-    if contributor_count == 0:
-        return None
-
-    # How many *other* contributors have strictly more qualifying merged PRs?
-    contributors_above = (
-        GitHubIssue.objects.filter(
-            type="pull_request",
-            is_merged=True,
-            contributor__isnull=False,
-            merged_at__gte=since_date,
-        )
-        .filter(owasp_blt_filter)
-        .exclude(bot_exclusions)
-        .exclude(contributor=contributor)
-        .values("contributor")
-        .annotate(total_prs=Count("id"))
-        .filter(total_prs__gt=contributor_count)
-        .count()
-    )
-
-    return contributors_above + 1
-
-
 def handle_pull_request_event(payload):
     """
     Handle GitHub pull_request events.
@@ -1563,14 +1509,7 @@ def handle_pull_request_event(payload):
         logger.error(f"Error finding repository for PR: {e}")
 
     if repo:
-        # --- Capture rank BEFORE the merge so we can detect improvements ---
-        since_date = timezone.now() - relativedelta(months=6)
-        old_rank = None
-        if action == "closed" and is_merged and contributor:
-            old_rank = get_contributor_pr_rank(contributor, since_date)
-
         # --- Upsert GitHubIssue row for this PR ---
-        github_issue = None
         try:
             github_issue, created = GitHubIssue.objects.update_or_create(
                 issue_id=pr_global_id,  # unique per PR (avoids clash with issues)
@@ -1599,29 +1538,6 @@ def handle_pull_request_event(payload):
             )
         except Exception as e:
             logger.error(f"Error creating/updating GitHubIssue for PR #{pr_number}: {e}")
-
-        # --- Congratulatory comment when rank improves on merge ---
-        if action == "closed" and is_merged and contributor and github_issue:
-            # Skip bot contributors (they don't need congratulations)
-            bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
-            contributor_lower = (contributor.name or "").lower()
-            if not any(bot in contributor_lower for bot in bots):
-                new_rank = get_contributor_pr_rank(contributor, since_date)
-                if new_rank is not None and (old_rank is None or new_rank < old_rank):
-                    contributor_name = contributor.name or gh_login or "contributor"
-                    if old_rank is None:
-                        comment = (
-                            f"🎉 Congratulations @{contributor_name}! "
-                            f"You've entered the BLT PR leaderboard at rank #{new_rank} "
-                            f"with this merged PR! Keep up the great work! 🚀"
-                        )
-                    else:
-                        comment = (
-                            f"🎉 Congratulations @{contributor_name}! "
-                            f"This merged PR has moved you up to rank #{new_rank} "
-                            f"on the BLT PR leaderboard (up from #{old_rank})! Keep up the great work! 🚀"
-                        )
-                    github_issue.add_comment(comment)
 
     # --- Badge logic (preserve existing behaviour) ---
     if action == "closed" and is_merged and pr_user_profile:
