@@ -1009,10 +1009,15 @@ class UserProfile(models.Model):
         """Simple score: recent check-ins + streak"""
         today = timezone.now().date()
         cutoff_date = today - timedelta(days=29)  # Last 30 days including today
-        recent = DailyStatusReport.objects.filter(
-            user=self.user,
-            date__range=(cutoff_date, today),
-        ).count()
+        recent = (
+            DailyStatusReport.objects.filter(
+                user=self.user,
+                date__range=(cutoff_date, today),
+            )
+            .values("date")
+            .distinct()
+            .count()
+        )
         self.leaderboard_score = recent + (self.current_streak * 2)
         self.save(update_fields=["leaderboard_score"])
 
@@ -1660,6 +1665,9 @@ class DailyStatusReport(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["user", "date"], name="dsr_user_date_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "date"], name="unique_dsr_user_date"),
         ]
 
 
