@@ -1559,8 +1559,34 @@ def home(request):
     # Get top bug reporters for current month
     current_time = timezone.now()
     top_bug_reporters = (
-        User.objects.filter(points__created__month=current_time.month, points__created__year=current_time.year)
-        .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
+        User.objects.filter(
+            points__created__month=current_time.month,
+            points__created__year=current_time.year,
+            points__issue__isnull=False,  # Only consider users with issue-related points
+        )
+        .annotate(
+            bug_count=Count(
+                "points",
+                filter=Q(
+                    points__score__gt=0,
+                    points__issue__isnull=False,
+                    points__created__month=current_time.month,
+                    points__created__year=current_time.year,
+                ),
+            ),
+            total_score=Coalesce(
+                Sum(
+                    "points__score",
+                    filter=Q(
+                        points__issue__isnull=False,
+                        points__created__month=current_time.month,
+                        points__created__year=current_time.year,
+                    ),
+                ),
+                0,
+            ),
+        )
+        .filter(bug_count__gt=0)  # Exclude users without any bug reports
         .order_by("-total_score")[:5]
     )
 
@@ -3071,9 +3097,7 @@ def invite_organization(request):
         today = timezone.now().date()
         invite_count = (
             InviteOrganization.objects.filter(sender=request.user, created__date=today)
-            .exclude(
-                email__regex=SAMPLE_INVITE_EMAIL_PATTERN  # Exclude sample invites from count
-            )
+            .exclude(email__regex=SAMPLE_INVITE_EMAIL_PATTERN)  # Exclude sample invites from count
             .count()
         )
 

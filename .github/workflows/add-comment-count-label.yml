@@ -213,9 +213,11 @@ jobs:
                 comment.body && comment.body.includes(notificationMarker) && comment.user.login === 'github-actions[bot]'
               );
               
+              const prAuthor = pr.user.login;
               const conversationWord = count === 1 ? 'conversation' : 'conversations';
               const commentBody = notificationMarker + '\n' +
                 '## 💬 Unresolved Conversations Detected\n\n' +
+                `Hi @${prAuthor}!\n\n` +
                 `This pull request currently has **${count} unresolved ${conversationWord}** that need to be addressed.\n\n` +
                 '### Action Required\n' +
                 '- Review the pending discussions in the "Files changed" tab\n' +
