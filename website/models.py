@@ -1666,9 +1666,6 @@ class DailyStatusReport(models.Model):
         indexes = [
             models.Index(fields=["user", "date"], name="dsr_user_date_idx"),
         ]
-        constraints = [
-            models.UniqueConstraint(fields=["user", "date"], name="unique_dsr_user_date"),
-        ]
 
 
 class IpReport(models.Model):
