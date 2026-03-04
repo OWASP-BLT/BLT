@@ -361,6 +361,13 @@
                                             Team Leaderboard
                                         </a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'team_member_leaderboard' %}"
+                                           class="flex items-center transition-colors {% if request.resolver_match.url_name == 'team_member_leaderboard' %} text-[#e74c3c] bg-[#feeae9] dark:bg-red-900/30 hover:bg-[#feeae9] dark:hover:bg-red-900/30 hover:text-[#e74c3c] cursor-default {% else %} text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] hover:bg-gray-100 dark:hover:bg-gray-800 {% endif %} ">
+                                            <i class="fas fa-user-friends w-5 mr-2 {% if request.resolver_match.url_name == 'team_member_leaderboard' %} text-[#e74c3c] {% else %} text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] {% endif %} "></i>
+                                            Team Member Leaderboard
+                                        </a>
+                                    </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">About Us</h3>
                                 <ul class="space-y-2">

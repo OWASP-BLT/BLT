@@ -1006,6 +1006,23 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    leaderboard_score = models.PositiveIntegerField(default=0, db_index=True)
+
+    def update_leaderboard_score(self):
+        """Simple score: recent check-ins + streak"""
+        today = timezone.now().date()
+        cutoff_date = today - timedelta(days=29)  # Last 30 days including today
+        recent = (
+            DailyStatusReport.objects.filter(
+                user=self.user,
+                date__range=(cutoff_date, today),
+            )
+            .values("date")
+            .distinct()
+            .count()
+        )
+        self.leaderboard_score = recent + (self.current_streak * 2)
+        self.save(update_fields=["leaderboard_score"])
 
     def check_team_membership(self):
         return self.team is not None
@@ -1121,6 +1138,8 @@ class UserProfile(models.Model):
                 # Update last check-in and save
                 self.last_check_in = check_in_date
                 self.save()
+
+                self.update_leaderboard_score()
 
                 self.award_streak_badges()
 
@@ -1645,6 +1664,11 @@ class DailyStatusReport(models.Model):
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "date"], name="dsr_user_date_idx"),
+        ]
 
 
 class IpReport(models.Model):
