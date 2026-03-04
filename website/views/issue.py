@@ -2642,7 +2642,7 @@ def generate_github_issue(description):
     try:
         openai_api_key = os.getenv("OPENAI_API_KEY")
         if not openai_api_key:
-            logger.error("OPENAI_API_KEY is not set")
+            logger.warning("OPENAI_API_KEY is not set")
             return {"error": "OpenAI integration not configured"}
         client = OpenAI(api_key=openai_api_key)
 
