@@ -265,7 +265,7 @@ When a PR contains migrations with numbers that overlap existing migrations (e.g
 **Key Features**:
 - Validates PR has at least one approved review
 - Excludes reviews from: PR author, bots, specific maintainers
-- Adds label: `needs-peer-review` (yellow) or `has-peer-review` (green)
+- Adds label: `needs-peer-review` (red) or `has-peer-review` (green)
 - Posts comment requesting review if none found
 - Fails the check until a valid review is submitted
 
