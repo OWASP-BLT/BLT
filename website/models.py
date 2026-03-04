@@ -3748,7 +3748,6 @@ class SecurityIncidentHistory(models.Model):
             ),
         ]
 
-
     def __str__(self):
         changer = self.changed_by.username if self.changed_by else "System"
         return f"{self.field_name} changed by {changer}"

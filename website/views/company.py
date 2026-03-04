@@ -3608,9 +3608,7 @@ class OrganizationSecurityDashboardView(View):
             "minimap_subnets": minimap_subnet_list,
             # World Map
             "map_markers": map_markers,
-            "top_countries": [
-                {"country": c, "total": d["total"], "failed": d["failed"]} for c, d in top_countries
-            ],
+            "top_countries": [{"country": c, "total": d["total"], "failed": d["failed"]} for c, d in top_countries],
             # Vulnerability Management
             "vuln_total": vuln_total,
             "vuln_open": vuln_open,
