@@ -1003,7 +1003,7 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
-    leaderboard_score = models.IntegerField(default=0, db_index=True)
+    leaderboard_score = models.PositiveIntegerField(default=0, db_index=True)
 
     def update_leaderboard_score(self):
         """Simple score: recent check-ins + streak"""

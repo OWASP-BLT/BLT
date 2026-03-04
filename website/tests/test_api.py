@@ -340,8 +340,12 @@ class TeamLeaderboardAPITest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("results", response.data)
         self.assertGreater(len(response.data["results"]), 0)
-        member = response.data["results"][0]
-        self.assertIn("leaderboard_score", member)
+        results = response.data["results"]
+        self.assertIn("leaderboard_score", results[0])
+
+        # Verify descending ranking by score
+        scores = [member["leaderboard_score"] for member in results]
+        self.assertEqual(scores, sorted(scores, reverse=True))
 
 
 class ProjectFreshnessFilteringTestCase(APITestCase):

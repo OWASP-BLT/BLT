@@ -2100,7 +2100,11 @@ class TeamMemberLeaderboardAPIView(generics.ListAPIView):
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
-        team = self.request.user.userprofile.team
+        try:
+            team = self.request.user.userprofile.team
+        except ObjectDoesNotExist:
+            logger.warning("User %s has no userprofile; returning empty leaderboard.", self.request.user.id)
+            return UserProfile.objects.none()
         if not team:
             logger.info("User %s has no team; returning empty leaderboard.", self.request.user.id)
             return UserProfile.objects.none()
