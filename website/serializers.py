@@ -322,6 +322,17 @@ class SecurityIncidentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "resolved_at"]
 
+    def to_internal_value(self, data):
+        data = data.copy()
+
+        if "severity" in data and isinstance(data["severity"], str):
+            data["severity"] = data["severity"].lower()
+
+        if "status" in data and isinstance(data["status"], str):
+            data["status"] = data["status"].lower()
+
+        return super().to_internal_value(data)
+
 
 class TeamMemberLeaderboardSerializer(serializers.ModelSerializer):
     """
@@ -340,13 +351,3 @@ class TeamMemberLeaderboardSerializer(serializers.ModelSerializer):
             "leaderboard_score",
             "current_streak",
         )
-    def to_internal_value(self, data):
-        data = data.copy()
-
-        if "severity" in data and isinstance(data["severity"], str):
-            data["severity"] = data["severity"].lower()
-
-        if "status" in data and isinstance(data["status"], str):
-            data["status"] = data["status"].lower()
-
-        return super().to_internal_value(data)

@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0269_alter_project_freshness_alter_room_type"),
+        ("website", "0271_make_email_unique_safe"),
     ]
 
     operations = [
         migrations.AddField(
             model_name="userprofile",
             name="leaderboard_score",
-            field=models.IntegerField(db_index=True, default=0),
+            field=models.PositiveIntegerField(db_index=True, default=0),
         ),
     ]
