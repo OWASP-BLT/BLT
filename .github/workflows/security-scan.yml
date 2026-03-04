@@ -41,7 +41,7 @@ jobs:
 
       - name: Install project dependencies
         run: |
-          pip install poetry
+          pip install poetry poetry-plugin-export
           poetry export -f requirements.txt --output requirements.txt --without-hashes
 
       - name: Run pip-audit
@@ -246,13 +246,21 @@ jobs:
               await github.rest.issues.getLabel({ owner, repo, name: newLabel });
             } catch (e) {
               if (e.status === 404) {
-                await github.rest.issues.createLabel({
-                  owner,
-                  repo,
-                  name: newLabel,
-                  color: labelColor,
-                  description: description
-                });
+                try {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: newLabel,
+                    color: labelColor,
+                    description: description
+                  });
+                } catch (createErr) {
+                  if (createErr.status === 403) {
+                    core.warning('Permission denied: Cannot create label (fork PR).');
+                  } else {
+                    throw createErr;
+                  }
+                }
               }
             }
 
