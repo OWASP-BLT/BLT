@@ -120,7 +120,7 @@ jobs:
     name: Secrets Detection
     runs-on: ubuntu-latest
     outputs:
-      scan_exit_code: ${{ steps.secrets.outputs.exit_code }}
+      secrets_count: ${{ steps.secrets-check.outputs.secrets_count }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -146,7 +146,9 @@ jobs:
           echo "exit_code=$?" >> $GITHUB_OUTPUT
 
       - name: Check for secrets
+        id: secrets-check
         run: |
+          SECRETS_COUNT=0
           if [ -f secrets-results.json ]; then
             SECRETS_COUNT=$(python -c "
           import sys, json
@@ -162,6 +164,7 @@ jobs:
               echo "No secrets detected"
             fi
           fi
+          echo "secrets_count=$SECRETS_COUNT" >> $GITHUB_OUTPUT
 
       - name: Upload secrets scan results
         if: always()
@@ -199,14 +202,15 @@ jobs:
             }
 
             // Check actual exit codes from scan jobs (not job result, which is
-            // always 'success' due to continue-on-error)
+            // always 'success' due to continue-on-error).
+            // Note: detect-secrets always exits 0, so we check secrets_count instead.
             const depExit = '${{ needs.dependency-scan.outputs.scan_exit_code }}';
             const banditExit = '${{ needs.bandit-scan.outputs.scan_exit_code }}';
-            const secretsExit = '${{ needs.secrets-scan.outputs.scan_exit_code }}';
+            const secretsCount = '${{ needs.secrets-scan.outputs.secrets_count }}';
 
-            core.info(`Scan exit codes - dependency: ${depExit}, bandit: ${banditExit}, secrets: ${secretsExit}`);
+            core.info(`Scan results - dependency exit: ${depExit}, bandit exit: ${banditExit}, secrets count: ${secretsCount}`);
 
-            const allPassed = depExit === '0' && banditExit === '0' && secretsExit === '0';
+            const allPassed = depExit === '0' && banditExit === '0' && secretsCount === '0';
             const newLabel = allPassed ? 'security: passed' : 'security: review needed';
             const labelColor = allPassed ? '0e8a16' : 'fbca04';
             const description = allPassed ? 'Security scans passed' : 'Security scans need review';
