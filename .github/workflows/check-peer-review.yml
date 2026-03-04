@@ -164,7 +164,7 @@ jobs:
             // Determine label based on peer review status
             const hasPeerReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
             const newLabel = hasPeerReview ? 'has-peer-review' : 'needs-peer-review';
-            const labelColor = hasPeerReview ? '0e8a16' : 'fbca04';  // Green or Yellow
+            const labelColor = hasPeerReview ? '0e8a16' : 'e74c3c';  // Green or Red (BLT red)
             const description = hasPeerReview ? 'PR has received peer review' : 'PR needs peer review';
             
             // Get current labels on the PR
@@ -194,10 +194,20 @@ jobs:
               }
             }
             
-            // Ensure the new label exists (create if missing)
+            // Ensure the new label exists with correct color/description (create or update)
             async function ensureLabelExists(labelName, color, desc) {
               try {
-                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                const { data: existing } = await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                if (existing.color !== color || existing.description !== desc) {
+                  await github.rest.issues.updateLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: color,
+                    description: desc,
+                  });
+                  core.info(`Updated label ${labelName}`);
+                }
               } catch (e) {
                 if (e.status === 404) {
                   await github.rest.issues.createLabel({
