@@ -17,7 +17,7 @@ class BlueSkyService:
             except Exception:
                 logger.exception("Failed to login to BlueSky")
         else:
-            logger.warning("BlueSky credentials not configured")
+            logger.debug("BlueSky credentials not configured")
 
     def post_text(self, text):
         """Post plain text to BlueSky."""
