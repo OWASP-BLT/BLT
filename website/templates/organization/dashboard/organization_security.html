@@ -9,8 +9,7 @@
 {% endblock description %}
 {% block body %}
     {% if monitoring_disabled %}
-        <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-12 relative hex-bg"
-             style="background-color: #0A0E1A">
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-12 relative hex-bg bg-[#0A0E1A]">
             <div class="max-w-lg mx-auto text-center">
                 <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-[rgba(0,255,255,0.2)] bg-[#0D1321]">
                     <i class="fas fa-shield-alt text-[#00FFFF] text-2xl" aria-hidden="true"></i>
@@ -235,10 +234,9 @@
                 font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
             }
         </style>
-        <div class="w-full overflow-y-auto h-[calc(100vh-185px)] relative hex-bg"
+        <div class="w-full overflow-y-auto h-[calc(100vh-185px)] relative hex-bg bg-[#0A0E1A]"
              id="security-dashboard"
-             data-org-id="{{ organization }}"
-             style="background-color: #0A0E1A">
+             data-org-id="{{ organization }}">
             <div class="scanline-overlay"></div>
             <div class="flex flex-col p-3 gap-2 relative z-10">
                 <!-- Section Navigation Strip -->
