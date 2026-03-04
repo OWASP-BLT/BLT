@@ -326,6 +326,16 @@ class TeamLeaderboardAPITest(APITestCase):
         self.user2.userprofile.team = self.team
         self.user2.userprofile.leaderboard_score = 5
         self.user2.userprofile.save()
+        self.outsider = get_user_model().objects.create_user(
+            username="outsider", email="outsider@example.com", password="pass1234"
+        )
+        other_team = Organization.objects.create(
+            name="Other Team",
+            url=f"https://other-team-{uuid.uuid4().hex}.example.com",
+        )
+        self.outsider.userprofile.team = other_team
+        self.outsider.userprofile.leaderboard_score = 999
+        self.outsider.userprofile.save()
 
     def test_api_requires_auth_and_returns_data(self):
         """Test API endpoint requires authentication and returns correct structure"""
@@ -341,6 +351,11 @@ class TeamLeaderboardAPITest(APITestCase):
         self.assertIn("results", response.data)
         self.assertGreater(len(response.data["results"]), 0)
         results = response.data["results"]
+        returned_ids = {member["id"] for member in results}
+        self.assertEqual(
+            returned_ids,
+            {self.user.userprofile.id, self.user2.userprofile.id},
+        )
         self.assertIn("leaderboard_score", results[0])
 
         # Verify descending ranking by score

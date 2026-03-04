@@ -1657,6 +1657,11 @@ class DailyStatusReport(models.Model):
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "date"], name="dsr_user_date_idx"),
+        ]
+
 
 class IpReport(models.Model):
     IP_TYPE_CHOICES = [
