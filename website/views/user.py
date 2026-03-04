@@ -3,7 +3,9 @@ import hmac
 import json
 import logging
 import os
+import re
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
@@ -57,7 +59,6 @@ from website.models import (
     Repo,
     Tag,
     Thread,
-    User,
     UserBadge,
     UserProfile,
     Wallet,
@@ -660,6 +661,38 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
+        # Comment Leaderboard - Use commenter_contributor
+        # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for comments created in the last 6 months
+        # Create bot exclusion query for commenters
+        commenter_bot_exclusions = Q()
+        for bot in bots:
+            commenter_bot_exclusions |= Q(commenter_contributor__name__icontains=bot)
+
+        from website.models import GitHubComment
+
+        comment_leaderboard = (
+            GitHubComment.objects.filter(
+                commenter_contributor__isnull=False,
+                created_at__gte=since_date,
+            )
+            .filter(
+                Q(issue__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(issue__repo__repo_url__startswith="https://github.com/owasp-blt/")
+            )
+            .exclude(commenter_bot_exclusions)  # Exclude bot commenters
+            .select_related("commenter_contributor", "commenter__user")
+            .values(
+                "commenter_contributor__name",
+                "commenter_contributor__github_url",
+                "commenter_contributor__avatar_url",
+                "commenter__user__username",
+            )
+            .annotate(total_comments=Count("id"))
+            .order_by("-total_comments")[:10]
+        )
+        context["comment_leaderboard"] = comment_leaderboard
+
         # Top visitors leaderboard
         top_visitors = (
             UserProfile.objects.select_related("user")
@@ -710,7 +743,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
             "August",
             "September",
             "October",
-            "Novermber",
+            "November",
             "December",
         ]
 
@@ -1350,6 +1383,8 @@ def github_webhook(request):
             "push": handle_push_event,
             "pull_request_review": handle_review_event,
             "issues": handle_issue_event,
+            "issue_comment": handle_comment_event,
+            "pull_request_review_comment": handle_comment_event,
             "status": handle_status_event,
             "fork": handle_fork_event,
             "create": handle_create_event,
@@ -1458,7 +1493,7 @@ def handle_pull_request_event(payload):
 
     # --- Repo mapping (same style as handle_issue_event) ---
     repo_html_url = repo_data.get("html_url")
-    repo_full_name = repo_data.get("full_name")  # "owner/repo" (for logging only)
+    repo_full_name = repo_data.get("full_name")  # "owner/repo"
 
     if not pr_global_id or not repo_html_url:
         logger.warning("Pull request event missing required data (id or repo_html_url)")
@@ -1529,10 +1564,36 @@ def handle_review_event(payload):
     return JsonResponse({"status": "success"}, status=200)
 
 
+def _extract_bounty_from_labels(labels):
+    """
+    Extract the total bounty amount in USD from GitHub issue labels.
+
+    Matches amounts like "$5", "$10", "$100", "$1,000", "$50.00" even when embedded
+    in labels (e.g., "bounty: $50"). Returns Decimal total, or None if no amount found.
+    """
+
+    total = Decimal("0.00")
+    found_any = False
+    dollar_pattern = re.compile(r"\$\s*([\d,]+(?:\.\d{1,2})?)")
+    for label in labels:
+        label_name = label.get("name", "") if isinstance(label, dict) else str(label)
+        match = dollar_pattern.search(label_name)
+        if match:
+            try:
+                amount = Decimal(match.group(1).replace(",", ""))
+                total += amount
+                found_any = True
+            except InvalidOperation:
+                continue
+    return total if found_any else None
+
+
 def handle_issue_event(payload):
     """
-    Handle GitHub issue events (opened, closed, etc.)
-    Updates GitHubIssue records in BLT to match GitHub issue state
+    Handle GitHub issue events (opened, closed, labeled, unlabeled, etc.)
+    Updates GitHubIssue records in BLT to match GitHub issue state.
+    On labeled/unlabeled events, extracts bounty from dollar-sign labels
+    and stores/updates the value in GitHubIssue.p2p_amount_usd.
     """
     action = payload.get("action")
     issue_data = payload.get("issue", {})
@@ -1541,32 +1602,36 @@ def handle_issue_event(payload):
     logger.debug(f"GitHub issue event: {action}")
 
     # Extract issue details
-    issue_id = issue_data.get("number")
+    # IMPORTANT: Use issue "number" (the per-repo #123 visible in URLs), NOT
+    # issue "id" (GitHub's globally-unique internal integer).  The badge route
+    # and all DB lookups for issues key on (issue_number, repo), so every code
+    # path in this handler must use the same canonical value.
+    issue_number = issue_data.get("number")
     issue_state = issue_data.get("state")
     issue_html_url = issue_data.get("html_url")
 
     # Extract repository details
-    repo_full_name = repo_data.get("full_name")  # e.g., "owner/repo"
+    repo_full_name = repo_data.get("full_name")  # e.g. - "owner/repo"
     repo_html_url = repo_data.get("html_url")
 
-    if not issue_id or not repo_html_url:
+    if not issue_number or not repo_html_url:
         logger.warning("Issue event missing required data")
         return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
 
     # Find the Repo in BLT database
+    repo = None
     try:
         repo = Repo.objects.get(repo_url=repo_html_url)
     except Repo.DoesNotExist:
         logger.info(f"Repository not found in BLT: {repo_html_url}")
         # Not an error - we only track issues for repos we have in our database
-        # Continue to badge assignment
     except Exception as e:
         logger.error(f"Error finding repository: {e}")
-        # Continue to badge assignment
-    else:
+
+    if repo:
         # Find and update the GitHubIssue record
         try:
-            github_issue = GitHubIssue.objects.get(issue_id=issue_id, repo=repo, type="issue")
+            github_issue = GitHubIssue.objects.get(issue_id=issue_number, repo=repo, type="issue")
 
             # Update the issue state
             github_issue.state = issue_state
@@ -1579,11 +1644,75 @@ def handle_issue_event(payload):
             if issue_data.get("updated_at"):
                 github_issue.updated_at = dateutil_parser.parse(issue_data["updated_at"])
 
+            # Sync bounty from labels on opened, labeled, or unlabeled events
+            if action in ("opened", "labeled", "unlabeled"):
+                labels = issue_data.get("labels", [])
+                amount = _extract_bounty_from_labels(labels)
+                previous = github_issue.p2p_amount_usd
+                github_issue.p2p_amount_usd = amount if amount is not None else None
+                # Invalidate badge cache if bounty changed
+                try:
+                    if previous != github_issue.p2p_amount_usd:
+                        parts = (repo.repo_url or "").rstrip("/").split("/")
+                        owner, repo_name = parts[-2], parts[-1]
+                        cache.delete(f"issue_badge:{owner}:{repo_name}:{github_issue.issue_id}")
+                        cache.delete(f"issue_badge:pk:{github_issue.pk}")
+                except Exception as e:
+                    logger.warning(f"Failed to invalidate badge cache for bounty update: {e}")
+
             github_issue.save()
-            logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
+            logger.info(f"Updated GitHubIssue #{issue_number} in repo {repo_full_name} to state: {issue_state}")
         except GitHubIssue.DoesNotExist:
-            logger.info(f"GitHubIssue {issue_id} not found in BLT for repo {repo_full_name}")
-            # Not an error - we may not have all issues in our database
+            # If the issue doesn't exist yet and this is an opened event, create it
+            if action == "opened":
+                try:
+                    labels = issue_data.get("labels", [])
+                    bounty = _extract_bounty_from_labels(labels)
+
+                    created_at = safe_parse_github_datetime(
+                        issue_data.get("created_at"),
+                        default=timezone.now(),
+                        field_name="issue.created_at",
+                    )
+                    updated_at = safe_parse_github_datetime(
+                        issue_data.get("updated_at"),
+                        default=timezone.now(),
+                        field_name="issue.updated_at",
+                    )
+
+                    github_issue, created = GitHubIssue.objects.get_or_create(
+                        issue_id=issue_number,
+                        repo=repo,
+                        defaults={
+                            "title": issue_data.get("title", ""),
+                            "body": issue_data.get("body", ""),
+                            "state": issue_state or "open",
+                            "type": "issue",
+                            "created_at": created_at,
+                            "updated_at": updated_at,
+                            "url": issue_html_url or "",
+                            "p2p_amount_usd": bounty if bounty is not None else None,
+                        },
+                    )
+                    # Invalidate badge cache in case it was primed
+                    try:
+                        parts = (repo.repo_url or "").rstrip("/").split("/")
+                        owner, repo_name = parts[-2], parts[-1]
+                        cache.delete(f"issue_badge:{owner}:{repo_name}:{issue_number}")
+                        cache.delete(f"issue_badge:pk:{github_issue.pk}")
+                    except Exception as e:
+                        logger.warning(f"Failed to invalidate badge cache after create: {e}")
+                    if created:
+                        logger.info(f"Created GitHubIssue #{issue_number} in repo {repo_full_name}")
+                    else:
+                        logger.info(
+                            f"GitHubIssue #{issue_number} already existed in repo {repo_full_name} "
+                            f"(duplicate webhook event)"
+                        )
+                except Exception as e:
+                    logger.error(f"Error creating GitHubIssue: {e}")
+            else:
+                logger.info(f"GitHubIssue #{issue_number} not found in BLT for repo {repo_full_name}")
         except Exception as e:
             logger.error(f"Error updating GitHubIssue: {e}")
 
@@ -1593,6 +1722,147 @@ def handle_issue_event(payload):
         if closer_profile:
             closer_user = closer_profile.user
             assign_github_badge(closer_user, "First Issue Closed")
+
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_comment_event(payload):
+    """
+    Handle GitHub issue_comment and pull_request_review_comment events.
+
+    Tracks comments made on issues and pull requests for the comment leaderboard.
+    Filters out bot comments and stores comment data in GitHubComment model.
+    """
+    from website.models import GitHubComment
+
+    action = payload.get("action")
+    comment_data = payload.get("comment", {})
+    issue_data = payload.get("issue") or payload.get("pull_request") or {}
+    repo_data = payload.get("repository", {})
+
+    logger.debug(f"GitHub comment event: {action}")
+
+    # Only track created comments (not edited or deleted)
+    if action != "created":
+        return JsonResponse({"status": "ignored", "action": action}, status=200)
+
+    # Extract comment details
+    comment_id = comment_data.get("id")
+    comment_body = comment_data.get("body", "")
+    comment_url = comment_data.get("html_url", "")
+    comment_created_at = safe_parse_github_datetime(
+        comment_data.get("created_at"),
+        default=timezone.now(),
+        field_name="comment.created_at",
+    )
+    comment_updated_at = safe_parse_github_datetime(
+        comment_data.get("updated_at"),
+        default=timezone.now(),
+        field_name="comment.updated_at",
+    )
+
+    # Extract commenter details
+    commenter_data = comment_data.get("user", {})
+    commenter_login = commenter_data.get("login", "")
+    commenter_github_url = commenter_data.get("html_url", "")
+    commenter_avatar_url = commenter_data.get("avatar_url", "")
+    commenter_type = commenter_data.get("type", "User")
+    commenter_github_id = commenter_data.get("id")
+
+    # Filter out bot comments
+    if (
+        commenter_type == "Bot"
+        or commenter_login.endswith("[bot]")
+        or any(bot in commenter_login.lower() for bot in ["copilot", "dependabot", "github-actions", "renovate"])
+    ):
+        logger.debug(f"Ignoring bot comment from {commenter_login}")
+        return JsonResponse({"status": "ignored", "reason": "bot comment"}, status=200)
+
+    # Extract issue/PR details
+    issue_number = issue_data.get("number")
+    issue_global_id = issue_data.get("id")
+    repo_html_url = repo_data.get("html_url")
+    repo_full_name = repo_data.get("full_name")
+
+    if not all([comment_id, issue_global_id, repo_html_url]):
+        logger.warning("Comment event missing required data")
+        return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
+
+    # Find the Repo in BLT database
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+    except Repo.DoesNotExist:
+        logger.info(f"Repository not found in BLT for comment: {repo_html_url}")
+        # Not an error: we only track comments for repos that exist in our DB
+        return JsonResponse({"status": "success", "message": "Repository not tracked"}, status=200)
+    except Exception as e:
+        logger.error(f"Error finding repository for comment: {e}")
+        return JsonResponse({"status": "error", "message": "Database error"}, status=500)
+
+    # Find the GitHubIssue in BLT database
+    try:
+        github_issue = GitHubIssue.objects.get(issue_id=issue_global_id, repo=repo)
+    except GitHubIssue.DoesNotExist:
+        logger.info(f"GitHub issue/PR {issue_number} not found in BLT for repo {repo_full_name}")
+        # Not an error: we may not have all issues/PRs in our database
+        return JsonResponse({"status": "success", "message": "Issue/PR not tracked"}, status=200)
+    except Exception as e:
+        logger.error(f"Error finding GitHub issue for comment: {e}")
+        return JsonResponse({"status": "error", "message": "Database error"}, status=500)
+
+    # Map commenter to UserProfile
+    commenter_user_profile = None
+    if commenter_github_url:
+        commenter_user_profile = UserProfile.objects.filter(github_url=commenter_github_url).first()
+
+    # Map commenter to Contributor
+    commenter_contributor = None
+    if commenter_github_id:
+        try:
+            commenter_contributor, created = Contributor.objects.get_or_create(
+                github_id=commenter_github_id,
+                defaults={
+                    "name": commenter_login,
+                    "github_url": commenter_github_url,
+                    "avatar_url": commenter_avatar_url,
+                    "contributor_type": commenter_type,
+                    "contributions": 1,
+                },
+            )
+            if not created:
+                # Update existing contributor data
+                commenter_contributor.name = commenter_login
+                commenter_contributor.github_url = commenter_github_url
+                commenter_contributor.avatar_url = commenter_avatar_url
+                commenter_contributor.contributions += 1
+                commenter_contributor.save()
+        except Exception as e:
+            logger.error(f"Error creating/updating contributor for comment: {e}")
+
+    # Create or update the GitHubComment record
+    try:
+        github_comment, created = GitHubComment.objects.update_or_create(
+            comment_id=comment_id,
+            defaults={
+                "issue": github_issue,
+                "commenter": commenter_user_profile,
+                "commenter_contributor": commenter_contributor,
+                "body": comment_body,
+                "created_at": comment_created_at,
+                "updated_at": comment_updated_at,
+                "url": comment_url,
+            },
+        )
+
+        action_taken = "Created" if created else "Updated"
+        logger.info(
+            f"{action_taken} GitHubComment {comment_id} by {commenter_login} "
+            f"on {github_issue.type} #{issue_number} in repo {repo_full_name}"
+        )
+
+    except Exception as e:
+        logger.error(f"Error creating/updating GitHubComment: {e}")
+        return JsonResponse({"status": "error", "message": "Failed to save comment"}, status=500)
 
     return JsonResponse({"status": "success"}, status=200)
 

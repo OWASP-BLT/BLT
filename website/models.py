@@ -65,6 +65,9 @@ class Subscription(models.Model):
     feature = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.name} (${self.charge_per_month}/month)"
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=255)
@@ -294,6 +297,11 @@ class JoinRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
+
+    def __str__(self):
+        status = "Accepted" if self.is_accepted else "Pending"
+        team_name = self.team.name if self.team else "Unknown"
+        return f"{self.user.username} -> {team_name} ({status})"
 
 
 class Job(models.Model):
@@ -812,6 +820,9 @@ class IssueScreenshot(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"Screenshot for Issue #{self.issue_id}"
+
 
 if is_using_gcs():
 
@@ -874,6 +885,11 @@ class Winner(models.Model):
     prize = models.ForeignKey(HuntPrize, null=True, blank=True, on_delete=models.CASCADE)
     prize_amount = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        winner_name = self.winner.username if self.winner else "TBD"
+        hunt_name = self.hunt.name if self.hunt else "Unknown Hunt"
+        return f"{winner_name} - Winner of {hunt_name}"
 
 
 class Points(models.Model):
@@ -1175,18 +1191,27 @@ class IP(models.Model):
             models.Index(fields=["path", "created"], name="ip_path_created_idx"),
         ]
 
+    def __str__(self):
+        return f"{self.address or 'Unknown'} ({self.count} hits)"
+
 
 class OrganizationAdmin(models.Model):
-    role = (
+    ROLE_CHOICES = (
         (0, "Admin"),
         (1, "Moderator"),
     )
-    role = models.IntegerField(choices=role, default=0)
+    role = models.IntegerField(choices=ROLE_CHOICES, default=0)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        username = self.user.username if self.user else "Unknown"
+        org_name = self.organization.name if self.organization else "Unknown Org"
+        role_name = self.get_role_display() or "Unknown"
+        return f"{username} - {role_name} of {org_name}"
 
 
 class Wallet(models.Model):
@@ -1194,6 +1219,9 @@ class Wallet(models.Model):
     account_id = models.TextField(null=True, blank=True)
     current_balance = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet (${self.current_balance})"
 
     def deposit(self, value):
         self.transaction_set.create(value=value, running_balance=self.current_balance + Decimal(value))
@@ -1219,12 +1247,20 @@ class Transaction(models.Model):
     running_balance = models.DecimalField(max_digits=6, decimal_places=2)
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        sign = "+" if self.value >= 0 else "-"
+        return f"{sign}${abs(self.value)} ({self.wallet_id})"
+
 
 class Payment(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=6, decimal_places=2)
     active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        status = "Active" if self.active else "Inactive"
+        return f"Payment ${self.value} - {status}"
 
 
 class Monitor(models.Model):
@@ -1257,6 +1293,10 @@ class Bid(models.Model):
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
     bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
+
+    def __str__(self):
+        bidder = self.user.username if self.user else self.github_username or "Anonymous"
+        return f"Bid by {bidder} - {self.amount_bch} BCH ({self.status})"
 
     # def save(self, *args, **kwargs):
     #     if (
@@ -1508,6 +1548,9 @@ class Contribution(models.Model):
             models.Index(fields=["user", "created"]),
             models.Index(fields=["repository", "created"]),
         ]
+
+    def __str__(self):
+        return f"{self.title[:50]} ({self.contribution_type})"
 
 
 class BaconToken(models.Model):
@@ -2433,6 +2476,58 @@ class GitHubReview(models.Model):
         return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
 
 
+class GitHubComment(models.Model):
+    """
+    Model to store comments made by users on GitHub issues and pull requests.
+    Tracks engagement for the comment leaderboard.
+    """
+
+    comment_id = models.BigIntegerField(unique=True)
+    issue = models.ForeignKey(
+        GitHubIssue,
+        on_delete=models.CASCADE,
+        related_name="tracked_comments",
+    )
+    commenter = models.ForeignKey(
+        UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="github_comments_as_user",
+    )
+    commenter_contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="github_comments_as_contributor",
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    url = models.URLField()
+
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(commenter__isnull=False) | models.Q(commenter_contributor__isnull=False),
+                name="at_least_one_commenter",
+            ),
+        )
+        indexes = [
+            models.Index(fields=["created_at"], name="gh_comment_created_idx"),
+            models.Index(fields=["commenter_contributor"], name="gh_comment_contributor_idx"),
+        ]
+
+    def __str__(self):
+        commenter_name = "Unknown"
+        if self.commenter:
+            commenter_name = self.commenter.user.username
+        elif self.commenter_contributor:
+            commenter_name = self.commenter_contributor.name
+        return f"Comment #{self.comment_id} by {commenter_name} on {self.issue.type} #{self.issue.issue_id}"
+
+
 class Kudos(models.Model):
     """
     Model to send kudos to team members.
@@ -2472,6 +2567,9 @@ class OsshCommunity(models.Model):
     contributors_count = models.IntegerField(default=0, help_text="Approximate number of contributors")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.category})"
 
 
 class OsshDiscussionChannel(models.Model):
@@ -3629,3 +3727,7 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+
+    def __str__(self):
+        changer = self.changed_by.username if self.changed_by else "System"
+        return f"{self.field_name} changed by {changer}"

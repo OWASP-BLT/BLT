@@ -64,7 +64,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "user_avatar",
             "description",
             "winnings",
-            "follows",
             "issue_upvoted",
             "issue_saved",
             "issue_flaged",
@@ -341,3 +340,13 @@ class TeamMemberLeaderboardSerializer(serializers.ModelSerializer):
             "leaderboard_score",
             "current_streak",
         )
+    def to_internal_value(self, data):
+        data = data.copy()
+
+        if "severity" in data and isinstance(data["severity"], str):
+            data["severity"] = data["severity"].lower()
+
+        if "status" in data and isinstance(data["status"], str):
+            data["status"] = data["status"].lower()
+
+        return super().to_internal_value(data)
