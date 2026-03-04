@@ -19,7 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
-from django.db import connection, transaction
+from django.db import DatabaseError, IntegrityError, connection, transaction
 from django.db.models import Count, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
@@ -355,7 +355,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                 logger.warning(f"CVE validation failed: {e}")
                 # Don't clear valid CVE ID - just skip score fetch
                 cve_updates = {}
-            except Exception as e:
+            except (requests.RequestException, ValueError, TypeError) as e:
                 logger.error(f"Error fetching CVE score: {e}")
                 # Continue without CVE score - don't fail the entire creation
 
@@ -381,7 +381,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                 except Issue.DoesNotExist:
                     logger.error(f"Issue {issue.pk} not found after creation")
                     # Continue anyway - issue was created successfully
-                except Exception as e:
+                except (DatabaseError, IntegrityError) as e:
                     logger.error(f"Error updating CVE data in transaction: {e}")
                     # Continue - issue exists, just without CVE score
 
@@ -506,7 +506,7 @@ class DeleteIssueApiView(APIView):
             IssueScreenshot.objects.filter(issue=issue).delete()
             issue.delete()
             return Response({"status": "success"}, status=status.HTTP_200_OK)
-        except Exception as e:
+        except (DatabaseError, IntegrityError) as e:
             logger.exception("Error deleting issue: %s", e)
             return Response(
                 {"status": "error", "message": "An unexpected error occurred."},
@@ -1064,7 +1064,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
 
         except ValidationError:
             raise ParseError(detail="Validation failed.")
-        except Exception:
+        except (DatabaseError, IntegrityError):
             raise ParseError(detail="An unexpected error occurred while creating the time log.")
 
     @action(detail=False, methods=["post"])
@@ -1080,7 +1080,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
+        except (DatabaseError, IntegrityError) as e:
             return Response(
                 {"detail": "An unexpected error occurred while starting the time log."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1103,7 +1103,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
+        except (DatabaseError, IntegrityError) as e:
             return Response(
                 {"detail": "An unexpected error occurred while stopping the time log."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1160,7 +1160,7 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             serializer.save(user=self.request.user, recorded_at=timezone.now())
         except ValidationError:
             raise ParseError(detail="Validation failed.")
-        except Exception:
+        except (DatabaseError, IntegrityError):
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
 
 
@@ -1183,7 +1183,7 @@ class OwaspComplianceChecker(APIView):
                 "under_owasp_org": is_owasp_org,
                 "details": {"url_checked": url, "recommendations": []},
             }
-        except Exception:
+        except (ValueError, AttributeError):
             return {
                 "github_hosted": False,
                 "under_owasp_org": False,
@@ -1230,7 +1230,7 @@ class OwaspComplianceChecker(APIView):
                 "has_dates": has_dates,
                 "details": {"url_checked": safe_url, "recommendations": []},
             }
-        except Exception:
+        except (requests.RequestException, ValueError):
             return {
                 "has_owasp_mention": False,
                 "has_project_link": False,
@@ -1260,7 +1260,7 @@ class OwaspComplianceChecker(APIView):
                 "possible_paywall": has_paywall_indicators,
                 "details": {"url_checked": safe_url, "recommendations": []},
             }
-        except Exception:
+        except (requests.RequestException, ValueError):
             return {
                 "possible_paywall": None,
                 "details": {"url_checked": safe_url, "error": "Unable to check vendor neutrality"},
@@ -1904,7 +1904,8 @@ class DebugSystemStatsApiView(APIView):
             # Attempt to use a short-lived cache to avoid repeated COUNT() queries during active development
             try:
                 cached_counts = cache.get("debug_system_counts")
-            except Exception:
+            except Exception as e:
+                logger.warning("Could not read debug_system_counts from cache: %s", e)
                 cached_counts = None
 
             if cached_counts:
@@ -1951,9 +1952,9 @@ class DebugSystemStatsApiView(APIView):
                 # Cache for a short time (30 seconds) to reduce noise during rapid page reloads
                 try:
                     cache.set("debug_system_counts", db_counts, timeout=30)
-                except Exception:
+                except Exception as e:
                     # If cache not available, just continue with live counts
-                    pass
+                    logger.debug("Could not write debug_system_counts to cache: %s", e)
 
             return Response(
                 {

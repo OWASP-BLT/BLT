@@ -9,8 +9,6 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-
-# Create your views here.
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 from rest_framework.response import Response

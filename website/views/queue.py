@@ -1,6 +1,5 @@
 import logging
 import os
-from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.http import HttpResponse
