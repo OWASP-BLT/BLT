@@ -3434,7 +3434,7 @@ class OrganizationSecurityDashboardView(View):
 
         # ── World Map GeoIP Data ──
         unique_ips = list(
-            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=thirty_days_ago)
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=seven_days_ago)
             .exclude(ip_address__isnull=True)
             .values_list("ip_address", flat=True)
             .distinct()[:200]
