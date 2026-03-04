@@ -8,7 +8,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0271_make_email_unique_safe"),
+        ("website", "0272_userprofile_leaderboard_score_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -542,6 +542,39 @@ class Migration(migrations.Migration):
                         fields=["organization", "framework", "requirement_id"],
                         name="unique_compliance_with_org",
                     ),
+                ],
+            },
+        ),
+        # ── GeoIPCache ────────────────────────────────────────────
+        migrations.CreateModel(
+            name="GeoIPCache",
+            fields=[
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "ip_address",
+                    models.GenericIPAddressField(db_index=True, unique=True),
+                ),
+                ("latitude", models.FloatField(blank=True, null=True)),
+                ("longitude", models.FloatField(blank=True, null=True)),
+                ("city", models.CharField(blank=True, max_length=100)),
+                ("country", models.CharField(blank=True, max_length=100)),
+                ("country_code", models.CharField(blank=True, max_length=10)),
+                ("isp", models.CharField(blank=True, max_length=255)),
+                ("resolved_at", models.DateTimeField(auto_now_add=True)),
+            ],
+            options={
+                "verbose_name": "GeoIP cache entry",
+                "verbose_name_plural": "GeoIP cache entries",
+                "indexes": [
+                    models.Index(fields=["country"], name="geoip_country_idx"),
                 ],
             },
         ),
