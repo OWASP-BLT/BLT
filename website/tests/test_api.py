@@ -1,3 +1,4 @@
+import uuid
 from io import BytesIO
 from unittest.mock import Mock, patch
 
@@ -310,7 +311,10 @@ class TeamLeaderboardAPITest(APITestCase):
         )
 
         # Create a team and assign user to it
-        self.team = Organization.objects.create(name="Test Team")
+        self.team = Organization.objects.create(
+            name="Test Team",
+            url=f"https://test-team-{uuid.uuid4().hex}.example.com",
+        )
         self.user.userprofile.team = self.team
         self.user.userprofile.leaderboard_score = 10
         self.user.userprofile.save()
