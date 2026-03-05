@@ -29,9 +29,7 @@ class Command(LoggedBaseCommand):
                 self.stderr.write(msg)
 
         if updated_projects:
-            now = timezone.now()
-            for project in updated_projects:
-                project.modified = now
-            Project.objects.bulk_update(updated_projects, ["status", "modified"])
+            Project.objects.bulk_update(updated_projects, ["status"])
+            Project.objects.filter(id__in=[p.id for p in updated_projects]).update(modified=timezone.now())
 
         self.stdout.write(f"Project status update completed: {len(updated_projects)} projects updated")

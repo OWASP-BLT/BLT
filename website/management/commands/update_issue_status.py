@@ -24,9 +24,7 @@ class Command(LoggedBaseCommand):
                 self.stderr.write(f"Error updating issue {issue.id}: {str(e)}")
 
         if updated_issues:
-            now = timezone.now()
-            for issue in updated_issues:
-                issue.modified = now
-            Issue.objects.bulk_update(updated_issues, ["status", "modified"])
+            Issue.objects.bulk_update(updated_issues, ["status"])
+            Issue.objects.filter(id__in=[i.id for i in updated_issues]).update(modified=timezone.now())
 
         self.stdout.write(f"Issue status update completed: {len(updated_issues)} issues updated")
