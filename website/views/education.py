@@ -232,10 +232,11 @@ def add_section(request, course_id):
 
     # Sanitize user input
     title = request.POST.get("title")
+    fallback_order = course.sections.count() + 1
     try:
-        order = int(request.POST.get("order", 0))
+        order = max(1, int(request.POST.get("order", fallback_order)))
     except (ValueError, TypeError):
-        order = 0
+        order = fallback_order
 
     section = Section.objects.create(course=course, title=title, order=order)
     messages.success(request, f"Section '{title}' was added successfully!")
@@ -295,10 +296,11 @@ def add_lecture(request, section_id):
     title = request.POST.get("title")
     content_type = request.POST.get("content_type")
     description = request.POST.get("description")
+    fallback_order = section.lectures.count() + 1 if section else 1
     try:
-        order = int(request.POST.get("order", 0))
+        order = max(1, int(request.POST.get("order", fallback_order)))
     except (ValueError, TypeError):
-        order = 0
+        order = fallback_order
     duration = request.POST.get("duration") or None
 
     lecture = Lecture(
