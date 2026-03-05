@@ -21,7 +21,7 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         # Create OWASP BLT organization
         self.organization = Organization.objects.create(
             name="OWASP BLT",
-            url="https://owaspblt.org",
+            url="https://legacy.owaspblt.org",
         )
 
         # Create Slack integration
