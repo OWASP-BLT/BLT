@@ -2045,6 +2045,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 # Don't fail the request, just log the error
 
         return result
+
     def get_context_data(self, **kwargs):
         # if self.request is a get, clear out the form data
         if self.request.method == "GET":
