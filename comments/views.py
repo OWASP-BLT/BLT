@@ -67,6 +67,11 @@ def _get_issue_ct():
 
 
 @login_required(login_url="/accounts/login/")
+def _resolve_author_profile(user):
+    """Get or create UserProfile for the given user — ensures author_fk is never None."""
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    return profile
+
 def add_comment(request):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -87,7 +92,7 @@ def add_comment(request):
     _notify_mentioned_users(mentioned_users, request.user, pk, new_msg)
 
     issue_ct = _get_issue_ct()
-    author_fk = UserProfile.objects.filter(user=request.user).first()
+    author_fk = _resolve_author_profile(request.user)
     comment = Comment(
         author=author,
         author_fk=author_fk,
@@ -224,7 +229,7 @@ def reply_comment(request, pk):
     new_text, new_msg, mentioned_users = _process_mentions(reply_text)
     _notify_mentioned_users(mentioned_users, request.user, issue_pk, new_msg)
 
-    author_fk = UserProfile.objects.filter(user=request.user).first()
+    author_fk = _resolve_author_profile(request.user)
     comment = Comment(
         author=author,
         author_fk=author_fk,
