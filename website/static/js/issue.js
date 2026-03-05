@@ -147,8 +147,9 @@ $(function () {
             url: '/comment/autocomplete/',
             data: data,
             dataType: 'json',
-            jsonp: 'callback',
-            jsonpCallback: 'renderer',
+            success: function (data) {
+                renderer(data);
+            }
         });
     });
 
@@ -680,7 +681,7 @@ function processIssueReferences() {
     // Process markdown content
     const bugReportElement = document.getElementById('bug_report');
     if (bugReportElement && window.markdownit) {
-        const md = new window.markdownit();
+        const md = new window.markdownit({ html: false, linkify: true, typographer: true });
         const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
 
         let renderedHtml = md.render(markdownContent);
@@ -688,7 +689,9 @@ function processIssueReferences() {
         if (typeof DOMPurify !== 'undefined') {
             bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml);
         } else {
-            bugReportElement.innerHTML = renderedHtml;
+            // Secure fallback: if DOMPurify is missing, show text content to prevent XSS
+            bugReportElement.textContent = markdownContent;
+            console.warn('DOMPurify not loaded, falling back to text content for safety.');
         }
 
 
