@@ -12,7 +12,12 @@ from datetime import datetime
 from ipaddress import ip_address
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+    logging.warning("OpenCV (cv2) not installed; face-processing features will be disabled.")
+
 import markdown
 import numpy as np
 import requests
@@ -41,6 +46,20 @@ else:
     client = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+logger = logging.getLogger(__name__)
+
+
+def _sanitize_log(value, max_length=1000):
+    """Strip newlines, control characters, and Unicode line separators from values before logging.
+
+    Prevents log injection/forging while keeping output readable.
+    Truncates to max_length to guard against log flooding.
+    """
+    sanitized = re.sub(r"[\r\n\x00-\x1f\x7f-\x9f\u2028\u2029]", "", str(value))
+    if len(sanitized) > max_length:
+        return sanitized[:max_length] + "...(truncated)"
+    return sanitized
 
 
 GITHUB_API_TOKEN = settings.GITHUB_TOKEN
@@ -84,7 +103,22 @@ def get_client_ip(request):
 
 
 def get_email_from_domain(domain_name):
-    new_urls = deque(["http://" + domain_name])
+    # Validate domain_name is not an IP address or internal hostname
+    try:
+        ip = ip_address(domain_name)
+        if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+            return False
+    except ValueError:
+        # Not a raw IP — check that it looks like a real domain (has a dot, no spaces)
+        if "." not in domain_name or " " in domain_name:
+            return False
+
+    initial_url = "http://" + domain_name
+    safe_initial = rebuild_safe_url(initial_url)
+    if not safe_initial:
+        return False
+
+    new_urls = deque([safe_initial])
     processed_urls = set()
     emails = set()
     emails_out = set()
@@ -97,22 +131,28 @@ def get_email_from_domain(domain_name):
         base_url = "{0.scheme}://{0.netloc}".format(parts)
         path = url[: url.rfind("/") + 1] if "/" in parts.path else url
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=5, allow_redirects=False)
         except Exception:
             continue
         new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
         if new_emails:
             emails.update(new_emails)
             break
-        soup = BeautifulSoup(response.text)
+        soup = BeautifulSoup(response.text, "html.parser")
         for anchor in soup.find_all("a"):
             link = anchor.attrs["href"] if "href" in anchor.attrs else ""
             if link.startswith("/"):
                 link = base_url + link
             elif not link.startswith("http"):
                 link = path + link
-            if link not in new_urls and link not in processed_urls and link.find(domain_name) > 0:
-                new_urls.append(link)
+
+            # Validate every discovered link before adding to the crawl queue
+            safe_link = rebuild_safe_url(link)
+            if not safe_link:
+                continue
+
+            if safe_link not in new_urls and safe_link not in processed_urls and domain_name in safe_link:
+                new_urls.append(safe_link)
 
     for email in emails:
         if email.find(domain_name) > 0:
@@ -218,10 +258,30 @@ def rebuild_safe_url(url):
 def get_github_issue_title(github_issue_url):
     """Helper function to fetch the title of a GitHub issue."""
     try:
-        repo_path = "/".join(github_issue_url.split("/")[3:5])
-        issue_number = github_issue_url.split("/")[-1]
-        github_api_url = f"https://api.github.com/repos/{repo_path}/issues/{issue_number}"
-        response = requests.get(github_api_url)
+        parsed = urlparse(github_issue_url)
+        # Ensure the URL is from github.com
+        if parsed.hostname not in ("github.com", "www.github.com"):
+            return "No Title"
+
+        # Validate path structure: /owner/repo/issues/number
+        path_parts = [p for p in parsed.path.strip("/").split("/") if p]
+        if len(path_parts) < 4 or path_parts[2] not in ("issues", "pull"):
+            return "No Title"
+
+        owner = path_parts[0]
+        repo = path_parts[1]
+        issue_number = path_parts[3]
+
+        # Validate that owner, repo, and issue_number contain only safe characters
+        if not re.match(r"^[a-zA-Z0-9._-]+$", owner):
+            return "No Title"
+        if not re.match(r"^[a-zA-Z0-9._-]+$", repo):
+            return "No Title"
+        if not issue_number.isdigit():
+            return "No Title"
+
+        github_api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
+        response = requests.get(github_api_url, timeout=10)
         if response.status_code == 200:
             issue_data = response.json()
             return issue_data.get("title", "No Title")
@@ -267,6 +327,16 @@ def fetch_github_data(owner, repo, endpoint, number):
     """
     Fetch data from GitHub API for a given repository endpoint.
     """
+    # Validate path components to prevent path traversal
+    SAFE_PATTERN = re.compile(r"^[a-zA-Z0-9._-]+$")
+    SAFE_ENDPOINT = re.compile(r"^[a-zA-Z0-9_-]+$")
+    if not SAFE_PATTERN.match(owner) or not SAFE_PATTERN.match(repo):
+        return {"error": "Invalid owner or repo name"}
+    if not SAFE_ENDPOINT.match(str(endpoint)):
+        return {"error": "Invalid endpoint"}
+    if not str(number).isdigit():
+        return {"error": "Invalid number"}
+
     url = f"https://api.github.com/repos/{owner}/{repo}/{endpoint}/{number}"
     headers = {
         "Authorization": f"Bearer {GITHUB_API_TOKEN}",
@@ -332,7 +402,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
 
         except Exception as e:
             # If rate-limiting error occurs, wait and retry
-            logger.warning(f"Error encountered: {e}. Retrying in {2 ** attempt} seconds.")
+            logger.warning("Error encountered: %s. Retrying in %d seconds.", _sanitize_log(e), 2**attempt)
             time.sleep(2**attempt)  # Exponential backoff
 
     logger.error(f"Failed to complete request after {retries} attempts.")
@@ -382,7 +452,7 @@ def extract_function_signatures_and_content(repo_path):
                                 }
                                 functions.append(function_data)
                     except Exception as e:
-                        logger.warning(f"Error parsing {file_path}: {e}")
+                        logger.warning("Error parsing %s: %s", _sanitize_log(file_path), _sanitize_log(e))
     return functions
 
 
@@ -533,7 +603,7 @@ def fetch_github_user_data(username):
     user_data = {}
     try:
         # Fetch user profile
-        logging.info(f"Fetching user profile: {username}")
+        logging.info("Fetching user profile: %s", _sanitize_log(username))
         user_response = requests.get(f"{base_url}{username}", headers=headers)
         if user_response.status_code == 200:
             user_info = user_response.json()
@@ -551,10 +621,12 @@ def fetch_github_user_data(username):
                 "public_repos": user_info.get("public_repos"),
             }
         else:
-            logging.error(f"Failed to fetch user profile: {user_response.status_code} {user_response.text}")
+            logging.error(
+                "Failed to fetch user profile: %s %s", user_response.status_code, _sanitize_log(user_response.text)
+            )
 
         # Fetch repositories
-        logging.info(f"Fetching repositories for {username}")
+        logging.info("Fetching repositories for %s", _sanitize_log(username))
         repos_response = requests.get(repos_url, headers=headers)
         if repos_response.status_code == 200:
             repos = repos_response.json()
@@ -567,47 +639,66 @@ def fetch_github_user_data(username):
                     # Fetch the parent repository details
                     parent_repo_url = repo.get("parent", {}).get("url")
                     if not parent_repo_url:
-                        # Fetch detailed repo information to get parent URL
-                        repo_details_url = f"https://api.github.com/repos/{username}/{repo['name']}"
-                        repo_details_response = requests.get(repo_details_url, headers=headers)
-                        if repo_details_response.status_code == 200:
-                            repo_details = repo_details_response.json()
-                            parent_repo_url = repo_details.get("parent", {}).get("url")
+                        # Validate repo name before constructing URL
+                        repo_name_val = repo.get("name", "")
+                        if not re.match(r"^[a-zA-Z0-9._-]+$", repo_name_val):
+                            logging.warning("Skipping forked repo with unsafe name for detail fetch")
                         else:
-                            logging.error(
-                                f"Failed to fetch repo details for {repo['name']}: {repo_details_response.status_code}"
-                            )
+                            # Fetch detailed repo information to get parent URL
+                            repo_details_url = f"https://api.github.com/repos/{username}/{repo_name_val}"
+                            repo_details_response = requests.get(repo_details_url, headers=headers, timeout=10)
+                            if repo_details_response.status_code == 200:
+                                repo_details = repo_details_response.json()
+                                parent_repo_url = repo_details.get("parent", {}).get("url")
+                            else:
+                                logging.error(
+                                    "Failed to fetch repo details for %s: %s",
+                                    _sanitize_log(repo.get("name")),
+                                    repo_details_response.status_code,
+                                )
 
                     if parent_repo_url:
-                        parent_response = requests.get(parent_repo_url, headers=headers)
-                        if parent_response.status_code == 200:
-                            parent_repo = parent_response.json()
-                            logging.info(f"Fetched parent repo details for forked repo {repo['name']}")
-                            repo_data = {
-                                "name": parent_repo["name"],
-                                "url": parent_repo["html_url"],
-                                "language": parent_repo["language"],
-                                "stars": parent_repo["stargazers_count"],
-                                "forks": parent_repo["forks_count"],
-                                "description": parent_repo["description"],
-                                "topics": parent_repo.get("topics", []),
-                            }
-                        else:
-                            logging.error(
-                                f"Failed to fetch parent repo details for {repo['name']}: {parent_response.status_code}"
+                        # Validate that parent URL points to GitHub API
+                        parsed_parent = urlparse(parent_repo_url)
+                        if parsed_parent.hostname != "api.github.com" or not parsed_parent.path.startswith("/repos/"):
+                            logging.warning(
+                                "Skipping unexpected parent repo URL host: %s",
+                                parsed_parent.hostname,
                             )
-                            # Fallback to forked repo details
-                            repo_data = {
-                                "name": repo["name"],
-                                "url": repo["html_url"],
-                                "language": repo["language"],
-                                "stars": repo["stargazers_count"],
-                                "forks": repo["forks_count"],
-                                "description": repo["description"],
-                                "topics": repo.get("topics", []),
-                            }
+                        else:
+                            parent_response = requests.get(parent_repo_url, headers=headers, timeout=10)
+                            if parent_response.status_code == 200:
+                                parent_repo = parent_response.json()
+                                logging.info(
+                                    "Fetched parent repo details for forked repo %s", _sanitize_log(repo.get("name"))
+                                )
+                                repo_data = {
+                                    "name": parent_repo["name"],
+                                    "url": parent_repo["html_url"],
+                                    "language": parent_repo["language"],
+                                    "stars": parent_repo["stargazers_count"],
+                                    "forks": parent_repo["forks_count"],
+                                    "description": parent_repo["description"],
+                                    "topics": parent_repo.get("topics", []),
+                                }
+                            else:
+                                logging.error(
+                                    "Failed to fetch parent repo details for %s: %s",
+                                    _sanitize_log(repo.get("name")),
+                                    parent_response.status_code,
+                                )
+                                # Fallback to forked repo details
+                                repo_data = {
+                                    "name": repo["name"],
+                                    "url": repo["html_url"],
+                                    "language": repo["language"],
+                                    "stars": repo["stargazers_count"],
+                                    "forks": repo["forks_count"],
+                                    "description": repo["description"],
+                                    "topics": repo.get("topics", []),
+                                }
                     else:
-                        logging.warning(f"No parent repo found for forked repo {repo['name']}")
+                        logging.warning("No parent repo found for forked repo %s", _sanitize_log(repo.get("name")))
                         repo_data = {
                             "name": repo["name"],
                             "url": repo["html_url"],
@@ -633,10 +724,12 @@ def fetch_github_user_data(username):
 
             user_data["repositories"] = user_repos
         else:
-            logging.error(f"Failed to fetch repositories: {repos_response.status_code} {repos_response.text}")
+            logging.error(
+                "Failed to fetch repositories: %s %s", repos_response.status_code, _sanitize_log(repos_response.text)
+            )
 
         # Fetch starred repositories
-        logging.info(f"Fetching starred repositories for {username}")
+        logging.info("Fetching starred repositories for %s", _sanitize_log(username))
         starred_response = requests.get(starred_url, headers=headers)
         if starred_response.status_code == 200:
             starred = starred_response.json()
@@ -651,11 +744,13 @@ def fetch_github_user_data(username):
             ]
         else:
             logging.error(
-                f"Failed to fetch starred repositories: {starred_response.status_code} {starred_response.text}"
+                "Failed to fetch starred repositories: %s %s",
+                starred_response.status_code,
+                _sanitize_log(starred_response.text),
             )
 
         # Fetch recent activity
-        logging.info(f"Fetching recent activity for {username}")
+        logging.info("Fetching recent activity for %s", _sanitize_log(username))
         events_response = requests.get(events_url, headers=headers)
         if events_response.status_code == 200:
             events = events_response.json()
@@ -669,17 +764,42 @@ def fetch_github_user_data(username):
                 if event["type"] in ["PushEvent", "PullRequestEvent", "IssuesEvent"]
             ]
         else:
-            logging.error(f"Failed to fetch recent activity: {events_response.status_code} {events_response.text}")
+            logging.error(
+                "Failed to fetch recent activity: %s %s",
+                events_response.status_code,
+                _sanitize_log(events_response.text),
+            )
 
         # Fetch language usage
-        logging.info(f"Fetching language usage for {username}")
+        logging.info("Fetching language usage for %s", _sanitize_log(username))
         language_usage = {}
 
         for repo in user_data.get("repositories", []):
             # Adjust repo owner and name in case of parent repos
-            repo_url_parts = repo["url"].split("/")
-            repo_owner = repo_url_parts[3]
-            repo_name = repo_url_parts[4]
+            repo_url = repo.get("url", "")
+            parsed_repo_url = urlparse(repo_url)
+
+            # Validate the URL belongs to github.com
+            if parsed_repo_url.hostname not in ("github.com", "www.github.com"):
+                logging.warning(
+                    "Skipping non-GitHub repo URL for language fetch: %s", _sanitize_log(parsed_repo_url.hostname)
+                )
+                continue
+
+            path_parts = [p for p in parsed_repo_url.path.strip("/").split("/") if p]
+            if len(path_parts) < 2:
+                logging.warning("Skipping malformed repo URL path: %s", _sanitize_log(parsed_repo_url.path))
+                continue
+
+            repo_owner = path_parts[0]
+            repo_name = path_parts[1]
+
+            # Validate owner and name contain only safe characters
+            if not re.match(r"^[a-zA-Z0-9._-]+$", repo_owner) or not re.match(r"^[a-zA-Z0-9._-]+$", repo_name):
+                logging.warning(
+                    "Skipping repo with unsafe owner/name: %s/%s", _sanitize_log(repo_owner), _sanitize_log(repo_name)
+                )
+                continue
 
             repo_languages_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/languages"
             lang_response = requests.get(repo_languages_url, headers=headers)
@@ -688,7 +808,9 @@ def fetch_github_user_data(username):
                 for lang, bytes_used in lang_data.items():
                     language_usage[lang] = language_usage.get(lang, 0) + bytes_used
             else:
-                logging.warning(f"Failed to fetch languages for {repo['name']}: {lang_response.status_code}")
+                logging.warning(
+                    "Failed to fetch languages for %s: %s", _sanitize_log(repo.get("name")), lang_response.status_code
+                )
 
         user_data["top_languages"] = sorted(language_usage.items(), key=lambda x: x[1], reverse=True)
 
@@ -965,7 +1087,9 @@ class twitter:
                     )
 
                     if not upload_response.json().get("ok"):
-                        logging.warning(f"Error uploading image to Slack: {upload_response.json().get('error')}")
+                        logging.warning(
+                            "Error uploading image to Slack: %s", _sanitize_log(upload_response.json().get("error"))
+                        )
                 except Exception as e:
                     logging.error("Error uploading image to Slack: Something went wrong.")
 
@@ -975,7 +1099,7 @@ class twitter:
             response.raise_for_status()
 
             if not response.json().get("ok"):
-                logging.warning(f"Error sending message to Slack: {response.json().get('error')}")
+                logging.warning("Error sending message to Slack: %s", _sanitize_log(response.json().get("error")))
                 return False
 
             return True
@@ -1015,27 +1139,27 @@ def check_security_txt(domain_url):
     well_known_url = f"{domain_url}/.well-known/security.txt"
     safe_well_known_url = rebuild_safe_url(well_known_url)
     if not safe_well_known_url:
-        logger.debug(f"Skipping unsafe or invalid well-known URL: {well_known_url}")
+        logger.debug("Skipping unsafe or invalid well-known URL: %s", _sanitize_log(well_known_url))
     else:
         try:
             response = requests.head(safe_well_known_url, timeout=5)
             if response.status_code == 200:
                 return True
         except requests.RequestException as e:
-            logger.debug(f"HEAD request failed for {safe_well_known_url}: {e}")
+            logger.debug("HEAD request failed for %s: %s", _sanitize_log(safe_well_known_url), _sanitize_log(e))
 
     # If not found, check at root location (/security.txt)
     root_url = f"{domain_url}/security.txt"
     safe_root_url = rebuild_safe_url(root_url)
     if not safe_root_url:
-        logger.debug(f"Skipping unsafe or invalid root URL: {root_url}")
+        logger.debug("Skipping unsafe or invalid root URL: %s", _sanitize_log(root_url))
     else:
         try:
             response = requests.head(safe_root_url, timeout=5)
             if response.status_code == 200:
                 return True
         except requests.RequestException as e:
-            logger.debug(f"HEAD request failed for {safe_root_url}: {e}")
+            logger.debug("HEAD request failed for %s: %s", _sanitize_log(safe_root_url), _sanitize_log(e))
 
     # If we reach here, no security.txt was found
     return False
@@ -1194,7 +1318,7 @@ def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
         data = response.json()
 
         if "errors" in data:
-            logging.error(f"GitHub GraphQL error: {data['errors']}")
+            logging.error("GitHub GraphQL error: %s", _sanitize_log(data["errors"]))
             return []
 
         discussions = data.get("data", {}).get("repository", {}).get("discussions", {}).get("nodes", [])
@@ -1225,11 +1349,11 @@ def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
                 }
             )
 
-        logging.info(f"Fetched {len(result)} discussions from {owner}/{repo}")
+        logging.info("Fetched %d discussions from %s/%s", len(result), _sanitize_log(owner), _sanitize_log(repo))
         return result
 
     except requests.RequestException as e:
-        logging.error(f"Failed to fetch GitHub discussions: {e}")
+        logging.error("Failed to fetch GitHub discussions: %s", _sanitize_log(e))
         return []
     except Exception as e:
         logging.exception("Unexpected error fetching GitHub discussions")
@@ -1248,6 +1372,10 @@ def _get_face_cascade():
     global _face_cascade_cache
     if _face_cascade_cache is not None:
         return _face_cascade_cache
+
+    if cv2 is None:
+        logging.error("OpenCV not available – cannot load Haar Cascade classifier.")
+        return None
 
     try:
         cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
@@ -1280,6 +1408,10 @@ def overlay_faces(image, color=(0, 0, 0)):
     try:
         logging.debug("Starting face detection process")
 
+        if cv2 is None:
+            logging.warning("OpenCV not available - skipping face overlay")
+            return image
+
         # Convert image to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         logging.debug(f"Converted to grayscale, shape: {gray.shape}")
@@ -1311,11 +1443,11 @@ def overlay_faces(image, color=(0, 0, 0)):
         return image
 
     except ImportError as e:
-        logging.error(f"OpenCV import failed: {str(e)}")
+        logging.error("OpenCV import failed: %s", _sanitize_log(e))
         # Return original image on any error to ensure graceful fallback
         return image
     except Exception as e:
-        logging.error(f"Error during face overlay processing: {str(e)}", exc_info=True)
+        logging.error("Error during face overlay processing: %s", _sanitize_log(e), exc_info=True)
         # Return original image on any error to ensure graceful fallback
         return image
 
@@ -1340,9 +1472,12 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
         logging.warning("No image file provided for processing")
         return None
 
-    logging.info(f"Processing screenshot: {getattr(image_file, 'name', 'unknown')}")
+    logging.info("Processing screenshot: %s", _sanitize_log(getattr(image_file, "name", "unknown")))
 
     try:
+        if cv2 is None:
+            raise ImportError("OpenCV (cv2) is not installed")
+
         logging.debug("OpenCV imported successfully for screenshot processing")
 
         # Reset file pointer to beginning
@@ -1390,11 +1525,13 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
         processed_file.content_type = "image/jpeg"
         processed_file.size = len(buffer_bytes)
 
-        logging.info(f"Successfully processed screenshot: {original_name} -> {new_filename}")
+        logging.info(
+            "Successfully processed screenshot: %s -> %s", _sanitize_log(original_name), _sanitize_log(new_filename)
+        )
         return processed_file
 
     except ImportError as e:
-        logging.warning(f"OpenCV not available for screenshot processing: {str(e)}")
+        logging.warning("OpenCV not available for screenshot processing: %s", _sanitize_log(e))
         logging.info("Using fallback processing without face detection")
 
         # Fallback: Just convert to JPEG without face detection
@@ -1429,16 +1566,21 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
             processed_file.content_type = "image/jpeg"
             processed_file.size = len(output_buffer.getvalue())
 
-            logging.info(f"Fallback processing successful: {original_name} -> {new_filename}")
+            logging.info(
+                "Fallback processing successful: %s -> %s", _sanitize_log(original_name), _sanitize_log(new_filename)
+            )
             return processed_file
 
         except Exception as fallback_error:
-            logging.error(f"Fallback processing failed: {str(fallback_error)}")
+            logging.error("Fallback processing failed: %s", _sanitize_log(fallback_error))
             return None
 
     except Exception as e:
         logging.error(
-            f"Error processing bug screenshot {getattr(image_file, 'name', 'unknown')}: {str(e)}", exc_info=True
+            "Error processing bug screenshot %s: %s",
+            _sanitize_log(getattr(image_file, "name", "unknown")),
+            _sanitize_log(e),
+            exc_info=True,
         )
         return None
     finally:

@@ -64,7 +64,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "user_avatar",
             "description",
             "winnings",
-            "follows",
             "issue_upvoted",
             "issue_saved",
             "issue_flaged",
@@ -322,3 +321,33 @@ class SecurityIncidentSerializer(serializers.ModelSerializer):
             "resolved_at",
         ]
         read_only_fields = ["id", "created_at", "resolved_at"]
+
+    def to_internal_value(self, data):
+        data = data.copy()
+
+        if "severity" in data and isinstance(data["severity"], str):
+            data["severity"] = data["severity"].lower()
+
+        if "status" in data and isinstance(data["status"], str):
+            data["status"] = data["status"].lower()
+
+        return super().to_internal_value(data)
+
+
+class TeamMemberLeaderboardSerializer(serializers.ModelSerializer):
+    """
+    Serializer for team member leaderboard
+    """
+
+    username = serializers.CharField(source="user.username", read_only=True)
+    user_avatar = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = (
+            "id",
+            "username",
+            "user_avatar",
+            "leaderboard_score",
+            "current_streak",
+        )
