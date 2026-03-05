@@ -65,7 +65,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from user_agents import parse
 
-from comments.models import Comment
+from website.comments.models import Comment
 from website.decorators import ratelimit
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
@@ -3520,7 +3520,7 @@ class GsocView(View):
         # Sort projects by total PRs
         sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
 
-        return render(request, "gsoc.html", {"projects": sorted_project_data})
+        return render(request, "projects/gsoc_pr_report.html", {"projects": sorted_project_data})
 
 
 @login_required
@@ -3536,29 +3536,29 @@ def refresh_gsoc_project(request):
 
     if not project_name:
         messages.error(request, "Project name is required.")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
     if project_name not in GSOC25_PROJECTS:
         messages.error(request, "Invalid project name")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
     repos = GSOC25_PROJECTS.get(project_name, [])
 
     if not repos:
         messages.error(request, f"No repositories found for project {project_name}")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
     for repo in repos:
         if not isinstance(repo, str) or repo.count("/") != 1:
             messages.error(request, f"Invalid repository format: {repo}")
-            return redirect("gsoc")
+            return redirect("gsoc_pr_report")
 
     today = timezone.now().date()
     refresh_count = DailyStats.objects.filter(name=f"refresh_gsoc_{request.user.id}", created__date=today).count()
 
     if refresh_count >= 5:
         messages.error(request, "You have reached your daily limit of 5 refreshes.")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
     since_date = timezone.make_aware(datetime(2024, 11, 11))
 
@@ -3644,8 +3644,8 @@ def refresh_gsoc_project(request):
 
     except Exception as e:
         messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
-    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
+    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1")
 
-    return redirect("gsoc")
+    return redirect("gsoc_pr_report")

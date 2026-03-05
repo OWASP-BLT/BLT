@@ -20,12 +20,12 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.db import connection, transaction
-from django.db.models import Count, Q, Sum, Value
+from django.db.models import Count, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, generics, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
@@ -34,6 +34,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, I
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from website.cache.cve_cache import normalize_cve_id
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
     ActivityLog,
@@ -72,6 +73,7 @@ from website.serializers import (
     SearchHistorySerializer,
     SecurityIncidentSerializer,
     TagSerializer,
+    TeamMemberLeaderboardSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
 )
@@ -92,7 +94,9 @@ class UserIssueViewSet(viewsets.ModelViewSet):
     search_fields = ("user__username", "user__id")
     http_method_names = ["get", "head"]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
+        """Retrieves a filtered list of issues based on user authentication,status, domain,
+        and CVE score ranges."""
         anonymous_user = self.request.user.is_anonymous
         user_id = self.request.user.id
         if anonymous_user:
@@ -115,6 +119,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head", "put"]
 
     def retrieve(self, request, pk, *args, **kwargs):
+        """
+        Retrieve a specific user profile using the user's ID.
+        """
         user_profile = UserProfile.objects.filter(user__id=pk).first()
 
         if user_profile is None:
@@ -124,6 +131,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, pk, *args, **kwargs):
+        """
+        Update the authenticated user's profile information.
+        """
         user_profile = request.user.userprofile
 
         if user_profile is None:
@@ -183,7 +193,6 @@ class IssueViewSet(viewsets.ModelViewSet):
         if cve_id:
             # Normalize CVE ID to match stored format (uppercase, trimmed)
             # Use case-insensitive matching to handle both normalized and unnormalized data
-            from website.cache.cve_cache import normalize_cve_id
 
             normalized_cve_id = normalize_cve_id(cve_id)
             if normalized_cve_id:
@@ -2082,3 +2091,26 @@ class DebugClearCacheApiView(APIView):
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class TeamMemberLeaderboardAPIView(generics.ListAPIView):
+    serializer_class = TeamMemberLeaderboardSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        try:
+            team = self.request.user.userprofile.team
+        except ObjectDoesNotExist:
+            logger.warning("User %s has no userprofile; returning empty leaderboard.", self.request.user.id)
+            return UserProfile.objects.none()
+        if not team:
+            logger.info("User %s has no team; returning empty leaderboard.", self.request.user.id)
+            return UserProfile.objects.none()
+
+        return (
+            UserProfile.objects.filter(team=team)
+            .select_related("user")
+            .order_by("-leaderboard_score", "-current_streak")
+        )
