@@ -691,7 +691,6 @@ function processIssueReferences() {
         } else {
             // Secure fallback: if DOMPurify is missing, show text content to prevent XSS
             bugReportElement.textContent = markdownContent;
-            console.warn('DOMPurify not loaded, falling back to text content for safety.');
         }
 
 
