@@ -9,7 +9,6 @@ from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
 import pytz
-import requests
 from annoying.fields import AutoOneToOneField
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -30,6 +29,8 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+
+from website.cache.cve_cache import get_cached_cve_score, normalize_cve_id
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,9 @@ class Subscription(models.Model):
     number_of_domains = models.IntegerField(null=False, blank=True)
     feature = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} (${self.charge_per_month}/month)"
 
 
 class Tag(models.Model):
@@ -293,6 +297,11 @@ class JoinRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
+
+    def __str__(self):
+        status = "Accepted" if self.is_accepted else "Pending"
+        team_name = self.team.name if self.team else "Unknown"
+        return f"{self.user.username} -> {team_name} ({status})"
 
 
 class Job(models.Model):
@@ -621,8 +630,8 @@ class Issue(models.Model):
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
-    cve_id = models.CharField(max_length=16, null=True, blank=True)
-    cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
+    cve_id = models.CharField(max_length=20, null=True, blank=True)
+    cve_score = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
 
@@ -668,21 +677,50 @@ class Issue(models.Model):
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
 
+    def clean(self):
+        """Validate model fields."""
+        super().clean()
+        if self.cve_id:
+            # Use normalize_cve_id() for consistent validation
+            normalized = normalize_cve_id(self.cve_id)
+            if not normalized:
+                # normalize_cve_id returns empty string for invalid CVE IDs
+                raise ValidationError(f"Invalid CVE ID format: {self.cve_id}")
+
+    def save(self, *args, **kwargs):
+        """
+        Override save() to validate and normalize CVE ID on every save.
+        Only validates CVE-specific fields, not all model fields.
+        """
+        # Validate and normalize CVE ID if present
+        if self.cve_id:
+            normalized = normalize_cve_id(self.cve_id)
+            if not normalized:
+                # normalize_cve_id returns empty string for invalid CVE IDs
+                raise ValidationError(f"Invalid CVE ID format: {self.cve_id}")
+            # Update to normalized form (uppercase, trimmed)
+            if normalized != self.cve_id:
+                self.cve_id = normalized
+                # Ensure normalized value is persisted when update_fields is used
+                update_fields = kwargs.get("update_fields")
+                if update_fields is not None and "cve_id" not in update_fields:
+                    kwargs["update_fields"] = list(update_fields) + ["cve_id"]
+
+        # Call parent save() to persist the instance
+        super().save(*args, **kwargs)
+
     def get_cve_score(self):
-        if self.cve_id is None:
+        """
+        Get CVE score from cache/API.
+        Returns None for empty, None, or invalid CVE IDs.
+        """
+        if not self.cve_id:
             return None
-        try:
-            url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=%s" % (self.cve_id)
-            response = requests.get(url).json()
-            results = response["resultsPerPage"]
-            if results != 0:
-                metrics = response["vulnerabilities"][0]["cve"]["metrics"]
-                if metrics:
-                    cvss_metric_v = next(iter(metrics))
-                    return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
-        except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
-            logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
+        # normalize_cve_id handles empty strings and invalid formats
+        normalized = normalize_cve_id(self.cve_id)
+        if not normalized:
             return None
+        return get_cached_cve_score(normalized)
 
     def get_cve_severity(self):
         """
@@ -734,6 +772,8 @@ class Issue(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
+            models.Index(fields=["cve_id"], name="issue_cve_id_idx"),
+            models.Index(fields=["cve_score"], name="issue_cve_score_idx"),
         ]
 
 
@@ -779,6 +819,9 @@ class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Screenshot for Issue #{self.issue_id}"
 
 
 if is_using_gcs():
@@ -842,6 +885,11 @@ class Winner(models.Model):
     prize = models.ForeignKey(HuntPrize, null=True, blank=True, on_delete=models.CASCADE)
     prize_amount = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        winner_name = self.winner.username if self.winner else "TBD"
+        hunt_name = self.hunt.name if self.hunt else "Unknown Hunt"
+        return f"{winner_name} - Winner of {hunt_name}"
 
 
 class Points(models.Model):
@@ -955,6 +1003,23 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    leaderboard_score = models.PositiveIntegerField(default=0, db_index=True)
+
+    def update_leaderboard_score(self):
+        """Simple score: recent check-ins + streak"""
+        today = timezone.now().date()
+        cutoff_date = today - timedelta(days=29)  # Last 30 days including today
+        recent = (
+            DailyStatusReport.objects.filter(
+                user=self.user,
+                date__range=(cutoff_date, today),
+            )
+            .values("date")
+            .distinct()
+            .count()
+        )
+        self.leaderboard_score = recent + (self.current_streak * 2)
+        self.save(update_fields=["leaderboard_score"])
 
     def check_team_membership(self):
         return self.team is not None
@@ -1071,6 +1136,8 @@ class UserProfile(models.Model):
                 self.last_check_in = check_in_date
                 self.save()
 
+                self.update_leaderboard_score()
+
                 self.award_streak_badges()
 
         except Exception as e:
@@ -1133,18 +1200,27 @@ class IP(models.Model):
             models.Index(fields=["path", "created"], name="ip_path_created_idx"),
         ]
 
+    def __str__(self):
+        return f"{self.address or 'Unknown'} ({self.count} hits)"
+
 
 class OrganizationAdmin(models.Model):
-    role = (
+    ROLE_CHOICES = (
         (0, "Admin"),
         (1, "Moderator"),
     )
-    role = models.IntegerField(choices=role, default=0)
+    role = models.IntegerField(choices=ROLE_CHOICES, default=0)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        username = self.user.username if self.user else "Unknown"
+        org_name = self.organization.name if self.organization else "Unknown Org"
+        role_name = self.get_role_display() or "Unknown"
+        return f"{username} - {role_name} of {org_name}"
 
 
 class Wallet(models.Model):
@@ -1152,6 +1228,9 @@ class Wallet(models.Model):
     account_id = models.TextField(null=True, blank=True)
     current_balance = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet (${self.current_balance})"
 
     def deposit(self, value):
         self.transaction_set.create(value=value, running_balance=self.current_balance + Decimal(value))
@@ -1177,12 +1256,20 @@ class Transaction(models.Model):
     running_balance = models.DecimalField(max_digits=6, decimal_places=2)
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        sign = "+" if self.value >= 0 else "-"
+        return f"{sign}${abs(self.value)} ({self.wallet_id})"
+
 
 class Payment(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=6, decimal_places=2)
     active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        status = "Active" if self.active else "Inactive"
+        return f"Payment ${self.value} - {status}"
 
 
 class Monitor(models.Model):
@@ -1215,6 +1302,10 @@ class Bid(models.Model):
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
     bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
+
+    def __str__(self):
+        bidder = self.user.username if self.user else self.github_username or "Anonymous"
+        return f"Bid by {bidder} - {self.amount_bch} BCH ({self.status})"
 
     # def save(self, *args, **kwargs):
     #     if (
@@ -1325,6 +1416,63 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
+    freshness = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0.0,
+        db_index=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+
+    def calculate_freshness(self):
+        """
+        Calculate freshness using a Bumper-style activity decay model.
+        Prioritizes the 52-week participation stats for more granular recency
+        and consistency checks.
+        """
+        active_repos = self.repos.filter(is_archived=False)
+        total_raw_score = 0
+
+        for repo in active_repos:
+            repo_score = 0
+            stats = repo.participation_stats
+
+            # 1. Use 52-week stats if available (more robust)
+            if isinstance(stats, list) and len(stats) == 52:
+                # Last week (index 51)
+                if stats[51] > 0:
+                    repo_score = 1.0
+                # Last 4 weeks (30 days)
+                elif sum(stats[48:52]) > 0:
+                    repo_score = 0.6
+                # Last 12 weeks (90 days)
+                elif sum(stats[40:52]) > 0:
+                    repo_score = 0.3
+
+                # Consistency bonus: commits in 3+ distinct weeks of the last 12 weeks
+                weeks_active_last_quarter = sum(1 for w in stats[40:52] if w > 0)
+                if weeks_active_last_quarter >= 3:
+                    repo_score += 0.1
+
+            # 2. Fallback to last_commit_date if no stats or stats don't show recent activity
+            if repo_score == 0 and repo.last_commit_date:
+                now = timezone.now()
+                if repo.last_commit_date >= now - timedelta(days=7):
+                    repo_score = 1.0
+                elif repo.last_commit_date >= now - timedelta(days=30):
+                    repo_score = 0.6
+                elif repo.last_commit_date >= now - timedelta(days=90):
+                    repo_score = 0.3
+
+            total_raw_score += repo_score
+
+        if total_raw_score == 0:
+            return Decimal("0.00")
+
+        MAX_SCORE = 20  # ~20 actively maintained repos = fully fresh
+        freshness = min((total_raw_score / MAX_SCORE) * 100, 100)
+
+        return Decimal(str(round(freshness, 2)))
 
     def save(self, *args, **kwargs):
         # Always ensure a valid slug exists before saving
@@ -1354,6 +1502,23 @@ class Project(models.Model):
             self.slug = f"project-{int(time.time())}"
 
         super(Project, self).save(*args, **kwargs)
+
+    def get_participation_stats(self):
+        """
+        Calculates the aggregate 52-week activity for the project
+        by summing participation stats of its active repositories.
+        """
+        repos = self.repos.filter(is_archived=False)
+        # GitHub participation stats 'all' array has 52 entries
+        total_stats = [0] * 52
+
+        for repo in repos:
+            stats = repo.participation_stats
+            if isinstance(stats, list) and len(stats) == 52:
+                for i in range(52):
+                    total_stats[i] += stats[i]
+
+        return total_stats
 
     def __str__(self):
         return self.name
@@ -1392,6 +1557,9 @@ class Contribution(models.Model):
             models.Index(fields=["user", "created"]),
             models.Index(fields=["repository", "created"]),
         ]
+
+    def __str__(self):
+        return f"{self.title[:50]} ({self.contribution_type})"
 
 
 class BaconToken(models.Model):
@@ -1493,6 +1661,11 @@ class DailyStatusReport(models.Model):
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "date"], name="dsr_user_date_idx"),
+        ]
 
 
 class IpReport(models.Model):
@@ -1754,7 +1927,7 @@ class UserTaskSubmission(models.Model):
 
     progress = models.ForeignKey(UserAdventureProgress, on_delete=models.CASCADE, related_name="task_submissions")
     task = models.ForeignKey(AdventureTask, on_delete=models.CASCADE, related_name="submissions")
-    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, blog post, or other evidence")
+    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, or other evidence")
     notes = models.TextField(blank=True, help_text="Additional notes or explanation")
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -1789,26 +1962,6 @@ class UserTaskSubmission(models.Model):
             self.progress.check_completion()
 
 
-class Post(models.Model):
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, blank=True, max_length=255)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    image = models.ImageField(upload_to="blog_posts")
-    comments = GenericRelation("comments.Comment")
-
-    class Meta:
-        db_table = "blog_post"
-
-    def __str__(self):
-        return self.title
-
-    def get_absolute_url(self):
-        return reverse("post_detail", kwargs={"slug": self.slug})
-
-
 class PRAnalysisReport(models.Model):
     pr_link = models.URLField()
     issue_link = models.URLField()
@@ -1819,15 +1972,6 @@ class PRAnalysisReport(models.Model):
 
     def __str__(self):
         return self.pr_link
-
-
-@receiver(post_save, sender=Post)
-def verify_file_upload(sender, instance, **kwargs):
-    from django.core.files.storage import default_storage
-
-    if instance.image:
-        if not default_storage.exists(instance.image.name):
-            raise ValidationError(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
 
 
 class Repo(models.Model):
@@ -1876,6 +2020,7 @@ class Repo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
     last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
+    participation_stats = models.JSONField(default=list, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1993,7 +2138,7 @@ class Room(models.Model):
     ROOM_TYPES = [
         ("project", "Project"),
         ("bug", "Bug"),
-        ("org", "Organization"),
+        ("organization", "Organization"),
         ("custom", "Custom"),
     ]
 
@@ -2345,6 +2490,58 @@ class GitHubReview(models.Model):
         return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
 
 
+class GitHubComment(models.Model):
+    """
+    Model to store comments made by users on GitHub issues and pull requests.
+    Tracks engagement for the comment leaderboard.
+    """
+
+    comment_id = models.BigIntegerField(unique=True)
+    issue = models.ForeignKey(
+        GitHubIssue,
+        on_delete=models.CASCADE,
+        related_name="tracked_comments",
+    )
+    commenter = models.ForeignKey(
+        UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="github_comments_as_user",
+    )
+    commenter_contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="github_comments_as_contributor",
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    url = models.URLField()
+
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(commenter__isnull=False) | models.Q(commenter_contributor__isnull=False),
+                name="at_least_one_commenter",
+            ),
+        )
+        indexes = [
+            models.Index(fields=["created_at"], name="gh_comment_created_idx"),
+            models.Index(fields=["commenter_contributor"], name="gh_comment_contributor_idx"),
+        ]
+
+    def __str__(self):
+        commenter_name = "Unknown"
+        if self.commenter:
+            commenter_name = self.commenter.user.username
+        elif self.commenter_contributor:
+            commenter_name = self.commenter_contributor.name
+        return f"Comment #{self.comment_id} by {commenter_name} on {self.issue.type} #{self.issue.issue_id}"
+
+
 class Kudos(models.Model):
     """
     Model to send kudos to team members.
@@ -2384,6 +2581,9 @@ class OsshCommunity(models.Model):
     contributors_count = models.IntegerField(default=0, help_text="Approximate number of contributors")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.category})"
 
 
 class OsshDiscussionChannel(models.Model):
@@ -3541,3 +3741,7 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+
+    def __str__(self):
+        changer = self.changed_by.username if self.changed_by else "System"
+        return f"{self.field_name} changed by {changer}"

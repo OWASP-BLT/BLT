@@ -2,7 +2,7 @@
 <h3 align="center">Bug Logging Tool - Gamified Crowd-Sourced QA Testing & Vulnerability Disclosure</h3>
 
 <p align="center">
-  <strong>A gamified platform for discovering and reporting bugs across websites, apps, git repositories, and more</strong>
+  <strong>A gamified platform for discovering and reporting bugs across websites, applications, Git repositories, and more.</strong>
 </p>
 
 <p align="center">
@@ -122,10 +122,14 @@ docker info | findstr OSType
 
 #### Using Poetry
 ```bash
-# Install dependencies
+# Install Poetry
 pip install poetry
-poetry shell
+
+# 1. Install dependencies first (Creates the virtual environment)
 poetry install
+
+# 2. Activate the virtual environment
+poetry shell
 
 
 #### Beginner-Friendly Non-Docker Setup (Codespaces for Windows Beginners)

@@ -1,5 +1,6 @@
 import json
 import os
+import socket
 import sys
 
 import dj_database_url
@@ -89,7 +90,7 @@ INSTALLED_APPS = (
     "django_gravatar",
     "email_obfuscator",
     "import_export",
-    "comments",
+    "website.comments",
     "annoying",
     "rest_framework",
     "django_filters",
@@ -136,9 +137,22 @@ if DEBUG:
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
-TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
+
 
 if DEBUG and not TESTING:
+    # Configure INTERNAL_IPS for Docker environment
+    INTERNAL_IPS = {"127.0.0.1", "::1", "10.0.2.2"}
+    try:
+        _hostname, _aliases, ips = socket.gethostbyname_ex(socket.gethostname())
+    except (socket.gaierror, OSError):
+        # Fall back to default INTERNAL_IPS if hostname resolution fails
+        ips = []
+    else:
+        # Add Docker network IPs
+        INTERNAL_IPS.update([ip[: ip.rfind(".")] + ".1" for ip in ips if "." in ip])
+        # Add the container's own IP
+        INTERNAL_IPS.update(ips)
+
     DEBUG_TOOLBAR_PANELS = [
         "debug_toolbar.panels.versions.VersionsPanel",
         "debug_toolbar.panels.timer.TimerPanel",
@@ -278,7 +292,11 @@ EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
 # Set the custom email backend that sends Slack notifications
-EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
+# Use console backend in debug mode to print emails to terminal
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
@@ -368,9 +386,11 @@ else:
             "NAME": ":memory:",
         }
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 # Security: Do not send emails to unknown accounts during password reset
 # This prevents account enumeration attacks
@@ -528,7 +548,7 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+ACCOUNT_ADAPTER = "website.adapters.CustomAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
 
 # Social account settings for better UX

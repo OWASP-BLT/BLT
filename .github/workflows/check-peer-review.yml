@@ -15,7 +15,7 @@ on:
 
 # Prevent multiple workflow runs for the same PR
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -121,7 +121,9 @@ jobs:
           - coderabbitai
           - copilot
 
-          Once a valid peer review is submitted, this check will pass automatically. Thank you!" \
+          Once a valid peer review is submitted, this check will pass automatically. Thank you!
+
+          > ⚠️ The **Check Peer Review** workflow check is currently failing until a valid peer review is received." \
                 '{body: $body}' > /tmp/comment.json
               
               POST_COMMENT_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
@@ -143,6 +145,7 @@ jobs:
             fi
             
             echo "Peer review check: No valid peer review found."
+            exit 1
           else
             echo "Peer review check passed: Valid reviewers found: $VALID_REVIEWERS"
             echo "has_peer_review=true" >> $GITHUB_OUTPUT
@@ -161,7 +164,7 @@ jobs:
             // Determine label based on peer review status
             const hasPeerReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
             const newLabel = hasPeerReview ? 'has-peer-review' : 'needs-peer-review';
-            const labelColor = hasPeerReview ? '0e8a16' : 'fbca04';  // Green or Yellow
+            const labelColor = hasPeerReview ? '0e8a16' : 'e74c3c';  // Green or Red (BLT red)
             const description = hasPeerReview ? 'PR has received peer review' : 'PR needs peer review';
             
             // Get current labels on the PR
@@ -191,10 +194,20 @@ jobs:
               }
             }
             
-            // Ensure the new label exists (create if missing)
+            // Ensure the new label exists with correct color/description (create or update)
             async function ensureLabelExists(labelName, color, desc) {
               try {
-                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                const { data: existing } = await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                if (existing.color !== color || existing.description !== desc) {
+                  await github.rest.issues.updateLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: color,
+                    description: desc,
+                  });
+                  core.info(`Updated label ${labelName}`);
+                }
               } catch (e) {
                 if (e.status === 404) {
                   await github.rest.issues.createLabel({
