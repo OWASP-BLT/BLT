@@ -270,10 +270,11 @@ def delete_section(request, section_id):
     section.delete()
 
     # Re-order remaining sections
-    sections = list(Section.objects.filter(course_id=course_id))
+    sections = list(Section.objects.filter(course_id=course_id).order_by("order"))
     for i, section in enumerate(sections, 1):
         section.order = i
-    Section.objects.bulk_update(sections, ["order"])
+    if sections:
+        Section.objects.bulk_update(sections, ["order"])
 
     messages.success(request, "Section was deleted successfully!")
 
@@ -400,9 +401,11 @@ def delete_lecture(request, lecture_id):
 
     lecture.delete()
 
-    for i, lec in enumerate(Lecture.objects.filter(section=section), 1):
+    remaining = list(Lecture.objects.filter(section=section).order_by("order"))
+    for i, lec in enumerate(remaining, 1):
         lec.order = i
-        lec.save()
+    if remaining:
+        Lecture.objects.bulk_update(remaining, ["order"])
 
     messages.success(request, f"Lecture '{lecture.title}' was deleted successfully!")
 

@@ -1,4 +1,5 @@
 import requests
+from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
 from website.models import Issue
@@ -15,12 +16,17 @@ class Command(LoggedBaseCommand):
                 response = requests.get(issue.github_url, timeout=10)
                 if response.status_code == 200:
                     data = response.json()
-                    issue.status = data.get("state", "open")
-                    updated_issues.append(issue)
+                    new_status = data.get("state", "open")
+                    if new_status != issue.status:
+                        issue.status = new_status
+                        updated_issues.append(issue)
             except Exception as e:
                 self.stderr.write(f"Error updating issue {issue.id}: {str(e)}")
 
         if updated_issues:
-            Issue.objects.bulk_update(updated_issues, ["status"])
+            now = timezone.now()
+            for issue in updated_issues:
+                issue.modified = now
+            Issue.objects.bulk_update(updated_issues, ["status", "modified"])
 
         self.stdout.write(f"Issue status update completed: {len(updated_issues)} issues updated")
