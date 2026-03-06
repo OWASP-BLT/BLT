@@ -1,7 +1,9 @@
 import json
 import logging
 import os
+import random
 import re
+import string
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -13,11 +15,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from django.core.mail import send_mail
 from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -27,6 +31,7 @@ from slack_bolt import App
 from website.models import (
     DailyStatusReport,
     Domain,
+    DomainVerificationCode,
     Hunt,
     HuntPrize,
     Integration,
@@ -1852,6 +1857,7 @@ class DomainView(View):
                 "id",
                 "name",
                 "url",
+                "email",
                 "organization__name",
                 "created",
                 "modified",
@@ -1959,6 +1965,7 @@ class DomainView(View):
             "first_bug": first_bug,
             "last_bug": last_bug,
             "ongoing_bughunts": ongoing_bughunts,
+            "is_domain_manager": is_domain_manager,
         }
 
         return render(request, "organization/dashboard/view_domain.html", context)
@@ -2962,3 +2969,187 @@ def toggle_job_status(request, id, job_id):
     job.save(update_fields=["status"])
 
     return JsonResponse({"success": True, "status": job.status})
+
+
+def public_job_list(request):
+    """Public view showing all active public jobs"""
+    from django.utils import timezone
+
+    from website.models import Job
+
+    # Get all public and active jobs that haven't expired
+    jobs = (
+        Job.objects.filter(is_public=True, status="active")
+        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+        .select_related("organization")
+        .order_by("-created_at")
+    )
+
+    # Search functionality
+    search_query = request.GET.get("q", "")
+    if search_query:
+        jobs = jobs.filter(
+            Q(title__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(location__icontains=search_query)
+            | Q(organization__name__icontains=search_query)
+        )
+
+    # Filter by job type
+    job_type = request.GET.get("type", "")
+    if job_type:
+        jobs = jobs.filter(job_type=job_type)
+
+    # Filter by location
+    location = request.GET.get("location", "")
+    if location:
+        jobs = jobs.filter(location__icontains=location)
+
+    context = {
+        "jobs": jobs,
+        "search_query": search_query,
+        "job_type_filter": job_type,
+        "location_filter": location,
+    }
+
+    return render(request, "jobs/public_job_list.html", context)
+
+
+def job_detail(request, pk):
+    """Public view for a single job posting; org members can see all their jobs"""
+    from django.http import Http404
+
+    from website.models import Job
+
+    job = get_object_or_404(Job, pk=pk)
+
+    # Check if user is org member (admin or manager)
+    is_org_member = False
+    if request.user.is_authenticated:
+        is_org_member = (
+            job.organization.admin == request.user or job.organization.managers.filter(id=request.user.id).exists()
+        )
+
+    # Public users can only see active, public, non-expired jobs
+    if not is_org_member:
+        from django.utils import timezone
+
+        is_expired = job.expires_at and job.expires_at < timezone.now()
+        if not job.is_public or job.status != "active" or is_expired:
+            raise Http404("Job not found")
+
+    # Increment view count
+    job.increment_views()
+
+    context = {
+        "job": job,
+    }
+
+    return render(request, "jobs/job_detail.html", context)
+
+
+# Domain Management Verification Views
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_domain_access(request, pk):
+    """Request access to manage a domain by sending verification code to domain email"""
+    domain = get_object_or_404(Domain, pk=pk)
+
+    # Check if domain has an email configured
+    if not domain.email:
+        messages.error(request, "This domain does not have an email configured for verification.")
+        return redirect("view_domain", pk=pk)
+
+    # Check if user is already a manager
+    if domain.managers.filter(id=request.user.id).exists():
+        messages.info(request, "You are already a manager of this domain.")
+        return redirect("view_domain", pk=pk)
+
+    # Generate 6-digit verification code
+    code = "".join(random.choices(string.digits, k=6))
+
+    # Set expiration to 15 minutes from now
+    expires_at = timezone.now() + timedelta(minutes=15)
+
+    # Create verification code record
+    verification = DomainVerificationCode.objects.create(
+        domain=domain, user=request.user, code=code, expires_at=expires_at
+    )
+
+    # Send verification email
+    try:
+        email_context = {
+            "domain_name": domain.name,
+            "username": request.user.username,
+            "verification_code": code,
+        }
+        email_html = render_to_string("email/domain_verification_code.html", email_context)
+
+        send_mail(
+            subject=f"Domain Management Verification - {domain.name}",
+            message=f"Your verification code is: {code}. This code will expire in 15 minutes.",
+            html_message=email_html,
+            from_email=None,  # Uses DEFAULT_FROM_EMAIL from settings
+            recipient_list=[domain.email],
+            fail_silently=False,
+        )
+
+        messages.success(
+            request,
+            "A verification code has been sent to the domain's registered email address. Please check your email and enter the code.",
+        )
+    except Exception as e:
+        logger.error(f"Failed to send verification email for domain {domain.id} to user {request.user.id}: {e}")
+        messages.error(request, "Failed to send verification email. Please try again later.")
+        # Keep the record for audit trail but mark it as failed by setting expiration to past
+        verification.expires_at = timezone.now() - timedelta(minutes=1)
+        verification.save()
+
+    return redirect("verify_domain_access", pk=pk)
+
+
+@login_required
+def verify_domain_access(request, pk):
+    """View for entering and verifying the domain access code"""
+    domain = get_object_or_404(Domain, pk=pk)
+
+    # Check if user is already a manager
+    if domain.managers.filter(id=request.user.id).exists():
+        messages.info(request, "You are already a manager of this domain.")
+        return redirect("view_domain", pk=pk)
+
+    if request.method == "POST":
+        code = request.POST.get("verification_code", "").strip()
+
+        if not code:
+            messages.error(request, "Please enter the verification code.")
+            return render(request, "organization/verify_domain_access.html", {"domain": domain})
+
+        # Find the most recent unused verification code for this user and domain
+        verification = (
+            DomainVerificationCode.objects.filter(domain=domain, user=request.user, code=code, is_used=False)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not verification:
+            messages.error(request, "Invalid verification code. Please check and try again.")
+            return render(request, "organization/verify_domain_access.html", {"domain": domain})
+
+        if not verification.is_valid():
+            if verification.is_used:
+                messages.error(request, "This verification code has already been used.")
+            else:
+                messages.error(request, "This verification code has expired. Please request a new one.")
+            return render(request, "organization/verify_domain_access.html", {"domain": domain})
+
+        # Mark code as used and add user as domain manager
+        verification.mark_as_used()
+        domain.managers.add(request.user)
+
+        messages.success(request, f"Success! You are now a manager of {domain.name}. You can now manage this domain.")
+        return redirect("view_domain", pk=pk)
+
+    return render(request, "organization/verify_domain_access.html", {"domain": domain})
