@@ -119,6 +119,8 @@ jobs:
                     labels: [changesRequestedLabel] 
                   });
                   core.info(`Applied label ${changesRequestedLabel} to PR #${pull_number}`);
+                  // Fail the workflow when changes-requested label is added
+                  core.setFailed(`Changes requested on PR #${pull_number}. The workflow is failing as requested.`);
                 } catch (error) {
                   if (error.status === 403) {
                     core.warning(`Permission denied: Cannot add label to PR. Check that workflow has "issues: write" and "pull-requests: write" permissions.`);
@@ -128,6 +130,8 @@ jobs:
                 }
               } else {
                 core.info(`Label ${changesRequestedLabel} already present on PR #${pull_number}`);
+                // Also fail the workflow if the label was already present (still has changes requested)
+                core.setFailed(`Changes requested on PR #${pull_number}. The workflow is failing as requested.`);
               }
             } else {
               // Remove the label if no changes are requested
