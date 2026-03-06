@@ -1943,13 +1943,15 @@ def update_role(request):
         return HttpResponse("success")
 
     # Batch-fetch admin records instead of querying per iteration
-    admins_map = {
-        a.user.username: a
-        for a in OrganizationAdmin.objects.select_related("user").filter(
-            user__username__in=usernames,
-            organization=requesting_admin.organization,
-        )
+    admin_filters = {
+        "user__username__in": usernames,
+        "organization": requesting_admin.organization,
     }
+    # Moderators can only manage admins within their own domain
+    if requesting_admin.role == 1:
+        admin_filters["domain"] = requesting_admin.domain
+
+    admins_map = {a.user.username: a for a in OrganizationAdmin.objects.select_related("user").filter(**admin_filters)}
 
     # Collect domain PKs for batch fetch
     domain_pks = set()
