@@ -186,7 +186,7 @@ def mark_lecture_complete(request):
         return JsonResponse({"success": False, "error": "Lecture ID is required"}, status=400)
 
     lecture = get_object_or_404(Lecture, id=lecture_id)
-    userprofile = request.user.userprofile
+    userprofile = get_object_or_404(UserProfile, user=request.user)
 
     if not lecture.section:
         return JsonResponse({"success": False, "error": "Standalone lecture has no course enrollment."}, status=400)
