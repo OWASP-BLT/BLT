@@ -3,6 +3,9 @@ import logging
 import os
 import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
+from concurrent.futures import as_completed
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
@@ -11,6 +14,7 @@ from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import DatabaseError, IntegrityError, transaction
@@ -40,6 +44,8 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
+from website.services.cyber_cache import get_org_cyber_cache_key
+from website.services.dns_security import get_domain_dns_posture
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
@@ -789,6 +795,128 @@ class OrganizationDashboardAnalyticsView(View):
             "threat_intelligence": self.get_threat_intelligence(id),
         }
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
+
+
+class OrganizationDashboardCyberView(View):
+    """Organization dashboard view for DNS-focused cyber posture metrics."""
+
+    CACHE_TIMEOUT_SECONDS = 3600
+    MAX_DNS_WORKERS = 4
+    DNS_COLLECTION_TIME_BUDGET_SECONDS = 12
+
+    def _get_user_organizations(self, user):
+        """Return organizations available to the authenticated user for the switcher."""
+        if user.is_authenticated:
+            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
+        return []
+
+    def _safe_fetch_domain_posture(self, domain):
+        """Safely resolve DNS posture for a domain row and tolerate lookup errors."""
+        try:
+            return get_domain_dns_posture(domain["url"] or domain["name"])
+        except Exception:
+            return {"domain": "", "spf": False, "dmarc": False, "dnssec": False}
+
+    def _build_domain_result(self, domain, posture):
+        """Build one row of DNS posture output expected by the template."""
+        compliant = posture["spf"] and posture["dmarc"] and posture["dnssec"]
+        return {
+            "name": domain["name"],
+            "hostname": posture["domain"] or domain["name"],
+            "spf": posture["spf"],
+            "dmarc": posture["dmarc"],
+            "dnssec": posture["dnssec"],
+            "compliant": compliant,
+        }
+
+    def _build_dns_metrics(self, organization_id):
+        """Build DNS metrics with bounded concurrency and a total time budget."""
+        active_domains = list(
+            Domain.objects.filter(organization__id=organization_id, is_active=True)
+            .values("name", "url")
+            .order_by("name")
+        )
+
+        domain_results = [None] * len(active_domains)
+        if active_domains:
+            executor = ThreadPoolExecutor(max_workers=self.MAX_DNS_WORKERS)
+            futures = {}
+            timed_out = False
+            try:
+                futures = {
+                    executor.submit(self._safe_fetch_domain_posture, domain): index
+                    for index, domain in enumerate(active_domains)
+                }
+
+                for future in as_completed(futures, timeout=self.DNS_COLLECTION_TIME_BUDGET_SECONDS):
+                    index = futures[future]
+                    posture = future.result()
+                    domain_results[index] = self._build_domain_result(active_domains[index], posture)
+            except FuturesTimeoutError:
+                timed_out = True
+                logger.warning(
+                    "Cyber dashboard DNS collection timed out for organization %s; returning partial results.",
+                    organization_id,
+                )
+            finally:
+                if timed_out:
+                    for future in futures:
+                        future.cancel()
+                    executor.shutdown(wait=False, cancel_futures=True)
+                else:
+                    executor.shutdown(wait=True, cancel_futures=False)
+
+                for future, index in futures.items():
+                    if domain_results[index] is None:
+                        domain_results[index] = self._build_domain_result(
+                            active_domains[index], {"domain": "", "spf": False, "dmarc": False, "dnssec": False}
+                        )
+
+        total_domains = len(domain_results)
+        spf_count = sum(1 for entry in domain_results if entry["spf"])
+        dmarc_count = sum(1 for entry in domain_results if entry["dmarc"])
+        dnssec_count = sum(1 for entry in domain_results if entry["dnssec"])
+        compliant_count = sum(1 for entry in domain_results if entry["compliant"])
+        non_compliant_count = total_domains - compliant_count
+
+        return {
+            "domains": domain_results,
+            "total_domains": total_domains,
+            "spf_count": spf_count,
+            "dmarc_count": dmarc_count,
+            "dnssec_count": dnssec_count,
+            "compliant_count": compliant_count,
+            "non_compliant_count": non_compliant_count,
+            "compliance_labels": json.dumps(["Compliant", "Needs Attention"]),
+            "compliance_data": json.dumps([compliant_count, non_compliant_count]),
+        }
+
+    def _get_cached_dns_metrics(self, organization_id):
+        """Get DNS metrics from cache and compute/store on cache miss."""
+        cache_key = get_org_cyber_cache_key(organization_id)
+        cached_metrics = cache.get(cache_key)
+        if cached_metrics is not None:
+            return cached_metrics
+
+        metrics = self._build_dns_metrics(organization_id)
+        cache.set(cache_key, metrics, self.CACHE_TIMEOUT_SECONDS)
+        return metrics
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        """Render cached DNS posture metrics for the selected organization."""
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
+
+        context = {
+            "organization": id,
+            "organizations": self._get_user_organizations(request.user),
+            "organization_obj": organization_obj,
+            "dns_security": self._get_cached_dns_metrics(id),
+        }
+        return render(request, "organization/dashboard/organization_cyber.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):
