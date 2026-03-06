@@ -25,6 +25,7 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.messages import get_messages
 from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -1533,11 +1534,30 @@ def get_job_board_data():
     return jobs_list, seekers_list
 
 
+HOME_PAGE_CACHE_TTL = 300  # 5 minutes
+
+
 def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
     from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
+
+    # Full-page caching keyed by session key so each session gets its own CSRF
+    # token embedded in the cached HTML.  Ensure the session exists before reading
+    # the key (Django creates it lazily).
+    if not request.session.session_key:
+        request.session.save()
+    cache_key = f"home_page_session_{request.session.session_key}"
+
+    # Bypass the cache entirely when there are pending flash messages so they are
+    # rendered and consumed correctly rather than being silently discarded.
+    has_messages = len(get_messages(request)) > 0
+
+    if not has_messages:
+        cached_content = cache.get(cache_key)
+        if cached_content is not None:
+            return HttpResponse(cached_content)
 
     # Get last commit date
     try:
@@ -1741,33 +1761,34 @@ def home(request):
     # Recent jobs and seekers from standalone job board (cached)
     recent_jobs, recent_seekers = get_job_board_data()
 
-    return render(
-        request,
-        "home.html",
-        {
-            "last_commit": last_commit,
-            "current_year": timezone.now().year,
-            "current_time": current_time,  # Add current time for month display
-            "devto_articles": devto_articles,
-            "devto_profile_url": devto_profile_url,
-            "latest_repos": latest_repos,
-            "total_repos": total_repos,
-            "recent_discussions": recent_discussions,
-            "recent_activities": recent_activities,
-            "top_bug_reporters": top_bug_reporters,
-            "top_pr_contributors": top_pr_contributors,
-            "top_earners": top_earners,
-            "repo_stars": repo_stars,
-            "top_referrals": top_referrals,
-            "referral_code": referral_code,
-            "debug_mode": settings.DEBUG,
-            "system_stats": system_stats,
-            "latest_bugs": latest_bugs,
-            "recent_hackathons": recent_hackathons,
-            "recent_jobs": recent_jobs,
-            "recent_seekers": recent_seekers,
-        },
-    )
+    context = {
+        "last_commit": last_commit,
+        "current_year": timezone.now().year,
+        "current_time": current_time,  # Add current time for month display
+        "devto_articles": devto_articles,
+        "devto_profile_url": devto_profile_url,
+        "latest_repos": latest_repos,
+        "total_repos": total_repos,
+        "recent_discussions": recent_discussions,
+        "recent_activities": recent_activities,
+        "top_bug_reporters": top_bug_reporters,
+        "top_pr_contributors": top_pr_contributors,
+        "top_earners": top_earners,
+        "repo_stars": repo_stars,
+        "top_referrals": top_referrals,
+        "referral_code": referral_code,
+        "debug_mode": settings.DEBUG,
+        "system_stats": system_stats,
+        "latest_bugs": latest_bugs,
+        "recent_hackathons": recent_hackathons,
+        "recent_jobs": recent_jobs,
+        "recent_seekers": recent_seekers,
+    }
+
+    rendered = render_to_string("home.html", context, request=request)
+    if not has_messages:
+        cache.set(cache_key, rendered, timeout=HOME_PAGE_CACHE_TTL)
+    return HttpResponse(rendered)
 
 
 def test_sentry(request):
