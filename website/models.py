@@ -268,6 +268,7 @@ class Organization(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["created"], name="org_created_idx"),
+            models.Index(fields=["name"], name="org_name_idx"),
         ]
         constraints = [models.UniqueConstraint(fields=["slug"], name="unique_organization_slug")]
 
@@ -772,6 +773,9 @@ class Issue(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
+            models.Index(fields=["hunt"], name="issue_hunt_idx"),
+            models.Index(fields=["is_hidden"], name="issue_hidden_idx"),
+            models.Index(fields=["hunt", "is_hidden"], name="issue_hunt_hidden_idx"),
             models.Index(fields=["cve_id"], name="issue_cve_id_idx"),
             models.Index(fields=["cve_score"], name="issue_cve_score_idx"),
         ]
@@ -1526,6 +1530,7 @@ class Project(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["organization"], name="project_org_idx"),
+            models.Index(fields=["name"], name="project_name_idx"),
         ]
 
 
@@ -2052,6 +2057,8 @@ class Repo(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["project"], name="repo_project_idx"),
+            models.Index(fields=["name"], name="repo_name_idx"),
+            models.Index(fields=["primary_language"], name="repo_language_idx"),
         ]
 
 

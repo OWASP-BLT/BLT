@@ -79,6 +79,7 @@ from website.utils import (
 
 logger = logging.getLogger(__name__)
 SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
+SEARCH_RESULT_LIMIT = 20  # Max results per category in search views
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
@@ -611,17 +612,27 @@ def search(request, template="search.html"):
 
         # Handle type='all' - search ALL models
         if stype == "all":
-            organizations = Organization.objects.filter(name__icontains=query)
+            organizations = Organization.objects.filter(name__icontains=query)[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
                 issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )
+                )[:SEARCH_RESULT_LIMIT]
             else:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
-            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
+                    :SEARCH_RESULT_LIMIT
+                ]
+            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[:SEARCH_RESULT_LIMIT]
+            users = (
+                User.objects.filter(username__icontains=query)
+                .exclude(is_superuser=True)
+                .order_by("-points")[:SEARCH_RESULT_LIMIT]
+            )
+            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
+            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
 
             context = {
                 "request": request,
@@ -856,16 +867,17 @@ def search(request, template="search.html"):
                         result_count = 0
 
                         # Get result counts from context if available
+                        # Use len() instead of .count() on sliced querysets:
+                        # .count() on a sliced queryset first evaluates the slice and then counts,
+                        # making it redundant and potentially slower than just using len().
                         try:
                             if search_type == "all" or not search_type:
                                 # Sum counts from all search results
                                 for key in ["organizations", "issues", "domains", "users", "projects", "repos"]:
                                     if key in context:
                                         items = context[key]
-                                        if hasattr(items, "count"):
-                                            result_count += items.count()
-                                        elif isinstance(items, list):
-                                            result_count += len(items)
+                                        # Use len() which works for both lists and sliced querysets
+                                        result_count += len(items)
 
                             elif search_type == "tags":
                                 # Sum counts for tag search
@@ -878,10 +890,8 @@ def search(request, template="search.html"):
                                 ]:
                                     if key in context:
                                         items = context[key]
-                                        if hasattr(items, "count"):
-                                            result_count += items.count()
-                                        elif isinstance(items, list):
-                                            result_count += len(items)
+                                        # Use len() which works for both lists and sliced querysets
+                                        result_count += len(items)
 
                             else:
                                 # Map search types to their context keys
@@ -898,10 +908,8 @@ def search(request, template="search.html"):
                                 key = type_to_key.get(search_type, search_type)
                                 items = context.get(key)
                                 if items:
-                                    if hasattr(items, "count"):
-                                        result_count = items.count()
-                                    elif isinstance(items, list):
-                                        result_count = len(items)
+                                    # Use len() which works for both lists and sliced querysets
+                                    result_count = len(items)
 
                         except Exception:
                             logger.exception("Error calculating result count")
