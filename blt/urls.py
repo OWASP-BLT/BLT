@@ -1004,7 +1004,11 @@ urlpatterns = [
         name="toggle_job_status",
     ),
     path("jobs/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="public_job_list"),
-    path("jobs/<int:pk>/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="job_detail"),
+    path(
+        "jobs/<int:pk>/",
+        RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False),
+        name="job_detail",
+    ),
     path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
