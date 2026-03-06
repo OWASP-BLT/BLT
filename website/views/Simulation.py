@@ -109,7 +109,7 @@ def task_detail(request, lab_id, task_id):
     task = get_object_or_404(Tasks, id=task_id, lab=lab, is_active=True)
 
     # Create or get user lab progress
-    user_lab_progress, created = UserLabProgress.objects.get_or_create(user=request.user, lab=lab)
+    user_lab_progress, _created = UserLabProgress.objects.get_or_create(user=request.user, lab=lab)
 
     # Get user task progress
     try:
@@ -153,7 +153,7 @@ def submit_answer(request, lab_id, task_id):
         is_correct = user_answer == correct_answer
 
         # Update user task progress
-        user_task_progress, created = UserTaskProgress.objects.get_or_create(user=request.user, task=task)
+        user_task_progress, _created = UserTaskProgress.objects.get_or_create(user=request.user, task=task)
         user_task_progress.attempts += 1
 
         if is_correct and not user_task_progress.completed:
@@ -190,7 +190,7 @@ def submit_answer(request, lab_id, task_id):
             is_correct = False
 
         # Update user task progress
-        user_task_progress, created = UserTaskProgress.objects.get_or_create(user=request.user, task=task)
+        user_task_progress, _created = UserTaskProgress.objects.get_or_create(user=request.user, task=task)
         user_task_progress.attempts += 1
 
         if is_correct and not user_task_progress.completed:

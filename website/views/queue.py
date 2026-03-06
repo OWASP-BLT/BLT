@@ -1,5 +1,6 @@
 import logging
 import os
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.http import HttpResponse
@@ -96,12 +97,13 @@ def queue_list(request):
 
                 # Create Twitter intent URL
                 base_url = "https://x.com/intent/tweet"
+
+                # URL-encode parameters (message can contain spaces/&/unicode).
                 params = {
                     "text": queue_item.message,
                 }
 
-                # Build the final URL
-                tweet_url = f"{base_url}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
+                tweet_url = f"{base_url}?{urlencode(params)}"
 
                 # Redirect directly to Twitter in a new tab
                 response = redirect(tweet_url)
