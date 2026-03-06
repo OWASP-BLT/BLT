@@ -2,9 +2,15 @@ import json
 import logging
 import os
 import secrets
+import time
+from functools import wraps
 
 import requests
+from django.core.cache import cache
+from django.db import transaction
 from django.http import JsonResponse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -13,13 +19,182 @@ from website.models import GitHubIssue, Repo
 logger = logging.getLogger(__name__)
 
 
+def _coerce_to_bool(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes", "on"}
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return False
+
+
+def webhook_rate_limit(max_calls=10, period=60):
+    """
+    Rate limit decorator for webhook endpoints.
+    Args:
+        max_calls: Maximum number of calls allowed
+        period: Time period in seconds
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(request, *args, **kwargs):
+            # Use REMOTE_ADDR for rate limiting to avoid spoofing via X-Forwarded-For
+            # If behind a trusted proxy, use a proxy-aware utility (e.g., django-ipware) instead
+            ip = request.META.get("REMOTE_ADDR")
+            cache_key = f"webhook_ratelimit_{func.__name__}_{ip}"
+
+            try:
+                try:
+                    current = cache.incr(cache_key)
+                except ValueError:
+                    # Key doesn't exist, initialize it atomically
+                    if cache.add(cache_key, 1, timeout=period):
+                        current = 1
+                    else:
+                        # Another thread initialized; increment
+                        current = cache.incr(cache_key)
+            except Exception as e:
+                # Fail open: if cache backend is unavailable, allow the request
+                logger.error(f"Cache error in webhook_rate_limit for {func.__name__} from {ip}: {e}", exc_info=True)
+                return func(request, *args, **kwargs)
+
+            if current > max_calls:
+                logger.warning(f"Webhook rate limit exceeded for {func.__name__} from {ip}")
+                return JsonResponse(
+                    {"status": "error", "message": "Rate limit exceeded. Please try again later."}, status=429
+                )
+
+            return func(request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 @csrf_exempt
 @require_POST
+@webhook_rate_limit(max_calls=10, period=60)
+def timed_bounty(request):
+    """Record timed bounty metadata supplied by GitHub Actions."""
+
+    MAX_DURATION_HOURS = 720
+
+    try:
+        expected_token = os.environ.get("BLT_API_TOKEN")
+        if not expected_token:
+            logger.error("BLT_API_TOKEN environment variable is missing")
+            return JsonResponse({"status": "error", "message": "Server configuration error"}, status=500)
+
+        received_token = request.headers.get("X-BLT-API-TOKEN")
+        if not received_token or not secrets.compare_digest(received_token, expected_token):
+            logger.warning("Invalid or missing API token for timed_bounty")
+            return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON in timed_bounty request body")
+            return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
+
+        required_fields = ["issue_number", "repo", "owner", "bounty_expiry_date"]
+        if not all(field in data for field in required_fields):
+            logger.warning(f"Missing required fields in timed_bounty request: {data}")
+            return JsonResponse({"status": "error", "message": "Missing required fields"}, status=400)
+
+        try:
+            issue_number = int(data["issue_number"])
+        except (ValueError, TypeError):
+            logger.warning("Invalid issue_number in timed_bounty request")
+            return JsonResponse({"status": "error", "message": "Invalid issue number"}, status=400)
+
+        repo_name = data["repo"]
+        owner_name = data["owner"]
+
+        repo = Repo.objects.filter(name=repo_name, organization__name=owner_name).first()
+        if not repo:
+            logger.error(f"Repo not found for timed bounty: {owner_name}/{repo_name}")
+            return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
+
+        github_issue = GitHubIssue.objects.filter(issue_id=issue_number, repo=repo).first()
+        if not github_issue:
+            logger.error(f"Issue #{issue_number} not found for timed bounty in {owner_name}/{repo_name}")
+            return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+
+        expiry_raw = data["bounty_expiry_date"]
+        expiry_dt = parse_datetime(expiry_raw)
+        if not expiry_dt:
+            logger.warning(f"Unable to parse bounty_expiry_date '{expiry_raw}' for issue #{issue_number}")
+            return JsonResponse({"status": "error", "message": "Invalid bounty_expiry_date"}, status=400)
+
+        if timezone.is_naive(expiry_dt):
+            expiry_dt = timezone.make_aware(expiry_dt, timezone.utc)
+
+        # Validate duration is reasonable
+        now = timezone.now()
+        duration_seconds = (expiry_dt - now).total_seconds()
+        duration_hours = duration_seconds / 3600
+
+        if duration_hours > MAX_DURATION_HOURS:
+            logger.warning(
+                f"Bounty duration {duration_hours:.1f} hours exceeds maximum {MAX_DURATION_HOURS} hours "
+                f"for issue #{issue_number}"
+            )
+            max_days = MAX_DURATION_HOURS / 24
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Bounty duration exceeds maximum of {MAX_DURATION_HOURS} hours ({max_days:g} days)",
+                },
+                status=400,
+            )
+
+        if duration_hours < 0:
+            logger.warning(f"Bounty expiry date is in the past for issue #{issue_number}")
+            return JsonResponse({"status": "error", "message": "Bounty expiry date cannot be in the past"}, status=400)
+
+        try:
+            with transaction.atomic():
+                # Lock the row to prevent concurrent updates
+                github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
+                github_issue.bounty_expiry_date = expiry_dt
+                github_issue.save(update_fields=["bounty_expiry_date"])
+
+            logger.info(
+                "Stored timed bounty expiry for issue #%s in %s/%s at %s",
+                issue_number,
+                owner_name,
+                repo_name,
+                expiry_dt.isoformat(),
+            )
+
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Timed bounty recorded",
+                    "issue_number": issue_number,
+                    "bounty_expiry_date": expiry_dt.isoformat(),
+                }
+            )
+        except GitHubIssue.DoesNotExist:
+            logger.error(f"GitHubIssue not found for issue #{issue_number} in {owner_name}/{repo_name}")
+            return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+
+    except Exception:
+        logger.exception("Unexpected error in timed_bounty")
+        return JsonResponse({"status": "error", "message": "An unexpected error occurred"}, status=500)
+
+
+@csrf_exempt
+@require_POST
+@webhook_rate_limit(max_calls=20, period=60)
 def bounty_payout(request):
     """
     Minimal working version: Handle bounty payout webhook from GitHub Action.
     Processes payment and updates issue with comment and labels.
     """
+
     try:
         # Validate API token using constant-time comparison
         expected_token = os.environ.get("BLT_API_TOKEN")
@@ -57,6 +232,8 @@ def bounty_payout(request):
         repo_name = data["repo"]
         owner_name = data["owner"]
         contributor_username = data["contributor_username"]
+        # For test compatibility: if is_timed_bounty is True in the request, require bounty_expiry_date
+        is_timed_bounty = _coerce_to_bool(data.get("is_timed_bounty"))
 
         # Look up repository and issue
         repo = Repo.objects.filter(name=repo_name, organization__name=owner_name).first()
@@ -69,19 +246,59 @@ def bounty_payout(request):
             logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
-        # Check for duplicate payment
-        if github_issue.sponsors_tx_id:
-            logger.info(f"Payment already processed for issue #{issue_number}")
-            return JsonResponse(
-                {
-                    "status": "warning",
-                    "message": "Bounty payment already processed for this issue.",
-                    "transaction_id": github_issue.sponsors_tx_id,
-                },
-                status=200,
-            )
+        #  First transaction: validation and atomic intent marking
+        try:
+            with transaction.atomic():
+                github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
 
-        # Process payment via GitHub Sponsors API
+                # For test compatibility: if is_timed_bounty True and no expiry, return 400
+                if is_timed_bounty and github_issue.bounty_expiry_date is None:
+                    logger.warning(f"Timed bounty expiry date not set for issue #{issue_number}")
+                    return JsonResponse({"status": "error", "message": "Timed bounty expiry date not set"}, status=400)
+
+                # Only enforce expiry when the current label is a timed bounty.
+                if is_timed_bounty and github_issue.bounty_expiry_date is not None:
+                    now = timezone.now()
+                    if now > github_issue.bounty_expiry_date:
+                        logger.info(
+                            f"Bounty for issue #{issue_number} expired at {github_issue.bounty_expiry_date.isoformat()}"
+                        )
+                        return JsonResponse({"status": "error", "message": "Bounty expired"}, status=400)
+                elif not is_timed_bounty and github_issue.bounty_expiry_date is not None:
+                    logger.info(f"Clearing stale bounty_expiry_date for non-timed bounty issue #{issue_number}")
+                    github_issue.bounty_expiry_date = None
+                    github_issue.save(update_fields=["bounty_expiry_date"])
+
+                # Check for duplicate payment or in-progress payment
+                if github_issue.sponsors_tx_id:
+                    logger.info(f"Payment already processed for issue #{issue_number}")
+                    return JsonResponse(
+                        {
+                            "status": "warning",
+                            "message": "Bounty payment already processed for this issue.",
+                            "transaction_id": github_issue.sponsors_tx_id,
+                        },
+                        status=200,
+                    )
+                if github_issue.payment_pending:
+                    logger.info(f"Payment is already in progress for issue #{issue_number}")
+                    return JsonResponse(
+                        {
+                            "status": "warning",
+                            "message": "Bounty payment is already in progress for this issue. Please wait.",
+                        },
+                        status=202,
+                    )
+
+                # Mark payment as pending atomically
+                github_issue.payment_pending = True
+                github_issue.save(update_fields=["payment_pending"])
+
+        except GitHubIssue.DoesNotExist:
+            logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name}")
+            return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+
+        #  External payment call (outside transaction)
         transaction_id = process_github_sponsors_payment(
             username=contributor_username,
             amount=bounty_amount,
@@ -90,6 +307,35 @@ def bounty_payout(request):
 
         if not transaction_id:
             logger.error(f"Failed to process GitHub Sponsors payment for issue #{issue_number}")
+            # Reset payment_pending with retries to avoid permanently locking the bounty
+            max_cleanup_retries = 3
+            cleanup_success = False
+            for attempt in range(1, max_cleanup_retries + 1):
+                try:
+                    with transaction.atomic():
+                        github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
+                        github_issue.payment_pending = False
+                        github_issue.save(update_fields=["payment_pending"])
+                    cleanup_success = True
+                    break
+                except Exception:
+                    logger.exception(
+                        "Attempt %d/%d: Failed to clear payment_pending for issue #%s",
+                        attempt,
+                        max_cleanup_retries,
+                        issue_number,
+                    )
+                    if attempt < max_cleanup_retries:
+                        time.sleep(0.5 * attempt)
+            if not cleanup_success:
+                logger.critical(
+                    "MANUAL INTERVENTION REQUIRED: payment_pending is stuck True for "
+                    "issue #%s in %s/%s after payment failure. All %d cleanup attempts failed.",
+                    issue_number,
+                    owner_name,
+                    repo_name,
+                    max_cleanup_retries,
+                )
             return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
 
         logger.info(
@@ -97,9 +343,49 @@ def bounty_payout(request):
             f"for PR #{pr_number} (Issue #{issue_number})"
         )
 
-        # Save transaction ID to database
-        github_issue.sponsors_tx_id = transaction_id
-        github_issue.save()
+        #  Second transaction: record payment
+        try:
+            with transaction.atomic():
+                github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
+                github_issue.sponsors_tx_id = transaction_id
+                github_issue.payment_pending = False
+                github_issue.save(update_fields=["sponsors_tx_id", "payment_pending"])
+        except GitHubIssue.DoesNotExist:
+            logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name} after payment")
+            return JsonResponse({"status": "error", "message": "Issue not found after payment"}, status=404)
+        except Exception:
+            logger.exception(
+                "Failed to record sponsors_tx_id after payment. "
+                "Payment was sent successfully - transaction_id=%s, amount=%s, recipient=%s, issue=#%s",
+                transaction_id,
+                bounty_amount,
+                contributor_username,
+                issue_number,
+            )
+            # Attempt to recover: reset payment_pending and store the transaction ID
+            # so the issue is not permanently stuck.
+            try:
+                with transaction.atomic():
+                    gi = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
+                    gi.sponsors_tx_id = transaction_id
+                    gi.payment_pending = False
+                    gi.save(update_fields=["sponsors_tx_id", "payment_pending"])
+                logger.info(
+                    "Recovery succeeded: recorded transaction_id=%s for issue #%s",
+                    transaction_id,
+                    issue_number,
+                )
+            except Exception:
+                logger.critical(
+                    "MANUAL INTERVENTION REQUIRED: Payment sent but could not record "
+                    "transaction_id=%s for issue #%s in %s/%s. payment_pending is stuck True.",
+                    transaction_id,
+                    issue_number,
+                    owner_name,
+                    repo_name,
+                    exc_info=True,
+                )
+            return JsonResponse({"status": "error", "message": "Failed to record payment"}, status=500)
 
         # Add comment and labels to GitHub issue
         github_token = os.environ.get("GITHUB_TOKEN")
