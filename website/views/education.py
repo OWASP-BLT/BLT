@@ -4,7 +4,8 @@ from urllib.parse import urlparse
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch
+from django.db import transaction
+from django.db.models import Max, Prefetch
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -211,7 +212,7 @@ def course_content_management(request, course_id):
     """View for managing course content (sections and lectures)"""
     course = get_object_or_404(Course, id=course_id)
 
-    next_section_order = course.sections.count() + 1
+    next_section_order = (course.sections.aggregate(max_order=Max("order"))["max_order"] or 0) + 1
 
     lecture_types = Lecture.CONTENT_TYPES
 
@@ -232,7 +233,11 @@ def add_section(request, course_id):
 
     # Sanitize user input
     title = request.POST.get("title")
-    order = int(request.POST.get("order", 0))
+    fallback_order = (course.sections.aggregate(max_order=Max("order"))["max_order"] or 0) + 1
+    try:
+        order = max(1, int(request.POST.get("order", fallback_order)))
+    except (ValueError, TypeError):
+        order = fallback_order
 
     section = Section.objects.create(course=course, title=title, order=order)
     messages.success(request, f"Section '{title}' was added successfully!")
@@ -264,12 +269,15 @@ def delete_section(request, section_id):
     section = get_object_or_404(Section, id=section_id)
     course_id = section.course.id
 
-    section.delete()
+    with transaction.atomic():
+        section.delete()
 
-    # Re-order remaining sections
-    for i, section in enumerate(Section.objects.filter(course_id=course_id), 1):
-        section.order = i
-        section.save()
+        # Re-order remaining sections
+        sections = list(Section.objects.select_for_update().filter(course_id=course_id).order_by("order"))
+        for i, section in enumerate(sections, 1):
+            section.order = i
+        if sections:
+            Section.objects.bulk_update(sections, ["order"])
 
     messages.success(request, "Section was deleted successfully!")
 
@@ -290,7 +298,11 @@ def add_lecture(request, section_id):
     title = request.POST.get("title")
     content_type = request.POST.get("content_type")
     description = request.POST.get("description")
-    order = int(request.POST.get("order", 0))
+    fallback_order = (section.lectures.aggregate(max_order=Max("order"))["max_order"] or 0) + 1 if section else 1
+    try:
+        order = max(1, int(request.POST.get("order", fallback_order)))
+    except (ValueError, TypeError):
+        order = fallback_order
     duration = request.POST.get("duration") or None
 
     lecture = Lecture(
@@ -391,11 +403,14 @@ def delete_lecture(request, lecture_id):
     section = lecture.section
     course_id = section.course.id
 
-    lecture.delete()
+    with transaction.atomic():
+        lecture.delete()
 
-    for i, lec in enumerate(Lecture.objects.filter(section=section), 1):
-        lec.order = i
-        lec.save()
+        remaining = list(Lecture.objects.select_for_update().filter(section=section).order_by("order"))
+        for i, lec in enumerate(remaining, 1):
+            lec.order = i
+        if remaining:
+            Lecture.objects.bulk_update(remaining, ["order"])
 
     messages.success(request, f"Lecture '{lecture.title}' was deleted successfully!")
 
