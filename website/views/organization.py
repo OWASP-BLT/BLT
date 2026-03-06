@@ -1983,6 +1983,7 @@ def update_role(request):
                 admin.is_active = False
             elif role_val in ("0", "1"):
                 admin.role = int(role_val)
+                admin.is_active = True
             domain_key = "domain@" + username
             if domain_key in request.POST:
                 domain_val = request.POST[domain_key]
@@ -2000,6 +2001,7 @@ def update_role(request):
                 admin.is_active = False
             elif role_val == "1":
                 admin.role = int(role_val)
+                admin.is_active = True
 
         admins_to_update.append(admin)
 
