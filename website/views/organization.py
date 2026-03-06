@@ -1939,8 +1939,8 @@ def update_role(request):
         return HttpResponse("failed")
     requesting_admin = requesting_admins.first()
 
-    # Collect usernames from POST keys in one pass
-    usernames = [v for k, v in request.POST.items() if k.startswith("user@")]
+    # Collect usernames from POST keys in one pass (deduplicate to avoid bulk_update ValueError)
+    usernames = list(dict.fromkeys(v for k, v in request.POST.items() if k.startswith("user@")))
     if not usernames:
         return HttpResponse("success")
 
@@ -1951,6 +1951,9 @@ def update_role(request):
     }
     # Moderators can only manage admins within their own domain
     if requesting_admin.role == 1:
+        if requesting_admin.domain is None:
+            # Moderator has no domain assigned — cannot manage anyone
+            return HttpResponse("failed")
         admin_filters["domain"] = requesting_admin.domain
 
     admins_map = {a.user.username: a for a in OrganizationAdmin.objects.select_related("user").filter(**admin_filters)}
