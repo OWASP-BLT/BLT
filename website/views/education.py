@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Max, Prefetch
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -212,7 +212,7 @@ def course_content_management(request, course_id):
     """View for managing course content (sections and lectures)"""
     course = get_object_or_404(Course, id=course_id)
 
-    next_section_order = course.sections.count() + 1
+    next_section_order = (course.sections.aggregate(max_order=Max("order"))["max_order"] or 0) + 1
 
     lecture_types = Lecture.CONTENT_TYPES
 
@@ -233,7 +233,7 @@ def add_section(request, course_id):
 
     # Sanitize user input
     title = request.POST.get("title")
-    fallback_order = course.sections.count() + 1
+    fallback_order = (course.sections.aggregate(max_order=Max("order"))["max_order"] or 0) + 1
     try:
         order = max(1, int(request.POST.get("order", fallback_order)))
     except (ValueError, TypeError):
@@ -298,7 +298,7 @@ def add_lecture(request, section_id):
     title = request.POST.get("title")
     content_type = request.POST.get("content_type")
     description = request.POST.get("description")
-    fallback_order = section.lectures.count() + 1 if section else 1
+    fallback_order = (section.lectures.aggregate(max_order=Max("order"))["max_order"] or 0) + 1 if section else 1
     try:
         order = max(1, int(request.POST.get("order", fallback_order)))
     except (ValueError, TypeError):
