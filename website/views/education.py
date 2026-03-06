@@ -178,30 +178,34 @@ def mark_lecture_complete(request):
     """API endpoint to mark a lecture as completed"""
     try:
         data = json.loads(request.body)
-        lecture_id = data.get("lecture_id")
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON body"}, status=400)
 
-        if not lecture_id:
-            return JsonResponse({"success": False, "error": "Lecture ID is required"})
+    lecture_id = data.get("lecture_id")
+    if not lecture_id:
+        return JsonResponse({"success": False, "error": "Lecture ID is required"}, status=400)
 
-        lecture = get_object_or_404(Lecture, id=lecture_id)
-        userprofile = request.user.userprofile
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    userprofile = request.user.userprofile
 
-        course = lecture.section.course
-        enrollment = Enrollment.objects.filter(student=userprofile, course=course).first()
-        if not enrollment:
-            return JsonResponse({"success": False, "error": "You are not enrolled in this course."})
+    if not lecture.section:
+        return JsonResponse({"success": False, "error": "Standalone lecture has no course enrollment."}, status=400)
 
+    course = lecture.section.course
+    enrollment = Enrollment.objects.filter(student=userprofile, course=course).first()
+    if not enrollment:
+        return JsonResponse({"success": False, "error": "You are not enrolled in this course."}, status=400)
+
+    try:
         lecture_status, created = LectureStatus.objects.update_or_create(
             student=userprofile, lecture=lecture, defaults={"status": "COMPLETED"}
         )
-
         progress = enrollment.calculate_progress()
-
-        return JsonResponse({"success": True, "status": "COMPLETED", "progress": progress})
-
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        return JsonResponse({"status": "error", "message": "An error occurred, please try again later"}, status=400)
+        logger.error(f"Error marking lecture complete: {e}")
+        return JsonResponse({"success": False, "error": "An error occurred, please try again later"}, status=500)
+
+    return JsonResponse({"success": True, "status": "COMPLETED", "progress": progress})
 
 
 @instructor_required
@@ -557,8 +561,8 @@ def create_or_update_course(request):
         course_id = request.POST.get("id")
         if course_id:
             try:
-                course = Course.objects.get(id=course_id)
-            except Course.DoesNotExist:
+                course = Course.objects.get(id=int(course_id))
+            except (Course.DoesNotExist, ValueError, TypeError):
                 return JsonResponse({"success": False, "message": "Course not found"}, status=404)
             if course.instructor != user_profile:
                 return JsonResponse(
