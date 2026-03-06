@@ -2621,7 +2621,8 @@ def get_github_issue(request):
         issue_details = generate_github_issue(description)
 
         if "error" in issue_details:
-            return JsonResponse({"error": "There's a problem with AI"}, status=500)
+            status_code = 503 if issue_details.get("error_type") == "not_configured" else 500
+            return JsonResponse({"error": issue_details["error"]}, status=status_code)
 
         # Render the github_issue.html page with the generated issue details
         return render(
@@ -2640,7 +2641,11 @@ def get_github_issue(request):
 
 def generate_github_issue(description):
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+        openai_api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+        if not openai_api_key:
+            logger.warning("OPENAI_API_KEY is not set")
+            return {"error": "OpenAI integration not configured", "error_type": "not_configured"}
+        client = OpenAI(api_key=openai_api_key)
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
