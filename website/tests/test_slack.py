@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
+from website.management.commands.slack_weekly_report import Command
 from website.models import Integration, Organization, Project, SlackBotActivity, SlackIntegration
 from website.views.slack_handlers import get_project_with_least_members, slack_commands, slack_events
 
@@ -314,6 +315,53 @@ class SlackHandlerTests(TestCase):
         activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
         self.assertIsNotNone(activity)
         self.assertEqual(activity.details["command"], "/installed_apps")
+
+
+class SlackWeeklyReportTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        self.integration = Integration.objects.create(organization=self.organization, service_name="slack")
+        self.slack_integration = SlackIntegration.objects.create(
+            integration=self.integration,
+            bot_access_token="xoxb-test-token",
+            workspace_name="Test Workspace",
+            default_channel_id="C123456",
+            default_channel_name="general",
+        )
+
+    @patch("website.management.commands.slack_weekly_report.App")
+    def test_weekly_report_generation(self, mock_app):
+        """Test weekly report generation and sending."""
+        mock_client = MagicMock()
+        mock_app.return_value.client = mock_client
+        mock_client.chat_postMessage.return_value = {"ok": True}
+
+        command = Command()
+        command.handle()
+
+        mock_app.assert_called_once_with(token="xoxb-test-token")
+        mock_client.chat_postMessage.assert_called_once()
+
+        call_args = mock_client.chat_postMessage.call_args
+        message = call_args.kwargs["text"]
+        self.assertIn("Weekly Organization Report", message)
+        self.assertIn("Test Org", message)
+
+    @patch("website.management.commands.slack_weekly_report.App")
+    def test_weekly_report_custom_channel(self, mock_app):
+        """Test custom channel configuration."""
+        self.slack_integration.weekly_report_channel_id = "C789012"
+        self.slack_integration.save()
+
+        mock_client = MagicMock()
+        mock_app.return_value.client = mock_client
+        mock_client.chat_postMessage.return_value = {"ok": True}
+
+        command = Command()
+        command.handle()
+
+        call_args = mock_client.chat_postMessage.call_args
+        self.assertEqual(call_args.kwargs["channel"], "C789012")
 
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
