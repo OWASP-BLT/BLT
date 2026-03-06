@@ -1933,9 +1933,11 @@ def update_role(request):
     if request.method != "POST":
         return HttpResponse("failed")
 
-    requesting_admin = OrganizationAdmin.objects.filter(user=request.user, is_active=True).first()
-    if not requesting_admin or requesting_admin.role not in (0, 1):
+    requesting_admins = OrganizationAdmin.objects.filter(user=request.user, is_active=True, role__in=(0, 1))
+    if requesting_admins.count() != 1:
+        # Ambiguous if user admins multiple orgs; original endpoint has no org ID in URL
         return HttpResponse("failed")
+    requesting_admin = requesting_admins.first()
 
     # Collect usernames from POST keys in one pass
     usernames = [v for k, v in request.POST.items() if k.startswith("user@")]
@@ -1984,7 +1986,12 @@ def update_role(request):
             domain_key = "domain@" + username
             if domain_key in request.POST:
                 domain_val = request.POST[domain_key]
-                admin.domain = domains_map.get(domain_val) if domain_val else None
+                if not domain_val:
+                    # Explicitly clear domain
+                    admin.domain = None
+                elif domain_val in domains_map:
+                    admin.domain = domains_map[domain_val]
+                # Skip unknown domain IDs — don't nullify existing assignment
         elif requesting_admin.role == 1:
             # Moderators cannot modify full admins
             if admin.role == 0:
