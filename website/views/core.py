@@ -1482,8 +1482,8 @@ def fetch_devto_articles():
 
 
 # Standalone job board URLs and cache (homepage "recent jobs & seekers")
-JOB_BOARD_JOBS_URL = "https://jobs.legacy.owaspblt.org/data/jobs.json"
-JOB_BOARD_SEEKERS_URL = "https://jobs.legacy.owaspblt.org/data/seekers.json"
+JOB_BOARD_JOBS_URL = "https://jobs.owaspblt.org/data/jobs.json"
+JOB_BOARD_SEEKERS_URL = "https://jobs.owaspblt.org/data/seekers.json"
 JOB_BOARD_CACHE_TIMEOUT = 600  # 10 minutes
 
 
