@@ -66,12 +66,13 @@ def _get_issue_ct():
     return ContentType.objects.get_for_model(Issue)
 
 
-@login_required(login_url="/accounts/login/")
 def _resolve_author_profile(user):
     """Get or create UserProfile for the given user — ensures author_fk is never None."""
     profile, _ = UserProfile.objects.get_or_create(user=user)
     return profile
 
+
+@login_required(login_url="/accounts/login/")
 def add_comment(request):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
