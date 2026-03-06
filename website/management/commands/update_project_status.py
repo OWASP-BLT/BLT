@@ -20,7 +20,13 @@ class Command(LoggedBaseCommand):
                 if response.status_code == 200:
                     data = response.json()
                     is_archived = data.get("archived", False)
-                    new_status = "inactive" if is_archived else project.status
+                    if is_archived:
+                        new_status = "inactive"
+                    elif project.status == "inactive":
+                        # Reactivate previously archived projects
+                        new_status = "lab"
+                    else:
+                        new_status = project.status
                     if new_status != project.status:
                         project.status = new_status
                         updated_projects.append(project)
