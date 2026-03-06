@@ -1979,9 +1979,14 @@ def update_role(request):
                 admin.is_active = False
             elif role_val in ("0", "1"):
                 admin.role = int(role_val)
-            domain_val = request.POST.get("domain@" + username, "")
-            admin.domain = domains_map.get(domain_val) if domain_val else None
+            domain_key = "domain@" + username
+            if domain_key in request.POST:
+                domain_val = request.POST[domain_key]
+                admin.domain = domains_map.get(domain_val) if domain_val else None
         elif requesting_admin.role == 1:
+            # Moderators cannot modify full admins
+            if admin.role == 0:
+                continue
             if role_val == "9":
                 admin.is_active = False
             elif role_val == "1":
