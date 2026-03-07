@@ -1931,42 +1931,93 @@ def add_role(request):
 
 @login_required(login_url="/accounts/login")
 def update_role(request):
-    if request.method == "POST":
-        domain_admin = OrganizationAdmin.objects.get(user=request.user)
-        if domain_admin.role == 0 and domain_admin.is_active:
-            for key, value in request.POST.items():
-                if key.startswith("user@"):
-                    user = User.objects.get(username=value)
-                    if domain_admin.organization.admin == request.user:
-                        pass
-                    domain_admin = OrganizationAdmin.objects.get(user=user)
-                    if request.POST["role@" + value] != "9":
-                        domain_admin.role = request.POST["role@" + value]
-                    elif request.POST["role@" + value] == "9":
-                        domain_admin.is_active = False
-                    if request.POST["domain@" + value] != "":
-                        domain_admin.domain = Domain.objects.get(pk=request.POST["domain@" + value])
-                    else:
-                        domain_admin.domain = None
-                    domain_admin.save()
-            return HttpResponse("success")
-        elif domain_admin.role == 1 and domain_admin.is_active:
-            for key, value in request.POST.items():
-                if key.startswith("user@"):
-                    user = User.objects.get(username=value)
-                    if domain_admin.organization.admin == request.user:
-                        pass
-                    domain_admin = OrganizationAdmin.objects.get(user=user)
-                    if request.POST["role@" + value] == "1":
-                        domain_admin.role = request.POST["role@" + value]
-                    elif request.POST["role@" + value] == "9":
-                        domain_admin.is_active = False
-                    domain_admin.save()
-            return HttpResponse("success")
-        else:
-            return HttpResponse("failed")
-    else:
+    if request.method != "POST":
         return HttpResponse("failed")
+
+    try:
+        requesting_admin = OrganizationAdmin.objects.get(user=request.user, is_active=True)
+    except OrganizationAdmin.DoesNotExist:
+        return HttpResponse("failed")
+    except OrganizationAdmin.MultipleObjectsReturned:
+        logger.error("Multiple active OrganizationAdmin entries found for user %s", request.user.id)
+        return HttpResponse("failed")
+
+    if requesting_admin.role not in (0, 1):
+        return HttpResponse("failed")
+
+    # Collect usernames from POST keys in one pass (deduplicate to avoid bulk_update ValueError)
+    usernames = list(dict.fromkeys(v for k, v in request.POST.items() if k.startswith("user@")))
+    if not usernames:
+        return HttpResponse("success")
+
+    # Batch-fetch admin records instead of querying per iteration
+    admin_filters = {
+        "user__username__in": usernames,
+        "organization": requesting_admin.organization,
+    }
+    # Moderators can only manage admins within their own domain
+    if requesting_admin.role == 1:
+        if requesting_admin.domain is None:
+            # Moderator has no domain assigned — cannot manage anyone
+            return HttpResponse("failed")
+        admin_filters["domain"] = requesting_admin.domain
+
+    admins_map = {a.user.username: a for a in OrganizationAdmin.objects.select_related("user").filter(**admin_filters)}
+
+    # Collect domain PKs for batch fetch
+    domain_pks = set()
+    for username in usernames:
+        domain_val = request.POST.get("domain@" + username, "")
+        if domain_val:
+            domain_pks.add(domain_val)
+    domains_map = (
+        {str(d.pk): d for d in Domain.objects.filter(pk__in=domain_pks, organization=requesting_admin.organization)}
+        if domain_pks
+        else {}
+    )
+
+    admins_to_update = []
+    for username in usernames:
+        if username not in admins_map:
+            continue
+        admin = admins_map[username]
+
+        # Prevent admins from modifying their own account
+        if admin.user == request.user:
+            continue
+        role_val = request.POST.get("role@" + username, "")
+
+        if requesting_admin.role == 0:
+            if role_val == "9":
+                admin.is_active = False
+            elif role_val in ("0", "1"):
+                admin.role = int(role_val)
+                admin.is_active = True
+            domain_key = "domain@" + username
+            if domain_key in request.POST:
+                domain_val = request.POST[domain_key]
+                if not domain_val:
+                    # Explicitly clear domain
+                    admin.domain = None
+                elif domain_val in domains_map:
+                    admin.domain = domains_map[domain_val]
+                # Skip unknown domain IDs — don't nullify existing assignment
+        elif requesting_admin.role == 1:
+            # Moderators cannot modify full admins
+            if admin.role == 0:
+                continue
+            if role_val == "9":
+                admin.is_active = False
+            elif role_val == "1":
+                admin.role = int(role_val)
+                admin.is_active = True
+
+        admins_to_update.append(admin)
+
+    if admins_to_update:
+        update_fields = ["role", "is_active", "domain"] if requesting_admin.role == 0 else ["role", "is_active"]
+        OrganizationAdmin.objects.bulk_update(admins_to_update, update_fields)
+    return HttpResponse("success")
 
 
 def get_scoreboard(request):
