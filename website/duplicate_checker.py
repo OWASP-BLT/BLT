@@ -2,11 +2,12 @@
 Duplicate Bug Report Checker
 
 This module provides functionality to detect potential duplicate bug reports
-using simple text searching and similarity matching.
+using a Strategy pattern to support multiple detection algorithms (e.g., SequenceMatcher, Vector Search).
 """
 
 import logging
 import re
+from abc import ABC, abstractmethod
 from difflib import SequenceMatcher
 from urllib.parse import urlparse
 
@@ -68,239 +69,222 @@ STOP_WORDS = {
 }
 
 
-def normalize_text(text):
+class DuplicateDetectionStrategy(ABC):
     """
-    Normalize text for comparison by:
-    - Converting to lowercase
-    - Removing extra whitespace
-    - Removing special characters
-
-    Args:
-        text: Input text string
-
-    Returns:
-        Normalized text string
+    Abstract Base Class for duplicate detection strategies.
+    This allows us to easily swap between simple string matching and advanced AI/Vector search.
     """
-    if not text or not isinstance(text, str):
-        return ""
 
-    try:
-        # Convert to lowercase
-        text = text.lower()
+    @abstractmethod
+    def find_similar(self, url, description, domain=None, threshold=0.6, limit=10):
+        """
+        Find similar bug reports.
 
-        # Remove special characters but keep spaces
-        text = re.sub(r"[^\w\s]", " ", text)
+        Args:
+            url: The URL where the bug was found
+            description: The bug description
+            domain: Optional Domain object
+            threshold: Minimum similarity score (0-1)
+            limit: Maximum results
 
-        # Remove extra whitespace
-        text = " ".join(text.split())
-
-        return text
-    except (TypeError, AttributeError, UnicodeError) as e:
-        logger.warning("Error normalizing text: %s", e)
-        return ""
+        Returns:
+            List of dictionaries containing similar bugs
+        """
+        pass
 
 
-def extract_domain_from_url(url):
+class SequenceMatcherStrategy(DuplicateDetectionStrategy):
     """
-    Extract the domain name from a URL for comparison.
-
-    Args:
-        url: URL string
-
-    Returns:
-        Domain name string
+    Classic implementation using Python's difflib.SequenceMatcher.
+    Good for exact or near-exact text matches but fails on semantic similarity.
     """
-    if not url or not isinstance(url, str):
-        return ""
 
-    try:
-        # Add scheme if missing
-        if not url.startswith(("http://", "https://")):
-            url = f"https://{url}"
+    def normalize_text(self, text):
+        if not text or not isinstance(text, str):
+            return ""
+        try:
+            text = text.lower()
+            text = re.sub(r"[^\w\s]", " ", text)
+            text = " ".join(text.split())
+            return text
+        except (TypeError, AttributeError, UnicodeError) as e:
+            logger.warning("Error normalizing text: %s", e)
+            return ""
 
-        parsed = urlparse(url)
-        # Get the hostname and remove 'www.' if present
-        domain = parsed.hostname or parsed.path
-        if domain:
-            domain = domain.replace("www.", "").lower()
-        return domain or ""
-    except Exception as e:
-        logger.warning("Error extracting domain from URL '%s': %s", url, e)
-        return ""
+    def extract_domain_from_url(self, url):
+        if not url or not isinstance(url, str):
+            return ""
+        try:
+            # Handle protocol-relative URLs (e.g. //example.com)
+            if url.startswith("//"):
+                url = f"https:{url}"
+            # Add scheme if missing entirely (and not just a path)
+            elif not url.startswith(("http://", "https://")) and "." in url:
+                url = f"https://{url}"
 
+            parsed = urlparse(url)
+            domain = parsed.hostname or parsed.path
+            if domain:
+                domain = domain.replace("www.", "").lower()
+            return domain or ""
+        except Exception as e:
+            logger.warning("Error extracting domain from URL '%s': %s", url, e)
+            return ""
 
-def calculate_similarity(text1, text2):
-    """
-    Calculate similarity ratio between two texts using SequenceMatcher.
-
-    Args:
-        text1: First text string
-        text2: Second text string
-
-    Returns:
-        Float between 0 and 1, where 1 is identical
-    """
-    if not text1 or not text2:
-        return 0.0
-
-    try:
-        normalized1 = normalize_text(text1)
-        normalized2 = normalize_text(text2)
-
-        if not normalized1 or not normalized2:
+    def calculate_similarity(self, text1, text2):
+        if not text1 or not text2:
+            return 0.0
+        try:
+            normalized1 = self.normalize_text(text1)
+            normalized2 = self.normalize_text(text2)
+            if not normalized1 or not normalized2:
+                return 0.0
+            return SequenceMatcher(None, normalized1, normalized2).ratio()
+        except Exception as e:
+            logger.warning("Error calculating similarity: %s", e)
             return 0.0
 
-        return SequenceMatcher(None, normalized1, normalized2).ratio()
-    except Exception as e:
-        logger.warning("Error calculating similarity: %s", e)
-        return 0.0
+    def extract_keywords(self, text, min_length=3):
+        if not text:
+            return []
+        normalized = self.normalize_text(text)
+        words = normalized.split()
+        return [word for word in words if len(word) >= min_length and word not in STOP_WORDS]
+
+    def find_similar(self, url, description, domain=None, threshold=0.6, limit=10):
+        if not description:
+            logger.warning("find_similar called with empty description")
+            return []
+
+        similar_bugs = []
+
+        try:
+            # Guard against invalid inputs for threshold/limit
+            try:
+                threshold = max(0.0, min(1.0, float(threshold)))
+                limit = max(1, min(100, int(limit)))
+            except (ValueError, TypeError):
+                # Fallback to defaults to prevent crash
+                threshold = 0.6
+                limit = 10
+                logger.warning("Invalid threshold or limit provided to duplicate checker. Using defaults.")
+
+            target_domain = None
+            if url:
+                target_domain = self.extract_domain_from_url(url)
+
+            query = Q(is_hidden=False)
+            if domain:
+                query &= Q(domain=domain)
+            elif target_domain:
+                query &= (
+                    Q(url__icontains=target_domain)
+                    | Q(domain__url__icontains=target_domain)
+                    | Q(domain__name__icontains=target_domain)
+                )
+
+            potential_duplicates = (
+                Issue.objects.filter(query)
+                .exclude(status__in=["closed", "close"])
+                .select_related("user", "domain")
+                .order_by("-created")[:100]
+            )
+
+            description_keywords = self.extract_keywords(description)
+
+            for issue in potential_duplicates:
+                try:
+                    if not issue.description:
+                        continue
+
+                    desc_similarity = self.calculate_similarity(description, issue.description)
+                    url_similarity = 0.0
+                    if url:
+                        url_similarity = self.calculate_similarity(url, issue.url)
+
+                    if url:
+                        overall_similarity = (desc_similarity * 0.7) + (url_similarity * 0.3)
+                    else:
+                        overall_similarity = desc_similarity
+
+                    issue_keywords = self.extract_keywords(issue.description)
+                    keyword_matches = len(set(description_keywords) & set(issue_keywords))
+
+                    if keyword_matches > 0:
+                        keyword_boost = min(0.1 * keyword_matches, 0.2)
+                        overall_similarity = min(overall_similarity + keyword_boost, 1.0)
+
+                    if overall_similarity >= threshold:
+                        similar_bugs.append(
+                            {
+                                "issue": issue,
+                                "similarity": round(overall_similarity, 2),
+                                "description_similarity": round(desc_similarity, 2),
+                                "url_similarity": round(url_similarity, 2),
+                                "keyword_matches": keyword_matches,
+                            }
+                        )
+                except Exception as e:
+                    logger.warning("Error processing issue %s: %s", issue.id, e)
+                    continue
+
+            similar_bugs.sort(key=lambda x: x["similarity"], reverse=True)
+            return similar_bugs[:limit]
+
+        except Exception as e:
+            logger.error("Error in SequenceMatcherStrategy.find_similar: %s", e, exc_info=True)
+            return []
 
 
-def extract_keywords(text, min_length=3):
+class VectorSearchStrategy(DuplicateDetectionStrategy):
     """
-    Extract meaningful keywords from text for searching.
-    Filters out common words and keeps words longer than min_length.
+    Placeholder for AI-Powered Semantic Search using Vector Embeddings.
+    This will leverage FAISS or a Vector DB in future implementations.
     """
-    if not text:
-        return []
 
-    normalized = normalize_text(text)
-    words = normalized.split()
+    def find_similar(self, url, description, domain=None, threshold=0.6, limit=10):
+        # Prevent silent failure/confusion if accidentally enabled before implementation
+        raise NotImplementedError(
+            "VectorSearchStrategy is not yet implemented. "
+            "Use SequenceMatcherStrategy or contribute to implement this feature."
+        )
 
-    # Filter keywords using module-level stop words
-    keywords = [word for word in words if len(word) >= min_length and word not in STOP_WORDS]
 
-    return keywords
+def get_duplicate_strategy() -> DuplicateDetectionStrategy:
+    """
+    Factory method to get the active strategy.
+    Switches based on DUPLICATE_DETECTION_STRATEGY setting.
+    Defaults to 'sequence_matcher' if not specified.
+    """
+    from django.conf import settings
+
+    strategy_name = getattr(settings, "DUPLICATE_DETECTION_STRATEGY", "sequence_matcher")
+
+    if strategy_name == "vector_search":
+        return VectorSearchStrategy()
+
+    # Default to legacy sequence matcher
+    return SequenceMatcherStrategy()
+
+
+# -----------------------------------------------------------------------------
+# Public API Functions (Facades)
+# These maintain backward compatibility with the rest of the app
+# -----------------------------------------------------------------------------
 
 
 def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, limit=10):
     """
-    Find similar bug reports based on URL and description.
-
-    Args:
-        url: The URL where the bug was found (can be None for description-only search)
-        description: The bug description
-        domain: Optional Domain object to narrow search
-        similarity_threshold: Minimum similarity score (0-1) to consider a match
-        limit: Maximum number of similar bugs to return
-
-    Returns:
-        List of dictionaries containing similar bugs with similarity scores
+    Facade for finding similar bugs using the active strategy.
     """
-    # Input validation - description is required, URL is optional
-    if not description:
-        logger.warning("find_similar_bugs called with empty description")
-        return []
-
-    # Validate and clamp parameters
-    similarity_threshold = max(0.0, min(1.0, float(similarity_threshold)))
-    limit = max(1, min(100, int(limit)))
-
-    similar_bugs = []
-
-    try:
-        # Extract domain from URL if provided
-        target_domain = None
-        if url:
-            target_domain = extract_domain_from_url(url)
-
-        # Build query to find bugs
-        query = Q(is_hidden=False)
-
-        if domain:
-            # If domain object provided, use it
-            query &= Q(domain=domain)
-        elif target_domain:
-            # If URL provided and domain extracted, filter by domain
-            query &= (
-                Q(url__icontains=target_domain)
-                | Q(domain__url__icontains=target_domain)
-                | Q(domain__name__icontains=target_domain)
-            )
-        # If neither domain nor URL, search across all domains (no domain filter)
-
-        # Get potential duplicate issues
-        potential_duplicates = (
-            Issue.objects.filter(query)
-            .exclude(status__in=["closed", "close"])  # Exclude both "closed" and "close" status values
-            .select_related("user", "domain")
-            .order_by("-created")[:100]
-        )
-
-        # Extract keywords from the description for better matching
-        description_keywords = extract_keywords(description)
-
-        # Calculate similarity for each potential duplicate
-        for issue in potential_duplicates:
-            try:
-                # Skip if issue has no description
-                if not issue.description:
-                    continue
-
-                # Calculate description similarity
-                desc_similarity = calculate_similarity(description, issue.description)
-
-                # Calculate URL similarity (if URL provided)
-                url_similarity = 0.0
-                if url:
-                    url_similarity = calculate_similarity(url, issue.url)
-
-                # Weighted average (description is more important)
-                # If no URL provided, use description similarity only
-                if url:
-                    overall_similarity = (desc_similarity * 0.7) + (url_similarity * 0.3)
-                else:
-                    overall_similarity = desc_similarity
-
-                # Check if any keywords match
-                issue_keywords = extract_keywords(issue.description)
-                keyword_matches = len(set(description_keywords) & set(issue_keywords))
-
-                # Boost similarity if there are keyword matches
-                if keyword_matches > 0:
-                    keyword_boost = min(0.1 * keyword_matches, 0.2)
-                    overall_similarity = min(overall_similarity + keyword_boost, 1.0)
-
-                # Only include if above threshold
-                if overall_similarity >= similarity_threshold:
-                    similar_bugs.append(
-                        {
-                            "issue": issue,
-                            "similarity": round(overall_similarity, 2),
-                            "description_similarity": round(desc_similarity, 2),
-                            "url_similarity": round(url_similarity, 2),
-                            "keyword_matches": keyword_matches,
-                        }
-                    )
-            except Exception as e:
-                logger.warning("Error processing issue %s: %s", issue.id, e)
-                continue
-
-        # Sort by similarity score (highest first)
-        similar_bugs.sort(key=lambda x: x["similarity"], reverse=True)
-
-        return similar_bugs[:limit]
-
-    except Exception as e:
-        logger.error("Error in find_similar_bugs: %s", e, exc_info=True)
-        return []
+    strategy = get_duplicate_strategy()
+    return strategy.find_similar(url, description, domain, similarity_threshold, limit)
 
 
 def check_for_duplicates(url, description, domain=None, threshold=0.7):
     """
     Check if a bug report is likely a duplicate.
-
-    Args:
-        url: The URL where the bug was found
-        description: The bug description
-        domain: Optional Domain object
-        threshold: Similarity threshold for considering something a duplicate (default 0.7 for "high" confidence)
-
-    Returns:
-        Dictionary with:
-        - is_duplicate: Boolean indicating if likely duplicate
-        - similar_bugs: List of similar bugs found
-        - confidence: Confidence level (high/medium/low)
+    Uses the active strategy via find_similar_bugs.
     """
     # Use a lower threshold (0.5) for initial search to catch medium confidence matches
     # The threshold parameter is used to determine "high" vs "medium" confidence
@@ -335,13 +319,6 @@ def format_similar_bug(bug_info, truncate_description=200):
     """
     Helper function to format similar bug data consistently.
     Used by both API views and form views.
-
-    Args:
-        bug_info: Dictionary with 'issue' and 'similarity' keys
-        truncate_description: Length to truncate description (0 for no truncation)
-
-    Returns:
-        Dictionary with formatted bug data
     """
     issue = bug_info["issue"]
     description = issue.description

@@ -36,7 +36,7 @@ $(function () {
 
     new Clipboard('.btn');
     $('.copy-btn').on('click', function () {
-        $.notify('Copied!', {style: "custom", className: "success"});
+        $.notify('Copied!', { style: "custom", className: "success" });
     });
 
     $(document).on('submit', '#comments', function (e) {
@@ -95,7 +95,6 @@ $(function () {
         var issue_id = $('#issue_pk').val();
         var comment = $(this).prev().find('textarea').val();
         if (comment == '') return;
-        var csrftoken = $('#comments input[name=csrfmiddlewaretoken]').val();
         $.ajax({
             type: 'POST',
             url: '/issue/' + issue_id + '/comment/edit/',
@@ -103,9 +102,7 @@ $(function () {
                 comment_pk: comment_id,
                 text_comment: comment,
                 issue_pk: issue_id,
-            },
-            beforeSend: function (xhr) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                csrfmiddlewaretoken: $('#comments input[name=csrfmiddlewaretoken]').val(),
             },
             success: function (data) {
                 $('#target_div').html(data);
@@ -126,7 +123,6 @@ $(function () {
         var issue_id = $('#issue_pk').val();
         var comment = $(this).prev().find('textarea').val();
         if (comment == '') return;
-        var csrftoken = $('#comments input[name=csrfmiddlewaretoken]').val();
         $.ajax({
             type: 'POST',
             url: '/issue/' + issue_id + '/comment/reply/',
@@ -135,9 +131,7 @@ $(function () {
                 text_comment: comment,
                 issue_pk: issue_id,
                 parent_id: parent_id,
-            },
-            beforeSend: function (xhr) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                csrfmiddlewaretoken: $('#comments input[name=csrfmiddlewaretoken]').val(),
             },
             success: function (data) {
                 $('#target_div').html(data);
@@ -147,10 +141,11 @@ $(function () {
 
     $('body').on('input keyup', 'textarea', function () {
         var search = $(this).val();
+        var data = { search: search };
         $.ajax({
             type: 'GET',
             url: '/comment/autocomplete/',
-            data: {search: search},
+            data: data,
             dataType: 'json',
             success: function (data) {
                 renderer(data);
@@ -202,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleInput(e) {
         const { value, selectionStart } = e.target;
         const lastHashIndex = value.lastIndexOf('#', selectionStart);
-        
+
         // Clear any existing timer
         if (debounceTimer) {
             clearTimeout(debounceTimer);
@@ -215,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const query = value.slice(lastHashIndex + 1, selectionStart);
-        
+
         // Only search if we have a numeric query
         if (!/^\d+$/.test(query)) {
             hideSuggestionBox();
@@ -224,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentSearch = query;
         currentPage = 1; // Reset pagination when input changes
-        
+
         // Implement a 250ms debounce for API calls
         debounceTimer = setTimeout(() => {
             fetchIssueSuggestions(query, currentPage);
@@ -243,21 +238,21 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'ArrowUp':
                 e.preventDefault();
                 isKeyboardNavigating = true;
-                
+
                 selectedIndex = navigateSelection(
                     e.key === 'ArrowDown' ? 1 : -1,
                     selectedIndex,
                     items.length
                 );
-                
+
                 updateSelectedItem(items, selectedIndex);
-                
+
                 // Ensure selected item is visible in the suggestion box
                 if (selectedIndex >= 0) {
                     const selectedItem = items[selectedIndex];
                     ensureElementIsVisible(selectedItem, suggestionBox);
                 }
-                
+
                 // Load more issues if we're at the bottom and there are more pages
                 if (e.key === 'ArrowDown' && selectedIndex === items.length - 1 && hasMorePages && !isLoadingMore) {
                     loadMoreIssues();
@@ -312,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             z-index: 1000;
             display: none;
         `;
-        
+
         // Hide scrollbar for WebKit browsers
         const style = document.createElement('style');
         style.textContent = `
@@ -342,66 +337,67 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         `;
         document.head.appendChild(style);
-        
+
         document.body.appendChild(box);
         return box;
     }
 
     // Fetch issue suggestions with pagination
     async function fetchIssueSuggestions(query, page = 1, append = false) {
-    if (query !== currentSearch) return;
-    // Check cache first
-    const cacheKey = `${query}-${page}`;
-    if (cache.has(cacheKey)) {
-        const cachedData = cache.get(cacheKey);
-        displaySuggestions(cachedData.issues, append);
-        hasMorePages = cachedData.hasMorePages;
-        return;
+        if (query !== currentSearch) return;
+        // Check cache first
+        const cacheKey = `${query}-${page}`;
+        if (cache.has(cacheKey)) {
+            const cachedData = cache.get(cacheKey);
+            displaySuggestions(cachedData.issues, append);
+            hasMorePages = cachedData.hasMorePages;
+            return;
+        }
+
+        try {
+            if (!append) {
+                displayLoadingIndicator();
+            } else {
+                appendLoadingIndicator();
+            }
+
+            // Get issues from backend API
+            const url = `/api/v1/issues?page=${page}`;
+            const response = await fetch(url);
+
+            if (!response.ok) throw new Error('API request failed');
+
+            const data = await response.json();
+
+            // Check for pagination headers (if provided)
+            const linkHeader = response.headers.get('Link');
+            hasMorePages = linkHeader && linkHeader.includes('rel="next"');
+
+            // Filter issues by number containing the query
+            const filteredIssues = data.results
+                .filter(issue => issue.id.toString().includes(query))
+                .slice(0, 5); // Limit to 5 results per page
+
+            // Cache the results
+            cache.set(cacheKey, {
+                issues: filteredIssues,
+                hasMorePages: hasMorePages
+            });
+
+            if (query === currentSearch) {
+                displaySuggestions(filteredIssues, append);
+            }
+        } catch (error) {
+
+            if (!append) {
+                hideSuggestionBox();
+            } else {
+                removeLoadingIndicator();
+            }
+        } finally {
+            isLoadingMore = false;
+        }
     }
-    
-    try {
-        if (!append) {
-            displayLoadingIndicator();
-        } else {
-            appendLoadingIndicator();
-        }
-        
-        // Get issues from backend API
-        const url = `/api/v1/issues?page=${page}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) throw new Error('API request failed');
-        
-        const data = await response.json(); 
-
-        // Check for pagination headers (if provided)
-        const linkHeader = response.headers.get('Link');
-        hasMorePages = linkHeader && linkHeader.includes('rel="next"');
-
-        // Filter issues by number containing the query
-        const filteredIssues = data.results
-            .filter(issue => issue.id.toString().includes(query))
-            .slice(0, 5); // Limit to 5 results per page
-
-        // Cache the results
-        cache.set(cacheKey, {
-            issues: filteredIssues,
-            hasMorePages: hasMorePages
-        });
-
-        if (query === currentSearch) {
-            displaySuggestions(filteredIssues, append);
-        }
-    } catch (error) {
-        if (!append) {
-            hideSuggestionBox();
-        } else {
-            removeLoadingIndicator();
-        }
-    } finally {
-        isLoadingMore = false;
-    }
-}
 
     // Display loading indicator
     function displayLoadingIndicator() {
@@ -415,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Remove any existing loading indicators or load more buttons
         removeLoadingIndicator();
         removeLoadMoreButton();
-        
+
         const loadingItem = document.createElement('div');
         loadingItem.className = 'loading';
         loadingItem.textContent = 'Loading more...';
@@ -441,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load more issues
     function loadMoreIssues() {
         if (isLoadingMore || !hasMorePages) return;
-        
+
         isLoadingMore = true;
         currentPage++;
         fetchIssueSuggestions(currentSearch, currentPage, true);
@@ -457,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             removeLoadingIndicator();
             removeLoadMoreButton();
         }
-        
+
         if (!issues.length && !append) {
             hideSuggestionBox();
             return;
@@ -480,13 +476,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 cursor: pointer;
                 border-bottom: 1px solid #eee;
             `;
-            
+
             div.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent document click from firing
                 insertIssueReference(issue.id);
                 hideSuggestionBox();
             });
-            
+
             div.addEventListener('mouseover', () => {
                 if (!isKeyboardNavigating) {
                     const items = getSuggestionItems();
@@ -495,13 +491,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedIndex = Array.from(items).indexOf(div);
                 }
             });
-            
+
             div.addEventListener('mouseout', () => {
                 if (!isKeyboardNavigating) {
                     div.classList.remove('selected');
                 }
             });
-            
+
             suggestionBox.appendChild(div);
         });
 
@@ -519,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Position the suggestion box
         positionSuggestionBox();
-        
+
         // Show the suggestion box
         suggestionBox.style.display = 'block';
     }
@@ -528,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function ensureElementIsVisible(element, container) {
         const containerRect = container.getBoundingClientRect();
         const elementRect = element.getBoundingClientRect();
-        
+
         if (elementRect.bottom > containerRect.bottom) {
             container.scrollTop += (elementRect.bottom - containerRect.bottom);
         } else if (elementRect.top < containerRect.top) {
@@ -540,23 +536,23 @@ document.addEventListener('DOMContentLoaded', () => {
     function positionSuggestionBox() {
         const textareaRect = textarea.getBoundingClientRect();
         const { scrollLeft, scrollTop } = document.documentElement;
-        
+
         // Get cursor position
         const cursorPosition = getCursorCoordinates(textarea);
-        
+
         // Position below cursor
         suggestionBox.style.left = `${textareaRect.left + cursorPosition.left + scrollLeft}px`;
         suggestionBox.style.top = `${textareaRect.top + cursorPosition.top + scrollTop + 20}px`;
-        
+
         // Ensure box is within viewport
         const boxRect = suggestionBox.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        
+
         if (boxRect.right > viewportWidth) {
             suggestionBox.style.left = `${viewportWidth - boxRect.width - 10 + scrollLeft}px`;
         }
-        
+
         if (boxRect.bottom > viewportHeight) {
             suggestionBox.style.top = `${textareaRect.top + cursorPosition.top - boxRect.height - 10 + scrollTop}px`;
         }
@@ -566,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getCursorCoordinates(textarea) {
         const cursorPosition = textarea.selectionStart;
         const textBefore = textarea.value.substring(0, cursorPosition);
-        
+
         // Create a mirror element
         const mirror = document.createElement('div');
         mirror.style.cssText = `
@@ -583,29 +579,29 @@ document.addEventListener('DOMContentLoaded', () => {
             font: ${getComputedStyle(textarea).font};
             line-height: ${getComputedStyle(textarea).lineHeight};
         `;
-        
+
         // Replace line breaks with <br> for proper rendering
         mirror.innerHTML = escapeHTML(textBefore).replace(/\n/g, '<br>');
-        
+
         // Append a span to mark the cursor position
         const cursorMark = document.createElement('span');
         cursorMark.textContent = '|';
         mirror.appendChild(cursorMark);
-        
+
         // Add mirror to the document
         document.body.appendChild(mirror);
-        
+
         // Get the position of the cursor marker
         const cursorMarkRect = cursorMark.getBoundingClientRect();
         const mirrorRect = mirror.getBoundingClientRect();
-        
+
         // Calculate position relative to textarea
         const left = cursorMarkRect.left - mirrorRect.left;
         const top = cursorMarkRect.top - mirrorRect.top;
-        
+
         // Clean up
         document.body.removeChild(mirror);
-        
+
         return { left, top };
     }
 
@@ -638,15 +634,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentIndex === -1) {
             return direction > 0 ? 0 : totalItems - 1;
         }
-        
+
         const newIndex = currentIndex + direction;
-        
+
         if (newIndex < 0) {
             return totalItems - 1;
         } else if (newIndex >= totalItems) {
             return 0;
         }
-        
+
         return newIndex;
     }
 
@@ -654,15 +650,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function insertIssueReference(number) {
         const { value, selectionStart } = textarea;
         const lastHashIndex = value.lastIndexOf('#', selectionStart);
-        
+
         if (lastHashIndex === -1) return;
-        
+
         const textBefore = value.substring(0, lastHashIndex);
         const textAfter = value.substring(selectionStart);
         const newText = `${textBefore}#${number}${textAfter}`;
-        
+
         textarea.value = newText;
-        
+
         const newCursorPos = lastHashIndex + number.toString().length + 1;
         textarea.setSelectionRange(newCursorPos, newCursorPos);
         textarea.focus();
@@ -685,29 +681,30 @@ function processIssueReferences() {
     // Process markdown content
     const bugReportElement = document.getElementById('bug_report');
     if (bugReportElement && window.markdownit) {
-        const md = new window.markdownit();
+        const md = new window.markdownit({ html: false, linkify: true, typographer: true });
         const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
-        
+
         let renderedHtml = md.render(markdownContent);
         // First set the rendered HTML (already sanitized by markdownit)
         if (typeof DOMPurify !== 'undefined') {
             bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml);
         } else {
+            // Secure fallback: if DOMPurify is missing, show text content to prevent XSS
             bugReportElement.textContent = markdownContent;
         }
 
-       
+
         // Then find and replace issue references safely using DOM methods
         replaceIssueReferences(bugReportElement);
     }
-    
+
     // Process plain text descriptions
     const issueDescriptionElement = document.querySelector('.issue-description');
-    
-        if (issueDescriptionElement) {
-            // Safely replace issue references using DOM methods
-            replaceIssueReferences(issueDescriptionElement);
-        }
+
+    if (issueDescriptionElement) {
+        // Safely replace issue references using DOM methods
+        replaceIssueReferences(issueDescriptionElement);
+    }
 }
 
 
@@ -715,19 +712,19 @@ function replaceIssueReferences(element) {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     const nodesToReplace = [];
     let currentNode;
-    
+
     // First, collect all text nodes that need replacement
     while (currentNode = walker.nextNode()) {
         if (/#\d+/.test(currentNode.nodeValue)) {
             nodesToReplace.push(currentNode);
         }
     }
-    
+
     // Then, replace each collected node
     nodesToReplace.forEach(textNode => {
         const fragment = document.createDocumentFragment();
         const parts = textNode.nodeValue.split(/(#\d+)/g);
-        
+
         parts.forEach(part => {
             const match = part.match(/^#(\d+)$/);
             if (match) {
@@ -740,7 +737,7 @@ function replaceIssueReferences(element) {
                 fragment.appendChild(document.createTextNode(part));
             }
         });
-        
+
         textNode.parentNode.replaceChild(fragment, textNode);
     });
 }
