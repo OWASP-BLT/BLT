@@ -1933,11 +1933,16 @@ def update_role(request):
     if request.method != "POST":
         return HttpResponse("failed")
 
-    requesting_admins = OrganizationAdmin.objects.filter(user=request.user, is_active=True, role__in=(0, 1))
-    if requesting_admins.count() != 1:
-        # Ambiguous if user admins multiple orgs; original endpoint has no org ID in URL
+    try:
+        requesting_admin = OrganizationAdmin.objects.get(user=request.user, is_active=True)
+    except OrganizationAdmin.DoesNotExist:
         return HttpResponse("failed")
-    requesting_admin = requesting_admins.first()
+    except OrganizationAdmin.MultipleObjectsReturned:
+        logger.error("Multiple active OrganizationAdmin entries found for user %s", request.user.id)
+        return HttpResponse("failed")
+
+    if requesting_admin.role not in (0, 1):
+        return HttpResponse("failed")
 
     # Collect usernames from POST keys in one pass (deduplicate to avoid bulk_update ValueError)
     usernames = list(dict.fromkeys(v for k, v in request.POST.items() if k.startswith("user@")))
