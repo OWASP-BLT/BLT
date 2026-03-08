@@ -1365,6 +1365,8 @@ class CreateHunt(TemplateView):
             domain_admin = OrganizationAdmin.objects.get(user=request.user)
             domain_val = request.POST.get("domain", "")
             domain_pk = domain_val.split("-")[0].replace(" ", "") if domain_val else ""
+            if not domain_pk:
+                return HttpResponseBadRequest("Domain is required")
             if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == domain_pk)) or domain_admin.role == 0:
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
                 try:
@@ -1373,34 +1375,33 @@ class CreateHunt(TemplateView):
                     prize_second_runner = Decimal(request.POST.get("prize_second_runner", "0"))
                     total_amount = prize_winner + prize_runner + prize_second_runner
                 except (InvalidOperation, TypeError):
-                    return HttpResponse("Invalid prize amounts")
+                    return HttpResponseBadRequest("Invalid prize amounts")
                 if total_amount > wallet.current_balance:
-                    return HttpResponse("Insufficient balance")
+                    return HttpResponseBadRequest("Insufficient balance")
                 hunt = Hunt()
                 try:
                     hunt.domain = Domain.objects.get(pk=domain_pk)
                 except (Domain.DoesNotExist, ValueError):
-                    return HttpResponse("Invalid domain")
+                    return HttpResponseBadRequest("Invalid domain")
                 data = {}
                 data["content"] = request.POST.get("content", "")
                 data["start_date"] = request.POST.get("start_date", "")
                 data["end_date"] = request.POST.get("end_date", "")
                 form = HuntForm(data)
                 if not form.is_valid():
-                    return HttpResponse("Invalid form data")
+                    return HttpResponseBadRequest("Invalid form data")
                 if not domain_admin.is_active:
-                    return HttpResponse("Inactive domain admin")
+                    return HttpResponseBadRequest("Inactive domain admin")
                 if domain_admin.role == 1:
                     if hunt.domain != domain_admin.domain:
-                        return HttpResponse("Domain mismatch")
+                        return HttpResponseBadRequest("Domain mismatch")
                 tzsign = 1
-                offset = request.POST.get("tzoffset", "0")
                 try:
-                    offset_int = int(offset)
+                    tz_raw = int(request.POST.get("tzoffset", "0"))
                 except (ValueError, TypeError):
-                    offset_int = 0
-                if offset_int < 0:
-                    offset_int = offset_int * (-1)
+                    tz_raw = 0
+                offset_int = abs(tz_raw)
+                if tz_raw < 0:
                     tzsign = -1
                 start_date = form.cleaned_data["start_date"]
                 end_date = form.cleaned_data["end_date"]
@@ -1415,7 +1416,9 @@ class CreateHunt(TemplateView):
                 hunt.prize_runner = prize_runner
                 hunt.prize_second_runner = prize_second_runner
                 hunt.end_on = end_date
-                hunt.name = request.POST.get("name", "")
+                hunt.name = request.POST.get("name", "").strip()
+                if not hunt.name:
+                    return HttpResponseBadRequest("Hunt name is required")
                 hunt.description = form.cleaned_data["content"]
                 wallet.withdraw(total_amount)
                 wallet.save()
@@ -1666,6 +1669,11 @@ def trademark_detailview(request, slug):
     try:
         ta_data = trademark_available_response.json()
     except ValueError:
+        logger.error(
+            "Failed to parse JSON from USPTO trademark-available API for slug=%s (status=%s)",
+            slug,
+            trademark_available_response.status_code,
+        )
         error_message = "Failed to parse response from USPTO API."
         return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
 
@@ -1679,6 +1687,11 @@ def trademark_detailview(request, slug):
         try:
             ts_data = trademark_search_response.json()
         except ValueError:
+            logger.error(
+                "Failed to parse JSON from USPTO trademark-search API for slug=%s (status=%s)",
+                slug,
+                trademark_search_response.status_code,
+            )
             ts_data = {}
         context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
     else:
@@ -1745,19 +1758,21 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         data["end_date"] = request.POST.get("end_date", "")
         form = HuntForm(data)
         if not form.is_valid():
-            return HttpResponse("Invalid form data")
+            return HttpResponseBadRequest("Invalid form data")
         hunt = get_object_or_404(Hunt, pk=pk)
         domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if not domain_admin.is_active:
-            return HttpResponse("Inactive domain admin")
+            return HttpResponseBadRequest("Inactive domain admin")
         if domain_admin.role == 1:
             if hunt.domain != domain_admin.domain:
-                return HttpResponse("Domain mismatch")
+                return HttpResponseBadRequest("Domain mismatch")
+        domain_pk = request.POST.get("domain", "").split("-")[0].replace(" ", "")
+        if not domain_pk:
+            return HttpResponseBadRequest("Domain is required")
         try:
-            domain_pk = request.POST.get("domain", "").split("-")[0].replace(" ", "")
             hunt.domain = Domain.objects.get(pk=domain_pk)
         except (ValueError, Domain.DoesNotExist):
-            return HttpResponse("Invalid domain")
+            return HttpResponseBadRequest("Invalid domain")
         tzsign = 1
         try:
             tz_raw = int(request.POST.get("tzoffset", "0"))
@@ -1776,7 +1791,9 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
             end_date = end_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
         hunt.starts_on = start_date
         hunt.end_on = end_date
-        hunt.name = request.POST.get("name", "")
+        hunt.name = request.POST.get("name", "").strip()
+        if not hunt.name:
+            return HttpResponseBadRequest("Hunt name is required")
         hunt.description = form.cleaned_data["content"]
         hunt.is_published = request.POST.get("publish", False) == "on"
         hunt.save()
