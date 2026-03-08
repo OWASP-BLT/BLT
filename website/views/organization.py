@@ -483,7 +483,9 @@ class Joinorganization(TemplateView):
                 sub = Subscription.objects.get(name=product)
             except Subscription.DoesNotExist:
                 return JsonResponse({"error": "Invalid subscription plan"}, status=400)
-            paymentType = request.POST.get("paymentType", "")
+            paymentType = request.POST.get("paymentType", "").strip()
+            if paymentType not in {"wallet", "card"}:
+                return JsonResponse({"error": "Invalid payment type"}, status=400)
             safe_url = rebuild_safe_url(url)
             if not safe_url:
                 return JsonResponse({"error": "Invalid or unsafe URL"}, status=400)
@@ -1373,14 +1375,23 @@ class CreateHunt(TemplateView):
                     prize_winner = Decimal(request.POST.get("prize_winner", "0"))
                     prize_runner = Decimal(request.POST.get("prize_runner", "0"))
                     prize_second_runner = Decimal(request.POST.get("prize_second_runner", "0"))
-                    total_amount = prize_winner + prize_runner + prize_second_runner
+                    prizes = (prize_winner, prize_runner, prize_second_runner)
                 except (InvalidOperation, TypeError):
                     return HttpResponseBadRequest("Invalid prize amounts")
+                if any(not prize.is_finite() or prize < 0 for prize in prizes):
+                    return HttpResponseBadRequest("Prize amounts must be finite, non-negative values")
+                total_amount = sum(prizes, Decimal("0"))
                 if total_amount > wallet.current_balance:
                     return HttpResponseBadRequest("Insufficient balance")
                 hunt = Hunt()
                 try:
-                    hunt.domain = Domain.objects.get(pk=domain_pk)
+                    if domain_admin.role == 1:
+                        hunt.domain = Domain.objects.filter(pk=domain_pk, pk__in=[domain_admin.domain_id]).get()
+                    else:
+                        hunt.domain = Domain.objects.filter(
+                            pk=domain_pk,
+                            organization=domain_admin.organization,
+                        ).get()
                 except (Domain.DoesNotExist, ValueError):
                     return HttpResponseBadRequest("Invalid domain")
                 data = {}
@@ -1684,6 +1695,9 @@ def trademark_detailview(request, slug):
     if ta_data[0].get("available") == "no":
         trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
         trademark_search_response = requests.get(trademark_search_url, headers=headers)
+        if trademark_search_response.status_code == 429:
+            error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
+            return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
         try:
             ts_data = trademark_search_response.json()
         except ValueError:
@@ -1692,7 +1706,8 @@ def trademark_detailview(request, slug):
                 slug,
                 trademark_search_response.status_code,
             )
-            ts_data = {}
+            error_message = "Failed to parse response from USPTO API."
+            return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
         context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
     else:
         context = {"available": ta_data[0].get("available"), "query": slug}
@@ -1770,7 +1785,13 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         if not domain_pk:
             return HttpResponseBadRequest("Domain is required")
         try:
-            hunt.domain = Domain.objects.get(pk=domain_pk)
+            if domain_admin.role == 1:
+                hunt.domain = Domain.objects.filter(pk=domain_pk, pk__in=[domain_admin.domain_id]).get()
+            else:
+                hunt.domain = Domain.objects.filter(
+                    pk=domain_pk,
+                    organization=domain_admin.organization,
+                ).get()
         except (ValueError, Domain.DoesNotExist):
             return HttpResponseBadRequest("Invalid domain")
         tzsign = 1
