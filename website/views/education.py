@@ -187,6 +187,11 @@ def mark_lecture_complete(request):
             lecture = get_object_or_404(Lecture, id=lecture_id)
             userprofile = request.user.userprofile
 
+            if not lecture.section:
+                return JsonResponse(
+                    {"success": False, "error": "Standalone lecture has no course enrollment."}, status=400
+                )
+
             course = lecture.section.course
             enrollment = Enrollment.objects.filter(student=userprofile, course=course).first()
             if not enrollment:
@@ -401,6 +406,13 @@ def delete_lecture(request, lecture_id):
     """Delete a lecture"""
     lecture = get_object_or_404(Lecture, id=lecture_id)
     section = lecture.section
+    title = lecture.title
+
+    if section is None:
+        lecture.delete()
+        messages.success(request, f"Lecture '{title}' was deleted successfully!")
+        return redirect("instructor_dashboard")
+
     course_id = section.course.id
 
     with transaction.atomic():
@@ -412,7 +424,7 @@ def delete_lecture(request, lecture_id):
         if remaining:
             Lecture.objects.bulk_update(remaining, ["order"])
 
-    messages.success(request, f"Lecture '{lecture.title}' was deleted successfully!")
+    messages.success(request, f"Lecture '{title}' was deleted successfully!")
 
     return redirect("course_content_management", course_id=course_id)
 
@@ -559,7 +571,10 @@ def create_or_update_course(request):
                 if not is_valid:
                     return JsonResponse({"success": False, "message": error_message}, status=400)
             user = request.user
-            user_profile = UserProfile.objects.get(user=user)
+            try:
+                user_profile = UserProfile.objects.get(user=user)
+            except UserProfile.DoesNotExist:
+                return JsonResponse({"success": False, "message": "User profile not found"}, status=404)
 
             course_id = request.POST.get("id")
             if course_id:
