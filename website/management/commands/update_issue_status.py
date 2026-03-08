@@ -19,12 +19,12 @@ class Command(LoggedBaseCommand):
                     new_status = data.get("state", "open")
                     if new_status != issue.status:
                         issue.status = new_status
+                        issue.modified = timezone.now()
                         updated_issues.append(issue)
             except Exception as e:
                 self.stderr.write(f"Error updating issue {issue.id}: {str(e)}")
 
         if updated_issues:
-            Issue.objects.bulk_update(updated_issues, ["status"])
-            Issue.objects.filter(id__in=[i.id for i in updated_issues]).update(modified=timezone.now())
+            Issue.objects.bulk_update(updated_issues, ["status", "modified"])
 
         self.stdout.write(f"Issue status update completed: {len(updated_issues)} issues updated")
