@@ -186,7 +186,11 @@ def mark_lecture_complete(request):
         return JsonResponse({"success": False, "error": "Lecture ID is required"}, status=400)
 
     lecture = get_object_or_404(Lecture, id=lecture_id)
-    userprofile = get_object_or_404(UserProfile, user=request.user)
+
+    try:
+        userprofile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        return JsonResponse({"success": False, "error": "User profile not found"}, status=404)
 
     if not lecture.section:
         return JsonResponse({"success": False, "error": "Standalone lecture has no course enrollment."}, status=400)
@@ -523,7 +527,10 @@ def get_course_content(request, course_id):
 @login_required(login_url="/accounts/login")
 @require_POST
 def create_or_update_course(request):
-    user_profile = get_object_or_404(UserProfile, user=request.user)
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        return JsonResponse({"success": False, "message": "User profile not found"}, status=404)
     try:
         title = request.POST.get("title")
         description = request.POST.get("description")
