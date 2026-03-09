@@ -29,13 +29,13 @@ class Command(LoggedBaseCommand):
                         new_status = project.status
                     if new_status != project.status:
                         project.status = new_status
-                        project.modified = timezone.now()
                         updated_projects.append(project)
             except Exception as e:
                 msg = f"Error updating project {project.id}: {str(e)}"
                 self.stderr.write(msg)
 
         if updated_projects:
-            Project.objects.bulk_update(updated_projects, ["status", "modified"])
+            Project.objects.bulk_update(updated_projects, ["status"])
+            Project.objects.filter(id__in=[p.id for p in updated_projects]).update(modified=timezone.now())
 
         self.stdout.write(f"Project status update completed: {len(updated_projects)} projects updated")
