@@ -1758,12 +1758,12 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         if not domain_admin.is_active:
             return HttpResponseRedirect("/")
         if domain_admin.role == 1:
-            if hunt.domain != domain_admin.domain:
+            if not domain_admin.domain or hunt.domain != domain_admin.domain:
                 return HttpResponseRedirect("/")
         domain = []
         if domain_admin.role == 0:
             domain = Domain.objects.filter(organization=domain_admin.organization)
-        else:
+        elif domain_admin.domain:
             domain = Domain.objects.filter(pk=domain_admin.domain.pk)
         initial = {"content": hunt.description}
         context = {"hunt": hunt, "domains": domain, "hunt_form": HuntForm(initial)}
@@ -1781,7 +1781,7 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         if not domain_admin.is_active:
             return HttpResponseBadRequest("Inactive domain admin")
         if domain_admin.role == 1:
-            if hunt.domain != domain_admin.domain:
+            if not domain_admin.domain or hunt.domain != domain_admin.domain:
                 return HttpResponseBadRequest("Domain mismatch")
         domain_pk = request.POST.get("domain", "").split("-")[0].replace(" ", "")
         if not domain_pk:
