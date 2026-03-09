@@ -920,19 +920,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     http_method_names = ("get", "head")
 
     def _serialize_projects(self, projects):
-        """Return consistent contributor-enriched project data."""
+        """Return serialized project data."""
         output = []
         for project in projects:
-            contributors_qs = getattr(project, "contributors", None)
-
-            if contributors_qs:
-                contributors_data = ContributorSerializer(contributors_qs.all(), many=True).data
-                contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
-            else:
-                contributors_data = []
-
             project_info = ProjectSerializer(project, context={"request": self.request}).data
-            project_info["contributors"] = contributors_data
             output.append(project_info)
 
         return output
