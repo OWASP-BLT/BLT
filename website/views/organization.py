@@ -1369,7 +1369,9 @@ class CreateHunt(TemplateView):
             domain_pk = domain_val.split("-")[0].replace(" ", "") if domain_val else ""
             if not domain_pk:
                 return HttpResponseBadRequest("Domain is required")
-            if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == domain_pk)) or domain_admin.role == 0:
+            if (
+                domain_admin.role == 1 and domain_admin.domain and (str(domain_admin.domain.pk) == domain_pk)
+            ) or domain_admin.role == 0:
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
                 try:
                     prize_winner = Decimal(request.POST.get("prize_winner", "0"))
