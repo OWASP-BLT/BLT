@@ -1924,7 +1924,7 @@ def add_or_update_organization(request):
 
             organization.name = request.POST["name"]
             organization.email = request.POST["email"]
-            organization.url = rebuild_safe_url(request.POST["url"])
+            organization.url = rebuild_safe_url(request.POST.get("url", "").strip())
             organization.admin = new_admin
             organization.github = request.POST["github"]
             organization.is_active = request.POST.get("verify") == "on"
