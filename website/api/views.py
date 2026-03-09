@@ -915,9 +915,15 @@ class ContributorViewSet(viewsets.ModelViewSet):
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     http_method_names = ("get", "head")
+
+    def get_queryset(self):
+        """Base queryset with star/fork annotations so all actions (list, retrieve, search) work."""
+        return Project.objects.annotate(
+            total_stars=Coalesce(Subquery(_PROJECT_STARS_SQ), Value(0)),
+            total_forks=Coalesce(Subquery(_PROJECT_FORKS_SQ), Value(0)),
+        )
 
     def _serialize_projects(self, projects):
         """Return serialized project data."""
@@ -957,12 +963,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             if tag_list:
                 tag_q = reduce(operator.or_, [Q(tags__name__iexact=t) for t in tag_list])
                 projects = projects.filter(tag_q).distinct()
-
-        # Use Subquery to avoid Sum inflation from M2M tag JOINs
-        projects = projects.annotate(
-            total_stars=Coalesce(Subquery(_PROJECT_STARS_SQ), Value(0)),
-            total_forks=Coalesce(Subquery(_PROJECT_FORKS_SQ), Value(0)),
-        )
 
         # Stars filtering
         stars = request.query_params.get("stars")
@@ -1015,15 +1015,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """Search projects by name, description, or tags."""
         query = request.query_params.get("q", "")
 
-        # Use Subquery for stars/forks to avoid inflation from tags JOIN
         projects = (
             self.get_queryset()
             .filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query))
             .distinct()
-            .annotate(
-                total_stars=Coalesce(Subquery(_PROJECT_STARS_SQ), Value(0)),
-                total_forks=Coalesce(Subquery(_PROJECT_FORKS_SQ), Value(0)),
-            )
         )
 
         # Apply pagination
