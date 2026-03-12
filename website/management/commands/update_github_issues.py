@@ -1,6 +1,7 @@
+import logging
 from collections import defaultdict
 from datetime import datetime
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlsplit
 
 import requests
 from django.conf import settings
@@ -10,6 +11,18 @@ from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
 from website.models import Contributor, GitHubIssue, GitHubReview, Repo, UserProfile
+
+logger = logging.getLogger(__name__)
+
+
+def _normalize_github_username(github_url: str) -> str | None:
+    """Extract GitHub username robustly using urlsplit — handles query strings and fragments."""
+    raw = (github_url or "").strip()
+    if not raw:
+        return None
+    path = urlsplit(raw).path.rstrip("/")
+    username = path.split("/")[-1] if path else None
+    return username or None
 
 
 class Command(LoggedBaseCommand):
@@ -25,7 +38,6 @@ class Command(LoggedBaseCommand):
     def handle(self, *_, **options):
         fetch_all_blt = options.get("all_blt_repos", False)
 
-        # Fetch PRs from the last 6 months
         from dateutil.relativedelta import relativedelta
 
         since_date = timezone.now() - relativedelta(months=6)
@@ -36,7 +48,6 @@ class Command(LoggedBaseCommand):
 
         self.stdout.write(f"Found {user_count} users with GitHub profiles")
 
-        # If no users with GitHub URLs, just fetch BLT repos directly
         if user_count == 0:
             self.stdout.write(self.style.WARNING("No users with GitHub URLs found."))
             self.stdout.write("Fetching PRs from BLT repositories instead...")
@@ -58,30 +69,42 @@ class Command(LoggedBaseCommand):
         for index, user in enumerate(users_with_github, 1):
             self.stdout.write(f"[{index}/{user_count}] Processing user: {user.github_url}")
 
-            github_username = user.github_url.split("/")[-1]
+            github_username = _normalize_github_username(user.github_url)
+            if not github_username:
+                self.stdout.write(
+                    self.style.WARNING(f"Could not parse GitHub username from URL: {user.github_url!r}. Skipping.")
+                )
+                continue
+
             query = f"author:{github_username} type:pr"
             encoded_query = quote_plus(query)
             api_url = f"https://api.github.com/search/issues?q={encoded_query}&per_page=100&page=1"
 
-            headers = {"Accept": "application/vnd.github.v3+json", "Authorization": f"token {settings.GITHUB_TOKEN}"}
+            headers = {
+                "Accept": "application/vnd.github.v3+json",
+                "Authorization": f"token {settings.GITHUB_TOKEN}",
+            }
 
             all_prs = []
 
-            # Handle pagination for pull requests
             while api_url:
                 try:
                     response = requests.get(api_url, headers=headers, timeout=(3, 20))
                     response.raise_for_status()
                     prs_data = response.json()
-
                     all_prs.extend(prs_data.get("items", []))
-
-                    # Check if there's a "next" page in headers
                     api_url = response.links.get("next", {}).get("url")
 
                 except requests.exceptions.RequestException as e:
+                    logger.warning(
+                        "Failed to fetch GitHub PR search page. username=%r url=%r error=%s",
+                        github_username,
+                        api_url,
+                        e,
+                        exc_info=True,
+                    )
                     self.stdout.write(self.style.ERROR(f"Error fetching data for {github_username}: {e!s}"))
-                    break  # Stop fetching if an error occurs
+                    break
 
             pr_count = len(all_prs)
             self.stdout.write(f"Found {pr_count} pull requests")
@@ -91,66 +114,67 @@ class Command(LoggedBaseCommand):
             with transaction.atomic():
                 for pr in all_prs:
                     repo_full_name = pr["repository_url"].split("repos/")[-1]
-                    repo_name = repo_full_name.split("/")[-1].lower()
-                    # Construct the full GitHub repo URL to uniquely identify the repository
                     github_repo_url = f"https://github.com/{repo_full_name}"
 
                     try:
-                        merged = True if pr["pull_request"].get("merged_at") else False
+                        merged = bool(pr["pull_request"].get("merged_at"))
 
-                        # Skip PRs that aren't merged
                         if not merged:
                             continue
 
-                        # Parse merged_at date and skip if before since_date
                         merged_at = timezone.make_aware(
                             datetime.strptime(pr["pull_request"]["merged_at"], "%Y-%m-%dT%H:%M:%SZ")
                         )
                         if merged_at < since_date:
                             skipped_old_prs += 1
                             continue
-                        # Use repo_url (which is unique) instead of name (which can have duplicates)
-                        repo = Repo.objects.get(repo_url=github_repo_url)
 
-                        # Get or create contributor record
+                        repo = Repo.objects.filter(repo_url=github_repo_url).first()
+                        if repo is None:
+                            self.stdout.write(
+                                self.style.WARNING(
+                                    f"Repo not found in database: {github_repo_url}. Not storing this issue in database."
+                                )
+                            )
+                            continue
+
+                        # ── Contributor: get-or-create, never touch contributions here ──
+                        contributor = None
                         try:
-                            # Get user details from GitHub API
                             user_api_url = pr["user"]["url"]
                             user_response = requests.get(user_api_url, headers=headers, timeout=(3, 10))
                             user_response.raise_for_status()
                             user_data = user_response.json()
 
-                            # Find or create contributor
-                            contributor, created = Contributor.objects.get_or_create(
+                            contributor, contributor_created = Contributor.objects.get_or_create(
                                 github_id=user_data["id"],
                                 defaults={
                                     "name": user_data["login"],
                                     "github_url": user_data["html_url"],
                                     "avatar_url": user_data["avatar_url"],
                                     "contributor_type": user_data["type"],
-                                    "contributions": 1,
+                                    "contributions": 0,
                                 },
                             )
 
-                            if not created:
-                                # Update existing contributor data
-                                contributor.name = user_data["login"]
-                                contributor.github_url = user_data["html_url"]
-                                contributor.avatar_url = user_data["avatar_url"]
-                                contributor.contributions += 1
-                                contributor.save()
+                            if not contributor_created:
+                                Contributor.objects.filter(pk=contributor.pk).update(
+                                    name=user_data["login"],
+                                    github_url=user_data["html_url"],
+                                    avatar_url=user_data["avatar_url"],
+                                )
+                                contributor.refresh_from_db()
 
-                            # Add contributor to repo
                             repo.contributor.add(contributor)
 
-                        except CommandError as e:
+                        except (requests.exceptions.RequestException, CommandError) as e:
                             self.stdout.write(self.style.WARNING(f"Error creating contributor: {e!s}"))
                             contributor = None
 
-                        # Create or update the pull request
-                        github_issue, created = GitHubIssue.objects.update_or_create(
+                        # ── GitHubIssue: update-or-create ──
+                        github_issue, issue_created = GitHubIssue.objects.update_or_create(
                             issue_id=pr["number"],
-                            repo=repo,  # Add repo to the lookup to ensure uniqueness
+                            repo=repo,
                             defaults={
                                 "title": pr["title"],
                                 "body": pr.get("body", ""),
@@ -175,21 +199,27 @@ class Command(LoggedBaseCommand):
                                 "is_merged": merged,
                                 "url": pr["html_url"],
                                 "user_profile": user,
-                                "contributor": contributor,  # Link to contributor
+                                "contributor": contributor,
                             },
                         )
+
+                        # ── Only increment contributions for brand-new PRs ──
+                        if issue_created and contributor is not None:
+                            Contributor.objects.filter(pk=contributor.pk).update(
+                                contributions=contributor.contributions + 1,
+                            )
+                            contributor.refresh_from_db()
 
                         if merged:
                             merged_pr_counts[user.id] += 1
 
-                        # Fetch reviews for this pull request
+                        # ── Reviews ──
                         reviews_url = pr["pull_request"]["url"] + "/reviews"
                         try:
                             reviews_response = requests.get(reviews_url, headers=headers, timeout=10)
-                            reviews_response.raise_for_status()  # Check for HTTP errors
+                            reviews_response.raise_for_status()
                             reviews_data = reviews_response.json()
 
-                            # Store ALL reviews (not just from BLT users)
                             if isinstance(reviews_data, list):
                                 for review in reviews_data:
                                     if not review.get("user"):
@@ -201,15 +231,11 @@ class Command(LoggedBaseCommand):
                                     reviewer_avatar_url = review["user"].get("avatar_url")
                                     reviewer_type = review["user"].get("type", "User")
 
-                                    # Skip bot accounts using GitHub API type first
                                     if reviewer_type == "Bot":
                                         continue
-
-                                    # Fallback check for bot naming patterns
                                     if reviewer_login and reviewer_login.endswith("[bot]"):
                                         continue
 
-                                    # Get or create reviewer contributor
                                     reviewer_contributor = None
                                     if reviewer_github_id:
                                         reviewer_contributor, _ = Contributor.objects.get_or_create(
@@ -223,14 +249,12 @@ class Command(LoggedBaseCommand):
                                             },
                                         )
 
-                                    # Check if reviewer has a UserProfile
                                     reviewer_profile = None
                                     if reviewer_github_url:
                                         reviewer_profile = UserProfile.objects.filter(
                                             github_url=reviewer_github_url
                                         ).first()
 
-                                    # Create or update the review
                                     GitHubReview.objects.update_or_create(
                                         review_id=review["id"],
                                         defaults={
@@ -249,12 +273,11 @@ class Command(LoggedBaseCommand):
                             self.stdout.write(self.style.ERROR(f"Error fetching reviews for PR {pr['number']}: {e!s}"))
                             continue
 
-                    except Repo.DoesNotExist:
+                    except Exception as e:
                         self.stdout.write(
-                            self.style.WARNING(
-                                f"Repo not found in database: {github_repo_url}. Not storing this issue in database."
-                            )
+                            self.style.ERROR(f"Unexpected error processing PR {pr.get('number', '?')}: {e!s}")
                         )
+                        logger.exception("Unexpected error processing PR %r", pr.get("number"))
                         continue
 
             if skipped_old_prs > 0:
@@ -278,7 +301,6 @@ class Command(LoggedBaseCommand):
         self.stdout.write("-" * 50)
         self.stdout.write(self.style.SUCCESS("GitHub data fetch completed!"))
 
-        # Optionally fetch all PRs from BLT repos (not just from BLT users)
         if fetch_all_blt:
             from django.core.management import call_command
 
