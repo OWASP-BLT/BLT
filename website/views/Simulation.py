@@ -11,6 +11,7 @@ from website.models import Labs, TaskContent, Tasks, UserLabProgress, UserTaskPr
 
 @login_required
 def dashboard(request):
+    """Render the labs dashboard with aggregated progress stats."""
     labs = Labs.objects.filter(is_active=True).order_by("order")
 
     # Batch-fetch all user progress for active labs in one query (avoids N+1)
