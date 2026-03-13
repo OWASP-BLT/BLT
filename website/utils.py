@@ -1047,7 +1047,8 @@ def check_security_txt(domain_url):
 
 
 def is_valid_github_token(github_token):
-    return bool(github_token and github_token != "abc123")
+    # Treat empty, "abc123", and "blank" as invalid placeholders
+    return bool(github_token and github_token not in ("abc123", "blank"))
 
 
 def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
@@ -1137,7 +1138,8 @@ def get_default_bacon_score(model_name, is_security=False, severity="LOW"):
     if is_security or norm_severity != "LOW":
         weight = SECURITY_SEVERITY_WEIGHTS.get(norm_severity, 1.0)
         score = max(score + 3, int(score * weight))
-    return score
+    # Clamp score between 1 and 50
+    return max(1, min(score, 50))
 
 
 def analyze_contribution(instance, action_type):
@@ -1178,11 +1180,13 @@ def analyze_contribution(instance, action_type):
             ai_severity = data.get("severity", detected_severity)
             ai_score = min(int(data.get("score", 0)), 50)
 
-            return max(ai_score, get_default_bacon_score(model_name, is_security_flag, ai_severity))
+            combined_score = max(ai_score, get_default_bacon_score(model_name, is_security_flag, ai_severity))
+            # Clamp combined_score between 1 and 50
+            return max(1, min(combined_score, 50))
         except Exception as e:
             logging.error(f"AI Audit for {model_name} failed: {e}")
 
-    return get_default_bacon_score(model_name, is_security_flag, detected_severity)
+    return max(1, min(get_default_bacon_score(model_name, is_security_flag, detected_severity), 50))
 
 
 # Image Processing Utilities for Privacy Protection

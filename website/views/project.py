@@ -53,15 +53,10 @@ from website.models import (
     Tag,
     UserProfile,
 )
-from website.utils import admin_required
+from website.utils import admin_required, is_valid_github_token
 
 logger = logging.getLogger(__name__)
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
-
-
-def is_valid_github_token(token):
-    """Check if a GitHub token is valid and not a placeholder."""
-    return bool(token) and token not in {"blank", "abc123"}
 
 
 # Helper function to parse date
