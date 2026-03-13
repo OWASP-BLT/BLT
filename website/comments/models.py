@@ -19,8 +19,10 @@ class Comment(models.Model):
     text = models.TextField()
     created_date = models.DateTimeField(default=timezone.now)
 
-    def __str__(self):
-        return self.text
+    def __str__(self) -> str:
+        # Avoid dumping arbitrarily large comment bodies in admin/logs.
+        return (self.text or "")[:80]
 
     def children(self):
-        return Comment.objects.filter(parent=self)
+        # Consistent ordering for threaded rendering.
+        return Comment.objects.filter(parent=self).order_by("created_date")
