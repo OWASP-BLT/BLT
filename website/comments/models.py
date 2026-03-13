@@ -20,9 +20,11 @@ class Comment(models.Model):
     created_date = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
+        """Return a short preview of the comment body for admin/log views."""
         # Avoid dumping arbitrarily large comment bodies in admin/logs.
         return (self.text or "")[:80]
 
     def children(self):
+        """Return child comments ordered by creation time for threaded rendering."""
         # Consistent ordering for threaded rendering.
         return Comment.objects.filter(parent=self).order_by("created_date")

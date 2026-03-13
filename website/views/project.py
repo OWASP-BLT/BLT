@@ -13,7 +13,6 @@ from pathlib import Path
 from urllib.parse import quote_plus, urlparse
 
 import requests
-import sentry_sdk
 from dateutil.parser import parse as parse_datetime
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -84,7 +83,7 @@ def blt_tomato(request):
     try:
         with json_file_path.open("r") as json_file:
             data = json.load(json_file)
-    except Exception:
+    except (FileNotFoundError, json.JSONDecodeError, IOError):
         data = []
 
     processed_projects = []
@@ -889,7 +888,7 @@ class RepoDetailView(DetailView):
 
             return []
 
-        except Exception:
+        except (requests.RequestException, ValueError):
             return []
 
     def get_github_top_contributors(self, repo_url):
@@ -1238,7 +1237,7 @@ class RepoDetailView(DetailView):
                     start_date = datetime.strptime(repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 else:
                     start_date = end_date - relativedelta(years=1)  # Fallback to 1 year
-            except Exception:
+            except (requests.RequestException, ValueError, KeyError):
                 start_date = end_date - relativedelta(years=1)  # Fallback to 1 year
 
         # Query contributor stats
@@ -1549,7 +1548,7 @@ class RepoDetailView(DetailView):
                         topics_resp = requests.get(topics_url, headers=topics_headers, timeout=10)
                         if topics_resp.status_code == 200:
                             topics = topics_resp.json().get("names", [])
-                    except Exception:
+                    except (requests.RequestException, ValueError):
                         topics = None
 
                     # Fetch latest release info
@@ -1566,7 +1565,7 @@ class RepoDetailView(DetailView):
                             # No release or not accessible; keep blank
                             release_name = None
                             release_date_str = None
-                    except Exception:
+                    except (requests.RequestException, ValueError):
                         release_name = None
                         release_date_str = None
 
@@ -2031,7 +2030,7 @@ class RepoDetailView(DetailView):
                                 repo.ai_summary = ai_data.get("summary", "No summary available.")
                             else:
                                 repo.ai_summary = "Failed to generate summary from AI service."
-                        except Exception:
+                        except (requests.RequestException, ValueError):
                             repo.ai_summary = "Error connecting to AI service."
                     else:
                         # If no AI service is configured, create a simple summary
@@ -2372,7 +2371,7 @@ def gsoc_pr_report(request):
 
         return render(request, "projects/gsoc_pr_report.html", context)
 
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         logger.exception("Error generating GSOC PR report")
         messages.error(request, "An error occurred while generating the report. Please try again later.")
         return redirect("project_list")
