@@ -90,7 +90,7 @@ INSTALLED_APPS = (
     "django_gravatar",
     "email_obfuscator",
     "import_export",
-    "comments",
+    "website.comments",
     "annoying",
     "rest_framework",
     "django_filters",
@@ -143,7 +143,7 @@ if DEBUG and not TESTING:
     # Configure INTERNAL_IPS for Docker environment
     INTERNAL_IPS = {"127.0.0.1", "::1", "10.0.2.2"}
     try:
-        _, _, ips = socket.gethostbyname_ex(socket.gethostname())
+        _hostname, _aliases, ips = socket.gethostbyname_ex(socket.gethostname())
     except (socket.gaierror, OSError):
         # Fall back to default INTERNAL_IPS if hostname resolution fails
         ips = []
@@ -292,7 +292,11 @@ EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
 # Set the custom email backend that sends Slack notifications
-EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
+# Use console backend in debug mode to print emails to terminal
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
@@ -432,7 +436,6 @@ LOGGING = {
             "formatter": "simple",
             "stream": "ext://sys.stdout",  # Explicitly use stdout
         },
-        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
     },
     "root": {
         "level": "DEBUG",  # Set to DEBUG to show all messages
@@ -440,7 +443,7 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "mail_admins"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": True,  # Changed to True to show in root logger
         },

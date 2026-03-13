@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Check for linked issues with bounties
         id: check-issues
-        uses: actions/github-script@v6.1.1
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7.1.0 https://github.com/actions/github-script/commit/f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -157,7 +157,7 @@ jobs:
 
       - name: Post bounty notification comments
         if: steps.check-issues.outputs['has-bounty'] == 'true'
-        uses: actions/github-script@v6.1.1
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7.1.0 https://github.com/actions/github-script/commit/f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
