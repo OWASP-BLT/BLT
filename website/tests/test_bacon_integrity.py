@@ -3,6 +3,7 @@ from django.db.models import Sum
 from django.test import TestCase
 
 from website.models import Points
+from website.utils import SECURITY_SEVERITY_WEIGHTS, detect_security_severity, get_default_bacon_score
 
 
 class BaconIntegrityTest(TestCase):
@@ -33,3 +34,23 @@ class BaconIntegrityTest(TestCase):
         point_entry.refresh_from_db()
 
         self.assertEqual(point_entry.reason, reason_str)
+
+
+class SecurityScoringTest(TestCase):
+    """Tests for the weighted security scoring engine."""
+
+    def test_detect_security_severity_critical(self):
+        self.assertEqual(detect_security_severity("SQL Injection fix", ""), "CRITICAL")
+
+    def test_detect_security_severity_high(self):
+        self.assertEqual(detect_security_severity("Fixed XSS vulnerability", ""), "HIGH")
+
+    def test_detect_security_severity_low(self):
+        self.assertEqual(detect_security_severity("Fixed typo in docs", ""), "LOW")
+
+    def test_get_default_bacon_score_security(self):
+        score = get_default_bacon_score("issue", is_security=True, severity="CRITICAL")
+        self.assertGreater(score, 5)
+
+    def test_security_severity_weights_keys(self):
+        self.assertEqual(set(SECURITY_SEVERITY_WEIGHTS.keys()), {"CRITICAL", "HIGH", "MEDIUM", "LOW"})
