@@ -436,7 +436,6 @@ LOGGING = {
             "formatter": "simple",
             "stream": "ext://sys.stdout",  # Explicitly use stdout
         },
-        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
     },
     "root": {
         "level": "DEBUG",  # Set to DEBUG to show all messages
@@ -444,7 +443,7 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "mail_admins"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": True,  # Changed to True to show in root logger
         },
