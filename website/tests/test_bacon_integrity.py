@@ -50,7 +50,13 @@ class SecurityScoringTest(TestCase):
 
     def test_get_default_bacon_score_security(self):
         score = get_default_bacon_score("issue", is_security=True, severity="CRITICAL")
-        self.assertGreater(score, 5)
+        self.assertEqual(score, 25)
 
     def test_security_severity_weights_keys(self):
         self.assertEqual(set(SECURITY_SEVERITY_WEIGHTS.keys()), {"CRITICAL", "HIGH", "MEDIUM", "LOW"})
+
+    def test_detect_security_severity_medium(self):
+        self.assertEqual(detect_security_severity("Fixed SSL certificate issue", ""), "MEDIUM")
+
+    def test_detect_security_severity_from_description(self):
+        self.assertEqual(detect_security_severity("Bug fix", "This addresses a CSRF vulnerability"), "HIGH")

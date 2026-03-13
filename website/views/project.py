@@ -59,6 +59,11 @@ logger = logging.getLogger(__name__)
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
+def is_valid_github_token(token):
+    """Check if a GitHub token is valid and not a placeholder."""
+    return bool(token) and token not in {"blank", "abc123"}
+
+
 # Helper function to parse date
 def parse_date(date_str):
     """Parse GitHub API date string to datetime object"""
@@ -879,7 +884,7 @@ class RepoDetailView(DetailView):
                 headers = {"Accept": "application/vnd.github.v3+json"}
 
                 # Add GitHub token if available for higher rate limits
-                if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                if is_valid_github_token(getattr(settings, "GITHUB_TOKEN", None)):
                     headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
 
                 response = requests.get(api_url, headers=headers, timeout=10)
@@ -1482,11 +1487,11 @@ class RepoDetailView(DetailView):
             page = int(self.request.GET.get("page", 1))
             per_page = 10
             repo_path = repo.repo_url.split("github.com/")[-1]
-            owner, repo_name = repo_path.split("/")
+            owner, repo_name = repo_path.rstrip("/").split("/")
 
             api_url = f"https://api.github.com/repos/{owner}/{repo_name}/stargazers"
             headers = {"Accept": "application/vnd.github.v3+json"}
-            if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+            if is_valid_github_token(getattr(settings, "GITHUB_TOKEN", None)):
                 headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
 
             # Fetch all stargazers using pagination
@@ -1551,15 +1556,9 @@ class RepoDetailView(DetailView):
                 context["current_page"] = page
                 context["filter_type"] = filter_type
         except Exception as e:
+            logger.warning("Error fetching stargazers for repo %s: %s", repo.slug, e)
             context["stargazers"] = []
             context["stargazers_error"] = "Error fetching stargazers"
-            context["total_stargazers"] = 0
-            context["total_pages"] = 0
-            context["current_page"] = 1
-            context["filter_type"] = "all"
-        if "stargazers" not in context:
-            context["stargazers"] = []
-            context["stargazers_error"] = None
             context["total_stargazers"] = 0
             context["total_pages"] = 0
             context["current_page"] = 1

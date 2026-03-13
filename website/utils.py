@@ -1051,7 +1051,7 @@ def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
     Required keys: title, url, author, author_url, created_at, comment_count.
     """
     github_token = settings.GITHUB_TOKEN
-    if not github_token or github_token == "abc123":
+    if not is_valid_github_token(github_token):
         return []
 
     query = """
@@ -1087,7 +1087,7 @@ def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
                 "url": n["url"],
                 "author": n["author"]["login"] if n["author"] else "Anon",
                 "author_url": n["author"]["url"] if n["author"] else "#",
-                "created_at": n["createdAt"],
+                "created_at": datetime.strptime(n["createdAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc),
                 "comment_count": n["comments"]["totalCount"] if "comments" in n else 0,
             }
             for n in nodes
