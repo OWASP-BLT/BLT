@@ -8,6 +8,7 @@ import re
 import socket
 import time
 from collections import deque
+from datetime import datetime, timezone
 from ipaddress import ip_address
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
@@ -1043,6 +1044,10 @@ def check_security_txt(domain_url):
 
 
 # --- RESTORED & HARDENED REWARD ENGINE ---
+
+
+def is_valid_github_token(github_token):
+    return bool(github_token and github_token != "abc123")
 
 
 def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
