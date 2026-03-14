@@ -143,7 +143,7 @@ if DEBUG and not TESTING:
     # Configure INTERNAL_IPS for Docker environment
     INTERNAL_IPS = {"127.0.0.1", "::1", "10.0.2.2"}
     try:
-        _, _, ips = socket.gethostbyname_ex(socket.gethostname())
+        _hostname, _aliases, ips = socket.gethostbyname_ex(socket.gethostname())
     except (socket.gaierror, OSError):
         # Fall back to default INTERNAL_IPS if hostname resolution fails
         ips = []
@@ -436,7 +436,6 @@ LOGGING = {
             "formatter": "simple",
             "stream": "ext://sys.stdout",  # Explicitly use stdout
         },
-        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
     },
     "root": {
         "level": "DEBUG",  # Set to DEBUG to show all messages
@@ -444,7 +443,7 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "mail_admins"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": True,  # Changed to True to show in root logger
         },
