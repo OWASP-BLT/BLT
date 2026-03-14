@@ -32,7 +32,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Count, F, Q, Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
@@ -1651,7 +1651,7 @@ def home(request):
     )
 
     # Get top earners - calculate based on Issues with $5 label and their linked PRs
-    # 
+    #
     # CALCULATION METHODOLOGY:
     # 1. Find all Issues (not PRs) that have the $5 label (has_dollar_tag=True)
     # 2. Find all merged Pull Requests that are linked to those $5 issues
@@ -1662,11 +1662,11 @@ def home(request):
     # This differs from the old calculation which used p2p_amount_usd payments.
     # The new approach rewards contributors based on merged PRs that solve $5 issues,
     # regardless of whether actual payment transactions were recorded.
-    
+
     # Step 1 & 2: Find all merged PRs linked to issues with $5 label, and aggregate by contributor
     # Use database-level aggregation for better performance
     BOUNTY_AMOUNT = 5  # $5 per issue
-    
+
     contributor_stats = (
         GitHubIssue.objects.filter(
             type="pull_request",
@@ -1681,13 +1681,13 @@ def home(request):
         )
         .order_by("-pr_count")[:5]  # Get top 5 contributors by PR count
     )
-    
+
     # Step 3: Get contributor IDs and prefetch UserProfiles to avoid N+1 queries
     contributor_ids = [stat["contributor"] for stat in contributor_stats]
-    
+
     # Prefetch contributors in a single query (Contributor model has no FK relationships to select)
     contributors_dict = {c.id: c for c in Contributor.objects.filter(id__in=contributor_ids)}
-    
+
     # Prefetch UserProfiles that have GitHubIssues associated with these contributors
     # We need to find which UserProfile is associated with each Contributor
     # The relationship is: Contributor -> GitHubIssue -> UserProfile
@@ -1700,39 +1700,37 @@ def home(request):
             .values("contributor_id", "user_profile_id")
             .distinct()
         )
-        
+
         # Get unique user_profile_ids
         profile_ids = list(set(m["user_profile_id"] for m in contributor_to_profile_mappings))
-        
+
         # Fetch all needed UserProfiles in one query
-        profiles = {
-            p.id: p for p in UserProfile.objects.filter(id__in=profile_ids).select_related("user")
-        }
-        
+        profiles = {p.id: p for p in UserProfile.objects.filter(id__in=profile_ids).select_related("user")}
+
         # Build the contributor -> user_profile mapping
         for mapping in contributor_to_profile_mappings:
             contributor_id = mapping["contributor_id"]
             profile_id = mapping["user_profile_id"]
-            
+
             # Only map if we haven't already (take first match)
             if contributor_id not in user_profiles_dict and profile_id in profiles:
                 user_profiles_dict[contributor_id] = profiles[profile_id]
-    
+
     # Step 4: Build the top earners list with proper structure using module-level helper classes
-    
+
     top_earners = []
     for stat in contributor_stats:
         contributor_id = stat["contributor"]
         pr_count = stat["pr_count"]
         total_earned = pr_count * BOUNTY_AMOUNT
-        
+
         contributor = contributors_dict.get(contributor_id)
         if not contributor:
             continue
-        
+
         # Check if contributor has an associated UserProfile
         user_profile = user_profiles_dict.get(contributor_id)
-        
+
         if user_profile:
             # Use the actual UserProfile and User
             earner_obj = EarnerProfile(
@@ -1749,7 +1747,7 @@ def home(request):
                 total_earnings=total_earned,
                 avatar=contributor.avatar_url,
             )
-        
+
         top_earners.append(earner_obj)
 
     # Get top referrals
