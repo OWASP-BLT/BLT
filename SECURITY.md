@@ -29,7 +29,7 @@ In return, we commit to:
 
 ## Bug Bounties
 
-Currently, we do not offer bounties for security vulnerability reports. To find out if we offer bounties in the future, please check the BLT project on the [BLT homepage](https://owaspblt.org).
+Currently, we do not offer bounties for security vulnerability reports. To find out if we offer bounties in the future, please check the BLT project on the [BLT homepage](https://legacy.owaspblt.org).
 
 ## Vulnerability Handling Process - (if a valid security issue is found)
 
@@ -41,7 +41,7 @@ Currently, we do not offer bounties for security vulnerability reports. To find 
 
 For general inquiries or non-security-related issues, you can contact the project leaders:
 
-- **Project Website**: [OWASP BLT](https://owaspblt.org)
+- **Project Website**: [OWASP BLT](https://legacy.owaspblt.org)
 - **GitHub Issues**: [OWASP BLT Issues](https://github.com/OWASP-BLT/BLT/issues)
 - **Slack**: Join the OWASP Slack workspace and find us in the `#project-blt` channel: [OWASP Slack](https://owasp.org/slack/invite)
 

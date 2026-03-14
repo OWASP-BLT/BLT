@@ -1450,7 +1450,7 @@ def fetch_devto_articles():
 
     try:
         # Use application-specific User-Agent instead of browser spoofing
-        headers = {"User-Agent": "OWASP-BLT/1.0 (+https://owaspblt.org)"}
+        headers = {"User-Agent": "OWASP-BLT/1.0 (+https://legacy.owaspblt.org)"}
         response = requests.get(
             DEVTO_API_BASE,
             headers=headers,
