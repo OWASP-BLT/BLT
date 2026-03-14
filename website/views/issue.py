@@ -4,8 +4,8 @@ import io
 import json
 import logging
 import os
-import smtplib
 import secrets
+import smtplib
 import socket
 import uuid
 from datetime import datetime, timedelta
@@ -1613,9 +1613,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             else:
                 for token in Token.objects.all():
                     token_provided = self.request.POST.get("token")
-                        if token_provided and secrets.compare_digest(token_provided, token.key):
+                    if token_provided and secrets.compare_digest(token_provided, token.key):
                         obj.user = User.objects.get(id=token.user_id)
-                            tokenauth = True
+                        tokenauth = True
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
 
@@ -1706,7 +1706,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     dest_email = getattr(domain.organization, "email", None)
 
                 if dest_email:
-                    import secrets
                     import string
                     import tempfile
                     from pathlib import Path
