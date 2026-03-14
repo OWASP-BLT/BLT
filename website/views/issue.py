@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import smtplib
+import secrets
 import socket
 import uuid
 from datetime import datetime, timedelta
@@ -50,6 +51,7 @@ from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.views import View
@@ -396,7 +398,7 @@ def UpdateIssue(request):
         tokenauth = False
         if "token" in request.POST:
             for token in Token.objects.all():
-                if request.POST["token"] == token.key:
+                if secrets.compare_digest(request.POST["token"], token.key):
                     request.user = User.objects.get(id=token.user_id)
                     tokenauth = True
                     break
@@ -572,7 +574,7 @@ def remove_user_from_issue(request, id):
     tokenauth = False
     try:
         for token in Token.objects.all():
-            if request.POST.get("token") == token.key:
+            if secrets.compare_digest(request.POST["token"], token.key):
                 request.user = User.objects.get(id=token.user_id)
                 tokenauth = True
     except Exception:
@@ -1610,9 +1612,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 obj.user = self.request.user
             else:
                 for token in Token.objects.all():
-                    if self.request.POST.get("token") == token.key:
+                    token_provided = self.request.POST.get("token")
+                        if token_provided and secrets.compare_digest(token_provided, token.key):
                         obj.user = User.objects.get(id=token.user_id)
-                        tokenauth = True
+                            tokenauth = True
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
 
@@ -2702,7 +2705,8 @@ class GithubIssueView(TemplateView):
         title = request.POST.get("issue_title")
         description = request.POST.get("description")
 
-        repository = request.POST.get("repository_url").replace("https://github.com/", "").replace(".git", "")
+        repository_url = request.POST.get("repository_url", "")
+        repository = repository_url.replace("https://github.com/", "").replace(".git", "")
         labels = request.POST.get("labels")
         labels_list = [label.strip() for label in labels.split(",")] if labels else []
         try:
