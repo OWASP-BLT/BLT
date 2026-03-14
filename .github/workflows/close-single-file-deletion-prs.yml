@@ -1,16 +1,14 @@
-name: Close Single File Deletion PRs
+name: Close PRs from Non-First-Time Contributors
 
 # Uses pull_request_target so it runs with base repo permissions for forked PRs.
 # SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
 #
-# Policy for single-file deletion PRs:
-#   - First-time contributors: only their single-file deletion PRs are accepted;
-#     any other type of change from a first-time contributor is closed.
-#   - All other contributors: single-file deletion PRs are automatically closed.
-#     File deletions from returning contributors require human review to verify:
-#       1. The deletion does not break any existing code or functionality.
-#       2. A sufficient replacement exists in another repository (if applicable).
-#     Open an issue to discuss with maintainers before creating such a PR.
+# Accepted PR policy:
+#   Only pull requests from first-time contributors (FIRST_TIMER or
+#   FIRST_TIME_CONTRIBUTOR) that delete exactly one file are accepted.
+#   Everything else is automatically closed:
+#     - First-time contributor with any change other than a single-file deletion.
+#     - Any contributor who has previously contributed to this repository.
 on:
   pull_request_target:
     types:
@@ -28,7 +26,7 @@ permissions:
   contents: read
 
 jobs:
-  check_single_file_deletion_pr:
+  check_contributor_pr:
     runs-on: ubuntu-latest
     if: >
       github.actor != 'dependabot[bot]'
@@ -40,7 +38,7 @@ jobs:
       && github.actor != 'copilot-swe-agent[bot]'
       && github.actor != 'copilot-swe-agent'
     steps:
-      - name: Enforce single-file deletion PR policy
+      - name: Enforce first-time contributor PR policy
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -77,12 +75,27 @@ jobs:
             files.forEach(f => core.info(`  ${f.status}: ${f.filename}`));
 
             const onlyOneFileDeleted = files.length === 1 && files[0].status === 'removed';
-            const deletedFile = onlyOneFileDeleted ? files[0].filename : null;
 
             let closeReason = null;
             let message = null;
 
-            if (isFirstTimeContributor && !onlyOneFileDeleted) {
+            if (!isFirstTimeContributor) {
+              // Any PR from a returning contributor is automatically closed.
+              closeReason = `returning contributor (${authorAssociation}) — only first-time contributors may submit PRs`;
+              message = [
+                `👋 Hi @${author},`,
+                '',
+                '🚫 **This pull request has been automatically closed** because only **first-time contributors** (`FIRST_TIMER` or `FIRST_TIME_CONTRIBUTOR`) may submit pull requests to this repository at this time.',
+                '',
+                'Your GitHub account has previously contributed to this repository, so this PR does not qualify for automatic acceptance.',
+                '',
+                '⚠️ **Please note:** Closed pull requests of this type are recorded and will count toward **negative scoring** on your contributor profile.',
+                '',
+                'If you believe this was closed in error, please open an issue to discuss it with the maintainers.',
+                '',
+                'Thank you for your understanding! 🙏',
+              ].join('\n');
+            } else if (isFirstTimeContributor && !onlyOneFileDeleted) {
               // First-time contributor whose PR is NOT a single-file deletion
               closeReason = `first-time contributor submitting a non-single-file-deletion PR`;
               message = [
@@ -105,25 +118,6 @@ jobs:
                 '- Browse issues labeled [`good first issue`](../../labels/good%20first%20issue)',
                 '- Fix a bug or implement a requested feature',
                 '- Improve tests or documentation in a meaningful way',
-                '',
-                'Thank you for your understanding! 🙏',
-              ].join('\n');
-            } else if (!isFirstTimeContributor && onlyOneFileDeleted) {
-              // Returning contributor submitting a single-file deletion
-              closeReason = `returning contributor (${authorAssociation}) submitting a single-file deletion`;
-              message = [
-                `👋 Hi @${author},`,
-                '',
-                `🚫 **This pull request has been automatically closed** because it only deletes \`${deletedFile}\` with no other changes.`,
-                '',
-                'File deletion PRs must be discussed with the maintainers in an issue **before** a PR is created. For a deletion to be accepted, all of the following must be verified:',
-                '',
-                '1. **The deletion does not break any existing code or functionality** — nothing in the codebase may import, reference, or depend on this file.',
-                '2. **A sufficient replacement exists** (e.g., the functionality has been moved to another repository or an equivalent resource is available).',
-                '',
-                'Please [open an issue](../../issues/new) to discuss the deletion with the maintainers first. They can confirm whether both conditions are satisfied and whether a replacement repository is needed.',
-                '',
-                '⚠️ **Please note:** Closed pull requests of this type are recorded and will count toward **negative scoring** on your contributor profile.',
                 '',
                 'Thank you for your understanding! 🙏',
               ].join('\n');
