@@ -383,7 +383,7 @@ def status_page(request):
 
         # OpenAI API check
         if CHECK_OPENAI:
-            openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
+            openai_api_key = os.getenv("OPENAI_API_KEY")
             if openai_api_key:
                 try:
                     logger.debug("Checking OpenAI API...")
