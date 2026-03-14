@@ -50,6 +50,7 @@ from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.views import View
@@ -2702,7 +2703,8 @@ class GithubIssueView(TemplateView):
         title = request.POST.get("issue_title")
         description = request.POST.get("description")
 
-        repository = request.POST.get("repository_url").replace("https://github.com/", "").replace(".git", "")
+        repository_url = request.POST.get("repository_url", "")
+        repository = repository_url.replace("https://github.com/", "").replace(".git", "")
         labels = request.POST.get("labels")
         labels_list = [label.strip() for label in labels.split(",")] if labels else []
         try:
