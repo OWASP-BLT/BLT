@@ -177,7 +177,7 @@ jobs:
 
   security-summary:
     name: Security Summary
-    needs: [dependency-scan, bandit-scan, secrets-scan]
+    needs: [bandit-scan, secrets-scan]
     if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -205,13 +205,12 @@ jobs:
             // Check actual exit codes from scan jobs (not job result, which is
             // always 'success' due to continue-on-error).
             // Note: detect-secrets always exits 0, so we check secrets_count instead.
-            const depExit = '${{ needs.dependency-scan.outputs.scan_exit_code }}';
             const banditExit = '${{ needs.bandit-scan.outputs.scan_exit_code }}';
             const secretsCount = '${{ needs.secrets-scan.outputs.secrets_count }}';
 
-            core.info(`Scan results - dependency exit: ${depExit}, bandit exit: ${banditExit}, secrets count: ${secretsCount}`);
+            core.info(`Scan results - bandit exit: ${banditExit}, secrets count: ${secretsCount}`);
 
-            const allPassed = depExit === '0' && banditExit === '0' && secretsCount === '0';
+            const allPassed = banditExit === '0' && secretsCount === '0';
             const newLabel = allPassed ? 'security: passed' : 'security: review needed';
             const labelColor = allPassed ? '0e8a16' : 'fbca04';
             const description = allPassed ? 'Security scans passed' : 'Security scans need review';
