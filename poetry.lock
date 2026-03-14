@@ -3660,15 +3660,23 @@ test = ["coverage[toml]", "pytest", "pytest-cov", "pytest-flake8", "pytest-isort
 
 [[package]]
 name = "tld"
-version = "0.13"
+version = "0.13.2"
 description = "Extract the top-level domain (TLD) from the URL given."
 optional = false
-python-versions = ">=3.7, <4"
+python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "tld-0.13-py2.py3-none-any.whl", hash = "sha256:f75b2be080f767ed17c2338a339eaa4fab5792586319ca819119da252f9f3749"},
-    {file = "tld-0.13.tar.gz", hash = "sha256:93dde5e1c04bdf1844976eae440706379d21f4ab235b73c05d7483e074fb5629"},
+    {file = "tld-0.13.2-py2.py3-none-any.whl", hash = "sha256:9b8fdbdb880e7ba65b216a4937f2c94c49a7226723783d5838fc958ac76f4e0c"},
+    {file = "tld-0.13.2.tar.gz", hash = "sha256:d983fa92b9d717400742fca844e29d5e18271079c7bcfabf66d01b39b4a14345"},
 ]
+
+[package.extras]
+all = ["tld[build,dev,docs,lint,test]"]
+build = ["build", "pkginfo", "twine", "wheel"]
+dev = ["detect-secrets", "ipython", "uv"]
+docs = ["sphinx", "sphinx-autobuild", "sphinx-llms-txt-link", "sphinx-no-pragma", "sphinx-rtd-theme (>=1.3.0)", "sphinx-source-tree ; python_version > \"3.9\""]
+lint = ["doc8", "mypy", "pydoclint", "ruff"]
+test = ["coverage", "fake.py", "pytest", "pytest-codeblock", "pytest-cov", "pytest-ordering", "tox"]
 
 [[package]]
 name = "tornado"
@@ -4258,4 +4266,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "b3ed20b535644a209526f8a5b6c9354aafdfaac78548f814c3acc7c1c6996d88"
+content-hash = "af3b0475b62544cbfb03cc92335e14c434065d4b2efc38dbcf4c9ee72ee166c4"
