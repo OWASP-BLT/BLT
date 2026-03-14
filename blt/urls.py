@@ -285,6 +285,7 @@ from website.views.ossh import (
     ossh_home,
     ossh_results,
 )
+from website.views.ossh_catalog import ossh_catalog
 from website.views.project import (
     ProjectBadgeView,
     ProjectCompactListView,
@@ -1115,6 +1116,7 @@ urlpatterns = [
     ),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
     path("open-source-sorting-hat/", ossh_home, name="ossh_home"),
+    path("api/ossh/catalog/", ossh_catalog, name="ossh_catalog"),
     path("open-source-sorting-hat/results", ossh_results, name="ossh_results"),
     path("get-github-data/", get_github_data, name="get_github_data"),
     path("get-recommended-repos/", get_recommended_repos, name="get_recommended_repos"),
