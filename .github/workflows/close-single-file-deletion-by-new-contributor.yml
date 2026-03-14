@@ -1,7 +1,11 @@
-name: Close Single File Deletion by New Contributor
+name: Close New Contributor PR Unless It Only Deletes One File
 
 # Uses pull_request_target so it runs with base repo permissions for forked PRs.
 # SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+#
+# Policy: First-time contributors are ONLY accepted when their PR deletes exactly
+# one file. Any other type of change (additions, modifications, multi-file changes)
+# from a first-time contributor will be automatically closed.
 on:
   pull_request_target:
     types:
@@ -19,7 +23,7 @@ permissions:
   contents: read
 
 jobs:
-  check_single_file_deletion:
+  check_new_contributor_pr:
     runs-on: ubuntu-latest
     if: >
       github.actor != 'dependabot[bot]'
@@ -31,7 +35,7 @@ jobs:
       && github.actor != 'copilot-swe-agent[bot]'
       && github.actor != 'copilot-swe-agent'
     steps:
-      - name: Close PR if it only deletes one file and author is a first-time contributor
+      - name: Close PR if author is a first-time contributor and PR does not only delete one file
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -72,31 +76,32 @@ jobs:
             core.info(`PR #${pull_number} changes ${files.length} file(s).`);
             files.forEach(f => core.info(`  ${f.status}: ${f.filename}`));
 
-            // Check if the PR only deletes exactly one file (no additions or modifications)
+            // Only accept PRs from first-time contributors that delete exactly one file
             const onlyOneFileDeleted = files.length === 1 && files[0].status === 'removed';
 
-            if (!onlyOneFileDeleted) {
-              core.info(`PR does not solely delete a single file. No action needed.`);
+            if (onlyOneFileDeleted) {
+              core.info(`PR #${pull_number} deletes exactly one file — accepted for a first-time contributor.`);
               return;
             }
 
-            // Both conditions are met: first-time contributor AND only deletes one file
-            core.info(`PR #${pull_number} by first-time contributor ${author} only deletes one file. Closing PR.`);
+            // Condition not met: first-time contributor but PR is not a single-file deletion
+            core.info(`PR #${pull_number} by first-time contributor ${author} does not only delete a single file. Closing PR.`);
 
-            const deletedFile = files[0].filename;
             const message = [
               `👋 Hi @${author}, thank you for your interest in contributing!`,
               '',
-              '🚫 **This pull request has been automatically closed** because it meets both of the following conditions:',
+              '🚫 **This pull request has been automatically closed** because pull requests from first-time contributors are only accepted when they **delete exactly one file**.',
               '',
-              `1. **Only deletes a single file** (\`${deletedFile}\`) with no other changes`,
-              '2. **You have not previously contributed** to this repository',
+              'The conditions that must both be true for a first-time contributor\'s PR to be accepted are:',
               '',
-              'Pull requests that solely delete a file without any meaningful accompanying changes are not accepted from first-time contributors, as this is a common pattern used to artificially inflate contribution counts.',
+              '1. **You have not previously contributed** to this repository',
+              '2. **The PR deletes exactly one file** with no other changes',
+              '',
+              'Your PR does not meet condition 2.',
               '',
               '⚠️ **Please note:** Closed pull requests of this type are recorded and will count toward **negative scoring** on your contributor profile.',
               '',
-              'If you believe this was closed in error or have a valid reason for this deletion, please open an issue to discuss it with the maintainers before resubmitting.',
+              'If you believe this was closed in error, please open an issue to discuss it with the maintainers before resubmitting.',
               '',
               '**We warmly welcome genuine contributions!** Here are some great ways to get started:',
               '- Browse issues labeled [`good first issue`](../../labels/good%20first%20issue)',
