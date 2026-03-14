@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -11,6 +12,15 @@ from website.management.base import LoggedBaseCommand
 from website.models import GitHubIssue, Repo
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_request_error(e):
+    """Return a log-safe representation of a requests exception, stripping credentials."""
+    if isinstance(e, requests.exceptions.HTTPError) and e.response is not None:
+        return f"HTTP {e.response.status_code} for {e.response.url}"
+    if isinstance(e, requests.exceptions.RequestException):
+        return type(e).__name__
+    return type(e).__name__
 
 
 class Command(LoggedBaseCommand):
@@ -69,8 +79,9 @@ class Command(LoggedBaseCommand):
                     self.update_repository(repo, skip_issues)
                     updated_count += 1
                 except Exception as e:
-                    logger.error(f"Error updating repository {repo.name}: {e}")
-                    self.stdout.write(self.style.ERROR(f"Failed to update {repo.name}: {e}"))
+                    safe_err = _sanitize_request_error(e)
+                    logger.error(f"Error updating repository {repo.name}: {safe_err}")
+                    self.stdout.write(self.style.ERROR(f"Failed to update {repo.name}: {safe_err}"))
             else:
                 skipped_count += 1
 
@@ -155,33 +166,64 @@ class Command(LoggedBaseCommand):
         # No issue activity found
         return None
 
-    @transaction.atomic
+    # GitHub owner and repo names: alphanumeric, hyphens, dots, underscores only
+    _GITHUB_NAME_RE = re.compile(r"^[a-zA-Z0-9\-._]+$")
+
+    def _validate_github_owner_repo(self, owner, repo_name):
+        """Validate that owner and repo_name are safe GitHub identifiers."""
+        if not self._GITHUB_NAME_RE.match(owner) or not self._GITHUB_NAME_RE.match(repo_name):
+            raise ValueError(f"Invalid GitHub owner or repo name: {owner}/{repo_name}")
+        if owner.startswith(".") or repo_name.startswith("."):
+            raise ValueError(f"Invalid GitHub owner or repo name: {owner}/{repo_name}")
+
     def update_repository(self, repo, skip_issues=False):
         """
         Update the repository data from GitHub.
+
+        Note: Network calls are intentionally kept outside of database transactions
+        to avoid holding connections open during unpredictable I/O operations.
+        Updates the last_updated timestamp after repository metadata is successfully fetched,
+        even if issue/PR fetching fails. This prevents infinite retry loops and excessive API calls.
         """
         self.stdout.write(f"Updating repository: {repo.name}")
 
         # Extract owner and repo name from the repo URL
         parsed = urlparse(repo.repo_url)
-        # parsed.netloc will be something like "github.com"
 
-        if parsed.netloc == "github.com":
+        try:
+            if parsed.scheme not in ("https",):
+                self.stdout.write("Only HTTPS GitHub URLs are supported.")
+                return
+
+            if parsed.netloc != "github.com":
+                self.stdout.write("Not a GitHub URL.")
+                return
+
             path = parsed.path.strip("/")  # e.g. "owner/repo"
             parts = path.split("/")
-            if len(parts) >= 2:
-                owner, repo_name = parts[-2], parts[-1]
-                # TODO: add your GitHub fetch/update logic here
+            if len(parts) == 2:
+                owner, repo_name = parts[0], parts[1]
+                self._validate_github_owner_repo(owner, repo_name)
+                self.update_repo_data(repo, owner, repo_name)
+
+                # Update the last_updated timestamp after repository metadata is successfully updated
+                # This prevents infinite retry loops if fetch_issues_and_prs fails
+                repo.last_updated = timezone.now()
+                repo.save(update_fields=["last_updated"])
+
+                self.fetch_participation_stats(repo, owner, repo_name)
+
+                if not skip_issues:
+                    self.fetch_issues_and_prs(repo, owner, repo_name)
+
+                self.stdout.write(self.style.SUCCESS(f"Successfully updated {repo.name}"))
             else:
                 self.stdout.write("Invalid GitHub URL format.")
-        else:
-            self.stdout.write("Not a GitHub URL.")
-
-        # Update the last_updated timestamp
-        repo.last_updated = timezone.now()
-        repo.save(update_fields=["last_updated"])
-
-        self.stdout.write(self.style.SUCCESS(f"Successfully updated {repo.name}"))
+                return
+        except (requests.exceptions.RequestException, ValueError) as e:
+            safe_err = _sanitize_request_error(e)
+            logger.error(f"Failed to update repository {repo.name}: {safe_err}")
+            self.stdout.write(self.style.ERROR(f"Failed to update {repo.name}: {safe_err}"))
 
     def update_repo_data(self, repo, owner, repo_name):
         """
@@ -194,7 +236,7 @@ class Command(LoggedBaseCommand):
         try:
             # Get repository data
             url = f"https://api.github.com/repos/{owner}/{repo_name}"
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
 
             repo_data = response.json()
@@ -206,12 +248,12 @@ class Command(LoggedBaseCommand):
             repo.watchers = repo_data.get("watchers_count", 0)
 
             # Truncate description if it's too long to prevent database errors
-            description = repo_data.get("description", "")
+            description = repo_data.get("description") or ""
             if description and len(description) > 255:
                 description = description[:252] + "..."
             repo.description = description
 
-            repo.primary_language = repo_data.get("language", "")
+            repo.primary_language = repo_data.get("language") or ""
             repo.is_archived = repo_data.get("archived", False)
 
             # Update last commit date if available
@@ -224,7 +266,40 @@ class Command(LoggedBaseCommand):
             repo.save()
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching repository data for {owner}/{repo_name}: {e}")
+            logger.error(f"Error fetching repository data for {owner}/{repo_name}: {_sanitize_request_error(e)}")
+            raise
+
+    def fetch_participation_stats(self, repo, owner, repo_name):
+        """
+        Fetch weekly commit participation stats for a repository (last 52 weeks).
+        """
+        headers = {"Accept": "application/vnd.github.v3+json"}
+        if settings.GITHUB_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+        url = f"https://api.github.com/repos/{owner}/{repo_name}/stats/participation"
+
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 202:
+                # Stats are being computed, we'll get them next time
+                self.stdout.write(f"Participation stats for {repo.name} are being computed (202).")
+                return
+
+            response.raise_for_status()
+            data = response.json()
+
+            # The 'all' array contains commit counts for all contributors
+            participation = data.get("all", [])
+
+            if participation:
+                repo.participation_stats = participation
+                repo.save(update_fields=["participation_stats"])
+                self.stdout.write(self.style.SUCCESS(f"Successfully updated participation stats for {repo.name}"))
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching participation stats for {owner}/{repo_name}: {_sanitize_request_error(e)}")
+            self.stdout.write(self.style.WARNING(f"Failed to fetch participation stats for {repo.name}"))
 
     def fetch_issues_and_prs(self, repo, owner, repo_name):
         """
@@ -263,7 +338,7 @@ class Command(LoggedBaseCommand):
             )
 
             try:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
 
                 data = response.json()
@@ -293,8 +368,8 @@ class Command(LoggedBaseCommand):
                     break
 
             except requests.exceptions.RequestException as e:
-                logger.error(f"Error fetching issues for {owner}/{repo_name}: {e}")
-                break
+                logger.error(f"Error fetching issues for {owner}/{repo_name}: {_sanitize_request_error(e)}")
+                raise
 
         return issues
 
@@ -307,9 +382,6 @@ class Command(LoggedBaseCommand):
         page = 1
         per_page = 100
 
-        # Calculate date one year ago for filtering
-        one_year_ago = (timezone.now() - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
-
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
@@ -318,13 +390,12 @@ class Command(LoggedBaseCommand):
             url = (
                 f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
                 f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
-                f"&since={one_year_ago}"
             )
 
-            self.stdout.write(f"Fetching PRs from: {url}")
+            self.stdout.write(f"Fetching closed PRs for {owner}/{repo_name}, page {page}")
 
             try:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
 
                 data = response.json()
@@ -355,8 +426,8 @@ class Command(LoggedBaseCommand):
                     break
 
             except requests.exceptions.RequestException as e:
-                logger.error(f"Error fetching closed PRs for {owner}/{repo_name}: {e}")
-                break
+                logger.error(f"Error fetching closed PRs for {owner}/{repo_name}: {_sanitize_request_error(e)}")
+                raise
 
         self.stdout.write(f"Total PRs fetched: {len(prs)}")
         return prs

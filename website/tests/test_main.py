@@ -271,11 +271,12 @@ class MySeleniumTests(LiveServerTestCase):
 class HideImage(TestCase):
     def setUp(self):
         test_issue = Issue.objects.create(description="test", url="test.com")
-        test_issue.screenshot = SimpleUploadedFile(
-            name="test_image.jpg",
-            content=open("website/static/images/dummy-user.png", "rb").read(),
-            content_type="image/png",
-        )
+        with open("website/static/images/dummy-user.webp", "rb") as f:
+            test_issue.screenshot = SimpleUploadedFile(
+                name="test_image.webp",
+                content=f.read(),
+                content_type="image/webp",
+            )
         test_issue.save()
 
     def test_on_hide(self):
@@ -454,7 +455,6 @@ class LeaderboardTests(TestCase):
 
     def test_monthly_leaderboard_excludes_bots(self):
         """Test that bots are excluded from monthly leaderboard"""
-        from datetime import datetime
 
         # Create bot users with typical bot naming patterns
         bot1 = User.objects.create_user(username="dependabot[bot]", password="password")
@@ -462,8 +462,8 @@ class LeaderboardTests(TestCase):
         bot3 = User.objects.create_user(username="renovate-bot", password="password")
 
         # Create points for bot users in current month
-        current_month = datetime.now().month
-        current_year = datetime.now().year
+        current_month = timezone.now().month
+        current_year = timezone.now().year
         Points.objects.create(user=bot1, score=100)
         Points.objects.create(user=bot2, score=200)
         Points.objects.create(user=bot3, score=150)
@@ -483,14 +483,13 @@ class LeaderboardTests(TestCase):
 
     def test_yearly_leaderboard_excludes_bots(self):
         """Test that bots are excluded from yearly leaderboard (each month view)"""
-        from datetime import datetime
 
         # Create bot users
         bot1 = User.objects.create_user(username="dependabot[bot]", password="password")
         bot2 = User.objects.create_user(username="copilot-bot", password="password")
 
         # Create points for bot users in current year
-        current_year = datetime.now().year
+        current_year = timezone.now().year
         Points.objects.create(user=bot1, score=500)
         Points.objects.create(user=bot2, score=600)
 
@@ -553,6 +552,58 @@ class LeaderboardTests(TestCase):
         # Check that regular reviewers are still present
         self.assertContains(response, "user1")
         self.assertContains(response, "user2")
+
+    def test_top_bug_reporters_filters_non_issue_points(self):
+        """Test that top bug reporters only shows users with issue-linked points, not non-issue points"""
+        # Create test users
+        user_with_issues = User.objects.create_user(username="issue_reporter", password="password")
+        user_without_issues = User.objects.create_user(username="non_issue_user", password="password")
+
+        # Create profiles
+        UserProfile.objects.get_or_create(user=user_with_issues)
+        UserProfile.objects.get_or_create(user=user_without_issues)
+
+        # Create issues for issue_reporter only
+        issue1 = Issue.objects.create(user=user_with_issues, domain=self.domain)
+        issue2 = Issue.objects.create(user=user_with_issues, domain=self.domain)
+
+        # Create points for user_with_issues (issue-linked points) in current month
+        Points.objects.create(user=user_with_issues, score=100, issue=issue1)
+        Points.objects.create(user=user_with_issues, score=50, issue=issue2)
+
+        # Create points for user_without_issues (non-issue points - e.g., invite points)
+        Points.objects.create(user=user_without_issues, score=200)  # No issue linked
+        Points.objects.create(user=user_without_issues, score=150)  # No issue linked
+
+        # Patch external API calls to avoid slow/flaky tests
+        with patch("website.views.core.get_job_board_data", return_value=([], [])), patch(
+            "website.views.core.fetch_github_discussions", return_value=[]
+        ), patch("website.views.core.fetch_devto_articles", return_value=[]), patch(
+            "website.views.core.get_last_commit_date", return_value=None
+        ):
+            # Get the homepage which displays top bug reporters
+            response = self.client.get("/")
+            self.assertEqual(response.status_code, 200)
+
+            # Check that the user with issue-linked points appears in top bug reporters
+            # The response context should have top_bug_reporters
+            top_bug_reporters = response.context.get("top_bug_reporters", [])
+
+            # Convert queryset to list of usernames for easier testing
+            reporter_usernames = [user.username for user in top_bug_reporters]
+
+            # User with issue-linked points SHOULD appear
+            self.assertIn("issue_reporter", reporter_usernames)
+
+            # User with only non-issue points should NOT appear
+            self.assertNotIn("non_issue_user", reporter_usernames)
+
+            # Verify the scores are calculated correctly (only issue-linked points count)
+            if top_bug_reporters:
+                issue_reporter = next((u for u in top_bug_reporters if u.username == "issue_reporter"), None)
+                if issue_reporter:
+                    # Should have total_score of 150 (100 + 50 from issue-linked points only)
+                    self.assertEqual(issue_reporter.total_score, 150)
 
 
 class ProjectPageTest(TestCase):

@@ -63,11 +63,11 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <div class="border-b border-gray-200 dark:border-gray-700">
                 <nav class="flex" aria-label="Tabs">
-                    <button onclick="switchTab('urlStats')"
-                            class="tab-button active text-[#e74c3c] border-[#e74c3c] whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm"
+                    <button onclick="switchTab('urlStats', this)"
+                            class="tab-button text-[#e74c3c] border-[#e74c3c] hover:opacity-80 whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm"
                             aria-current="page">URL Statistics ({{ web_stats.total_urls }} URLs)</button>
-                    <button onclick="switchTab('userAgents')"
-                            class="tab-button text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] hover:border-[#e74c3c] whitespace-nowrap py-4 px-6 border-b-2 border-transparent font-medium text-sm">
+                    <button onclick="switchTab('userAgents', this)"
+                            class="tab-button text-gray-500 hover:opacity-80 whitespace-nowrap py-4 px-6 border-b-2 border-transparent font-medium text-sm">
                         Unique Agents ({{ unique_agents_count }})
                     </button>
                 </nav>
@@ -92,7 +92,7 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {% for url in url_info %}
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.path }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_count }}</td>
@@ -139,7 +139,7 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {% for agent in user_agents %}
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td class="px-6 py-4 text-sm">{{ agent.agent }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ agent.total_count }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ agent.last_request|timesince }} ago</td>
@@ -167,6 +167,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const isDarkMode = document.documentElement.classList.contains('dark');
     // Traffic Chart
     const ctx = document.getElementById('trafficChart').getContext('2d');
     
@@ -214,16 +215,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     ticks: {
                         maxTicksLimit: 7,
-                        color: '#718096'
+                        color:'#718096'
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                        color: isDarkMode ? '#9ca3af' : '#374151',
+                        lineWidth: 0.5,
+                        drawBorder: false
                     },
                     ticks: {
-                        color: '#718096'
+                        color:'#718096'
                     }
                 }
             },
@@ -239,8 +242,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // User Agent Chart
     const userAgentCtx = document.getElementById('userAgentChart').getContext('2d');
     const userAgentData = {
-        labels: [{% for agent in user_agents %}'{{ agent.agent|truncatechars:50|escapejs }}',{% endfor %}],
-        datasets: [{
+        labels: [
+            {% for agent in user_agents %}
+                wrapLabel('{{ agent.agent|escapejs }}', 20),
+            {% endfor %}
+        ],
+        datasets: [{    
             label: 'User Agent Count',
             data: [{% for agent in user_agents %}{{ agent.total_count }},{% endfor %}],
             backgroundColor: 'rgba(231, 76, 60, 0.8)',
@@ -248,6 +255,27 @@ document.addEventListener('DOMContentLoaded', function() {
             borderWidth: 1
         }]
     };
+
+    function wrapLabel(label, maxCharsPerLine = 20) {
+    const words = label.split(' ');
+    const lines = [];
+    let currentLine = '';
+
+    words.forEach(word => {
+        if ((currentLine + word).length <= maxCharsPerLine) {
+            currentLine += (currentLine ? ' ' : '') + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    });
+
+    if (currentLine) {
+        lines.push(currentLine);
+    }
+
+    return lines;
+    }
 
     const userAgentConfig = {
         type: 'bar',
@@ -275,18 +303,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         display: false
                     },
                     ticks: {
-                        maxRotation: 45,
-                        minRotation: 45,
-                        color: '#718096'
+                        minRotation: 0,
+                        maxRotation: 0,
+                        autoSkip: false,
+                        color:'#718096'
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                        color: isDarkMode ? '#9ca3af' : '#374151',
+                        lineWidth: 0.5,
+                        drawBorder: false
                     },
+
                     ticks: {
-                        color: '#718096'
+                        color:'#718096'
                     }
                 }
             }
@@ -296,26 +328,27 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(userAgentCtx, userAgentConfig);
 });
 
-// Tab switching functionality
-function switchTab(tabId) {
+function switchTab(tabId, clickedButton) {
     // Hide all tab contents
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.add('hidden');
     });
-    
+
     // Show selected tab content
     document.getElementById(tabId).classList.remove('hidden');
-    
-    // Update tab button styles
+
+    // Reset all tabs to inactive (gray)
     document.querySelectorAll('.tab-button').forEach(button => {
         button.classList.remove('text-[#e74c3c]', 'border-[#e74c3c]');
         button.classList.add('text-gray-500', 'border-transparent');
     });
-    
-    // Update active tab button
-    const activeButton = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
-    activeButton.classList.remove('text-gray-500', 'border-transparent');
-    activeButton.classList.add('text-[#e74c3c]', 'border-[#e74c3c]');
+
+    // Activate clicked tab (red)
+    clickedButton.classList.remove('text-gray-500', 'border-transparent');
+    clickedButton.classList.add('text-[#e74c3c]', 'border-[#e74c3c]');
 }
+
+// Tab switching functionality
+
     </script>
 {% endblock %}

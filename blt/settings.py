@@ -1,5 +1,6 @@
 import json
 import os
+import socket
 import sys
 
 import dj_database_url
@@ -54,7 +55,9 @@ EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Ex
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable must be set")
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
@@ -87,7 +90,7 @@ INSTALLED_APPS = (
     "django_gravatar",
     "email_obfuscator",
     "import_export",
-    "comments",
+    "website.comments",
     "annoying",
     "rest_framework",
     "django_filters",
@@ -134,9 +137,22 @@ if DEBUG:
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
-TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
+
 
 if DEBUG and not TESTING:
+    # Configure INTERNAL_IPS for Docker environment
+    INTERNAL_IPS = {"127.0.0.1", "::1", "10.0.2.2"}
+    try:
+        _hostname, _aliases, ips = socket.gethostbyname_ex(socket.gethostname())
+    except (socket.gaierror, OSError):
+        # Fall back to default INTERNAL_IPS if hostname resolution fails
+        ips = []
+    else:
+        # Add Docker network IPs
+        INTERNAL_IPS.update([ip[: ip.rfind(".")] + ".1" for ip in ips if "." in ip])
+        # Add the container's own IP
+        INTERNAL_IPS.update(ips)
+
     DEBUG_TOOLBAR_PANELS = [
         "debug_toolbar.panels.versions.VersionsPanel",
         "debug_toolbar.panels.timer.TimerPanel",
@@ -276,7 +292,11 @@ EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
 # Set the custom email backend that sends Slack notifications
-EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
+# Use console backend in debug mode to print emails to terminal
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
@@ -313,7 +333,7 @@ if "DYNO" in os.environ:  # for Heroku
             },
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
 
@@ -328,7 +348,7 @@ else:
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
     # Removed DEBUG override - DEBUG should be controlled by environment variable
@@ -366,9 +386,11 @@ else:
             "NAME": ":memory:",
         }
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 # Security: Do not send emails to unknown accounts during password reset
 # This prevents account enumeration attacks
@@ -414,7 +436,6 @@ LOGGING = {
             "formatter": "simple",
             "stream": "ext://sys.stdout",  # Explicitly use stdout
         },
-        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
     },
     "root": {
         "level": "DEBUG",  # Set to DEBUG to show all messages
@@ -422,7 +443,7 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "mail_admins"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": True,  # Changed to True to show in root logger
         },
@@ -476,48 +497,27 @@ else:
     else:
         CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
-if DEBUG or TESTING:
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-else:
-    # temp to check memory usage
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-
-    # CACHES = {
-    #     "default": {
-    #         "BACKEND": "django_redis.cache.RedisCache",
-    #         "LOCATION": os.environ.get("REDISCLOUD_URL"),
-    #         "OPTIONS": {
-    #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-    #         },
-    #     }
-    # }
 
 if DEBUG or TESTING:
     anon_throttle = 100000
     user_throttle = 100000
 
 else:
-    anon_throttle = 100
-    user_throttle = 1000
+    anon_throttle = 5
+    user_throttle = 100
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework.authentication.TokenAuthentication",),
     "PAGE_SIZE": 10,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": f"{anon_throttle}/day",
-        "user": f"{user_throttle}/day",
+        "anon": f"{anon_throttle}/hour",
+        "user": f"{user_throttle}/hour",
     },
 }
 
@@ -552,7 +552,7 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+ACCOUNT_ADAPTER = "website.adapters.CustomAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
 
 # Social account settings for better UX
@@ -562,6 +562,13 @@ SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for soc
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token for AJAX requests
+CSRF_COOKIE_SAMESITE = "Lax"
 
 MDEDITOR_CONFIGS = {
     "default": {

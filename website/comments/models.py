@@ -1,0 +1,30 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.utils import timezone
+
+from website.models import UserProfile
+
+# Create your models here.
+
+
+class Comment(models.Model):
+    parent = models.ForeignKey("self", null=True, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    author = models.CharField(max_length=200)
+    author_fk = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL)
+    author_url = models.CharField(max_length=200)
+    text = models.TextField()
+    created_date = models.DateTimeField(default=timezone.now)
+
+    def __str__(self) -> str:
+        """Return a short preview of the comment body for admin/log views."""
+        # Avoid dumping arbitrarily large comment bodies in admin/logs.
+        return (self.text or "")[:80]
+
+    def children(self):
+        """Return child comments ordered by creation time for threaded rendering."""
+        # Consistent ordering for threaded rendering.
+        return Comment.objects.filter(parent=self).order_by("created_date")
