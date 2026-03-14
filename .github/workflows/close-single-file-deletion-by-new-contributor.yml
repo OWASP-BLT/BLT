@@ -1,0 +1,125 @@
+name: Close Single File Deletion by New Contributor
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  check_single_file_deletion:
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != github.repository_owner
+      && github.actor != 'sentry-autofix'
+      && github.actor != 'DonnieBLT'
+      && github.actor != 'copilot-swe-agent[bot]'
+      && github.actor != 'copilot-swe-agent'
+    steps:
+      - name: Close PR if it only deletes one file and author is a first-time contributor
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request in context. Skipping.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = pr.number;
+            const authorAssociation = pr.author_association;
+            const author = pr.user.login;
+
+            core.info(`PR #${pull_number} by ${author} (association: ${authorAssociation})`);
+
+            // FIRST_TIMER: author has never made any commit on GitHub before (brand new GitHub user)
+            // FIRST_TIME_CONTRIBUTOR: author has committed elsewhere but never to this repository
+            const isFirstTimeContributor =
+              authorAssociation === 'FIRST_TIMER' ||
+              authorAssociation === 'FIRST_TIME_CONTRIBUTOR';
+
+            if (!isFirstTimeContributor) {
+              core.info(`Author ${author} is not a first-time contributor (${authorAssociation}). No action needed.`);
+              return;
+            }
+
+            // Get all files changed in the PR (with pagination)
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            core.info(`PR #${pull_number} changes ${files.length} file(s).`);
+            files.forEach(f => core.info(`  ${f.status}: ${f.filename}`));
+
+            // Check if the PR only deletes exactly one file (no additions or modifications)
+            const onlyOneFileDeleted = files.length === 1 && files[0].status === 'removed';
+
+            if (!onlyOneFileDeleted) {
+              core.info(`PR does not solely delete a single file. No action needed.`);
+              return;
+            }
+
+            // Both conditions are met: first-time contributor AND only deletes one file
+            core.info(`PR #${pull_number} by first-time contributor ${author} only deletes one file. Closing PR.`);
+
+            const deletedFile = files[0].filename;
+            const message = [
+              `👋 Hi @${author}, thank you for your interest in contributing!`,
+              '',
+              '🚫 **This pull request has been automatically closed** because it meets both of the following conditions:',
+              '',
+              `1. **Only deletes a single file** (\`${deletedFile}\`) with no other changes`,
+              '2. **You have not previously contributed** to this repository',
+              '',
+              'Pull requests that solely delete a file without any meaningful accompanying changes are not accepted from first-time contributors, as this is a common pattern used to artificially inflate contribution counts.',
+              '',
+              '⚠️ **Please note:** Closed pull requests of this type are recorded and will count toward **negative scoring** on your contributor profile.',
+              '',
+              'If you believe this was closed in error or have a valid reason for this deletion, please open an issue to discuss it with the maintainers before resubmitting.',
+              '',
+              '**We warmly welcome genuine contributions!** Here are some great ways to get started:',
+              '- Browse issues labeled [`good first issue`](../../labels/good%20first%20issue)',
+              '- Fix a bug or implement a requested feature',
+              '- Improve tests or documentation in a meaningful way',
+              '',
+              'Thank you for your understanding! 🙏',
+            ].join('\n');
+
+            // Post an explanatory comment on the PR
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pull_number,
+              body: message,
+            });
+
+            // Close the PR
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number,
+              state: 'closed',
+            });
+
+            core.info(`PR #${pull_number} has been closed with an explanatory comment.`);
