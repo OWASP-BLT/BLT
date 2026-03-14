@@ -20,6 +20,7 @@ from better_profanity import profanity
 from bleach import clean
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -61,7 +62,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from user_agents import parse
 
-from comments.models import Comment
+from website.comments.models import Comment
 from website.decorators import ratelimit
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
@@ -82,6 +83,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
+from website.spam_detection import SpamDetection
 from website.utils import (
     admin_required,
     get_client_ip,
@@ -480,6 +482,68 @@ def newhome(request, template="bugs_list.html"):
         "leaderboard": leaderboard,
     }
     return render(request, template, context)
+
+
+@staff_member_required
+def review_queue(request):
+    # Handle POST requests for review actions
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "delete_selected":
+            issue_ids = request.POST.getlist("issue_ids")
+            if not issue_ids:
+                messages.error(request, "You didn't select any issues to delete.")
+            else:
+                count = len(issue_ids)
+                Issue.objects.filter(id__in=issue_ids).delete()
+                messages.success(request, f"Successfully deleted {count} issue(s).")
+            return redirect("review_queue")
+
+        # Handle single-issue actions
+        issue_id_str = request.POST.get("issue_id")
+        if not issue_id_str or not action:
+            messages.error(request, "Invalid request. Missing issue ID or action.")
+            return redirect("review_queue")
+
+        try:
+            issue_id = int(issue_id_str)
+            issue = Issue.objects.get(id=issue_id)
+
+            if action == "approve":
+                issue.verified = True
+                issue.is_hidden = False
+                issue.status = "open"
+                issue.save()
+                messages.success(request, f"Issue #{issue.id} has been approved.")
+
+            elif action == "spam":
+                issue.verified = False
+                issue.is_hidden = True
+                issue.status = "spam"
+                issue.save()
+                messages.success(request, f"Issue #{issue.id} has been marked as spam.")
+
+            else:
+                messages.error(request, "Invalid review action specified.")
+
+        except ValueError:
+            messages.error(request, f"Invalid issue ID: '{issue_id_str}'. Must be an integer.")
+        except Issue.DoesNotExist:
+            messages.error(request, f"Could not find an issue with ID #{issue_id_str} in the database.")
+
+        return redirect("review_queue")
+
+    # Handle GET requests: Display the list of issues for review
+    pending_issues = Issue.objects.filter(~Q(status="spam") & Q(is_hidden=True)).order_by("-spam_score", "-created")
+    spam_issues = Issue.objects.filter(Q(status="spam") & Q(is_hidden=True)).order_by("-created")
+
+    context = {
+        "pending_issues": pending_issues,
+        "spam_issues": spam_issues,
+    }
+
+    return render(request, "review/queue.html", context)
 
 
 # The delete_issue function performs delete operation from the database
@@ -1297,6 +1361,72 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         return super().post(request, *args, **kwargs)
 
+    def _save_issue_screenshots(self, obj):
+        """
+        Persist all uploaded screenshots to the issue.
+        Returns an HttpResponse if there's an error (e.g. file not found), otherwise None.
+        """
+        # Handle screenshot-hash uploads
+        if self.request.POST.get("screenshot-hash"):
+            try:
+                # Fix path separators and use os.path.join for cross-platform compatibility
+                screenshot_path = os.path.join("uploads", f"{self.request.POST.get('screenshot-hash')}.png")
+
+                # Check if file exists before trying to open to avoid generic errors
+                if not default_storage.exists(screenshot_path):
+                    raise FileNotFoundError
+
+                try:
+                    reopen = default_storage.open(screenshot_path, "rb")
+                    django_file = File(reopen)
+                    obj.screenshot.save(
+                        f"{self.request.POST.get('screenshot-hash')}.png",
+                        django_file,
+                        save=True,
+                    )
+                finally:
+                    if "reopen" in locals() and reopen:
+                        reopen.close()
+            except FileNotFoundError:
+                messages.error(self.request, "Screenshot file not found. Please try uploading again.")
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                )
+
+        # Save uploaded screenshots
+        for screenshot in self.request.FILES.getlist("screenshots"):
+            filename = screenshot.name
+            # Ensure JPG extension for processed files
+            if hasattr(screenshot, "_processed") and screenshot._processed:
+                extension = "jpg"
+            else:
+                extension = filename.split(".")[-1] if "." in filename else "png"
+            screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
+            default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
+
+        return None
+
+    def _check_for_spam(self, form):
+        try:
+            spam_detector = SpamDetection()
+            result = spam_detector.check_bug_report(
+                title=form.cleaned_data.get("description", ""),
+                description=form.cleaned_data.get("markdown_description", ""),
+                url=form.cleaned_data.get("url", ""),
+            )
+            is_spam = result.get("is_spam", False)
+            spam_score = result.get("spam_score", 0)
+            spam_reason = result.get("reason", "")
+        except Exception:
+            # If spam detection fails for any reason, log and continue
+            logger.exception("Spam detection failed; treating as non-spam")
+            is_spam, spam_score, spam_reason = False, 0, ""
+
+        return is_spam, spam_score, spam_reason
+
     def form_valid(self, form):
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
@@ -1319,6 +1449,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
             # Prevent  form submission
             messages.error(self.request, "Have a nice day.")
             return HttpResponseRedirect("/")
+
+        # Check for Spam
+        is_spam, spam_score, spam_reason = self._check_for_spam(form)
+        logger.info(f"Spam check result: is_spam={is_spam}, spam_score={spam_score}, spam_reason='{spam_reason}'")
 
         limit = 50 if self.request.user.is_authenticated else 30
         today = timezone.now().date()
@@ -1420,7 +1554,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
 
             # Only validate uploaded screenshots if there are any
-
             if len(self.request.FILES.getlist("screenshots")) > 0:
                 # Process screenshots for privacy protection (face overlay)
                 processed_screenshots = []
@@ -1466,6 +1599,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.FILES.setlist("screenshots", processed_screenshots)
             tokenauth = False
             obj = form.save(commit=False)
+            obj.spam_score = spam_score
+            obj.spam_reason = spam_reason
+
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
             if report_anonymous:
@@ -1478,6 +1614,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         obj.user = User.objects.get(id=token.user_id)
                         tokenauth = True
 
+            obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
+
             captcha_form = CaptchaForm(self.request.POST)
             if not captcha_form.is_valid() and not settings.TESTING:
                 messages.error(self.request, "Invalid Captcha!")
@@ -1486,7 +1624,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-
             parsed_url = urlparse(obj.url)
             clean_domain = parsed_url.netloc
             clean_domain_no_www = clean_domain.replace("www.", "")
@@ -1496,7 +1633,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             # Try multiple domain lookup strategies to match domain creation logic
             domain = None
-
             # Strategy 1: Exact URL match
             domain = Domain.objects.filter(url=clean_domain).first()
             if domain:
@@ -1537,6 +1673,28 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 logger.warning(f"Domain not found, creating new: name={clean_domain_no_www}, url={clean_domain}")
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
                 domain.save()
+
+            obj.domain = domain
+
+            if spam_score >= 6:
+                obj.is_hidden = True
+                obj.verified = False
+                obj.save()
+
+                error_response = self._save_issue_screenshots(obj)
+                if error_response:
+                    return error_response
+
+                messages.warning(
+                    self.request,
+                    "Your submission has been flagged for review and will be visible once approved by a moderator. Try again with a better description.",
+                )
+                logger.warning(
+                    f"Potential spam detected - Score: {spam_score}, Reason: {spam_reason} "
+                    f"IP: {reporter_ip}, "
+                    f"Description: {description[:100]}"
+                )
+                return HttpResponseRedirect("/")
 
             # Don't save issue if security vulnerability
             if form.instance.label == "4" or form.instance.label == 4:
@@ -1724,7 +1882,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 messages.error(self.request, cve_validation_error)
                 return self.form_invalid(form)
 
-            obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
             obj.save()
 
             # Store issue data for CVE score fetch outside transaction
@@ -1740,42 +1897,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
                 messages.success(self.request, "Domain added! + 1")
 
-            if self.request.POST.get("screenshot-hash"):
-                try:
-                    # Fix path separators and use os.path.join for cross-platform compatibility
-                    screenshot_path = os.path.join("uploads", f"{self.request.POST.get('screenshot-hash')}.png")
-
-                    try:
-                        reopen = default_storage.open(screenshot_path, "rb")
-                        django_file = File(reopen)
-                        obj.screenshot.save(
-                            f"{self.request.POST.get('screenshot-hash')}.png",
-                            django_file,
-                            save=True,
-                        )
-                    finally:
-                        if "reopen" in locals():
-                            reopen.close()
-                except FileNotFoundError:
-                    messages.error(self.request, "Screenshot file not found. Please try uploading again.")
-                    return render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                    )
-
-            # Save screenshots (these are now processed with face overlay if available)
-            for screenshot in self.request.FILES.getlist("screenshots"):
-                filename = screenshot.name
-                # Ensure JPG extension for processed files
-                if hasattr(screenshot, "_processed") and screenshot._processed:
-                    extension = "jpg"
-                else:
-                    extension = filename.split(".")[-1]
-                screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
-
+            error_response = self._save_issue_screenshots(obj)
+            if error_response:
+                return error_response
             # Handle team members
             team_members_id = [
                 member["id"]
@@ -3271,7 +3395,7 @@ class GsocView(View):
         # Sort projects by total PRs
         sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
 
-        return render(request, "gsoc.html", {"projects": sorted_project_data})
+        return render(request, "projects/gsoc_pr_report.html", {"projects": sorted_project_data})
 
 
 @login_required
@@ -3287,29 +3411,29 @@ def refresh_gsoc_project(request):
 
     if not project_name:
         messages.error(request, "Project name is required.")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
     if project_name not in GSOC25_PROJECTS:
         messages.error(request, "Invalid project name")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
     repos = GSOC25_PROJECTS.get(project_name, [])
 
     if not repos:
         messages.error(request, f"No repositories found for project {project_name}")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
     for repo in repos:
         if not isinstance(repo, str) or repo.count("/") != 1:
             messages.error(request, f"Invalid repository format: {repo}")
-            return redirect("gsoc")
+            return redirect("gsoc_pr_report")
 
     today = timezone.now().date()
     refresh_count = DailyStats.objects.filter(name=f"refresh_gsoc_{request.user.id}", created__date=today).count()
 
     if refresh_count >= 5:
         messages.error(request, "You have reached your daily limit of 5 refreshes.")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
     since_date = timezone.make_aware(datetime(2024, 11, 11))
 
@@ -3395,8 +3519,8 @@ def refresh_gsoc_project(request):
 
     except Exception as e:
         messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
-        return redirect("gsoc")
+        return redirect("gsoc_pr_report")
 
-    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
+    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1")
 
-    return redirect("gsoc")
+    return redirect("gsoc_pr_report")

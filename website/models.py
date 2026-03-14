@@ -65,6 +65,9 @@ class Subscription(models.Model):
     feature = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.name} (${self.charge_per_month}/month)"
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=255)
@@ -294,6 +297,11 @@ class JoinRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
+
+    def __str__(self):
+        status = "Accepted" if self.is_accepted else "Pending"
+        team_name = self.team.name if self.team else "Unknown"
+        return f"{self.user.username} -> {team_name} ({status})"
 
 
 class Job(models.Model):
@@ -620,6 +628,13 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
+    spam_score = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        help_text="AI-generated spam score (0-10, ≥6 triggers moderation)",
+    )
+    spam_reason = models.TextField(null=True, blank=True)
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=20, null=True, blank=True)
@@ -812,6 +827,9 @@ class IssueScreenshot(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"Screenshot for Issue #{self.issue_id}"
+
 
 if is_using_gcs():
 
@@ -874,6 +892,11 @@ class Winner(models.Model):
     prize = models.ForeignKey(HuntPrize, null=True, blank=True, on_delete=models.CASCADE)
     prize_amount = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        winner_name = self.winner.username if self.winner else "TBD"
+        hunt_name = self.hunt.name if self.hunt else "Unknown Hunt"
+        return f"{winner_name} - Winner of {hunt_name}"
 
 
 class Points(models.Model):
@@ -987,6 +1010,23 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    leaderboard_score = models.PositiveIntegerField(default=0, db_index=True)
+
+    def update_leaderboard_score(self):
+        """Simple score: recent check-ins + streak"""
+        today = timezone.now().date()
+        cutoff_date = today - timedelta(days=29)  # Last 30 days including today
+        recent = (
+            DailyStatusReport.objects.filter(
+                user=self.user,
+                date__range=(cutoff_date, today),
+            )
+            .values("date")
+            .distinct()
+            .count()
+        )
+        self.leaderboard_score = recent + (self.current_streak * 2)
+        self.save(update_fields=["leaderboard_score"])
 
     def check_team_membership(self):
         return self.team is not None
@@ -1103,6 +1143,8 @@ class UserProfile(models.Model):
                 self.last_check_in = check_in_date
                 self.save()
 
+                self.update_leaderboard_score()
+
                 self.award_streak_badges()
 
         except Exception as e:
@@ -1165,18 +1207,27 @@ class IP(models.Model):
             models.Index(fields=["path", "created"], name="ip_path_created_idx"),
         ]
 
+    def __str__(self):
+        return f"{self.address or 'Unknown'} ({self.count} hits)"
+
 
 class OrganizationAdmin(models.Model):
-    role = (
+    ROLE_CHOICES = (
         (0, "Admin"),
         (1, "Moderator"),
     )
-    role = models.IntegerField(choices=role, default=0)
+    role = models.IntegerField(choices=ROLE_CHOICES, default=0)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        username = self.user.username if self.user else "Unknown"
+        org_name = self.organization.name if self.organization else "Unknown Org"
+        role_name = self.get_role_display() or "Unknown"
+        return f"{username} - {role_name} of {org_name}"
 
 
 class Wallet(models.Model):
@@ -1184,6 +1235,9 @@ class Wallet(models.Model):
     account_id = models.TextField(null=True, blank=True)
     current_balance = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet (${self.current_balance})"
 
     def deposit(self, value):
         self.transaction_set.create(value=value, running_balance=self.current_balance + Decimal(value))
@@ -1209,12 +1263,20 @@ class Transaction(models.Model):
     running_balance = models.DecimalField(max_digits=6, decimal_places=2)
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        sign = "+" if self.value >= 0 else "-"
+        return f"{sign}${abs(self.value)} ({self.wallet_id})"
+
 
 class Payment(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=6, decimal_places=2)
     active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        status = "Active" if self.active else "Inactive"
+        return f"Payment ${self.value} - {status}"
 
 
 class Monitor(models.Model):
@@ -1247,6 +1309,10 @@ class Bid(models.Model):
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
     bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
+
+    def __str__(self):
+        bidder = self.user.username if self.user else self.github_username or "Anonymous"
+        return f"Bid by {bidder} - {self.amount_bch} BCH ({self.status})"
 
     # def save(self, *args, **kwargs):
     #     if (
@@ -1499,6 +1565,9 @@ class Contribution(models.Model):
             models.Index(fields=["repository", "created"]),
         ]
 
+    def __str__(self):
+        return f"{self.title[:50]} ({self.contribution_type})"
+
 
 class BaconToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -1599,6 +1668,11 @@ class DailyStatusReport(models.Model):
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "date"], name="dsr_user_date_idx"),
+        ]
 
 
 class IpReport(models.Model):
@@ -2514,6 +2588,9 @@ class OsshCommunity(models.Model):
     contributors_count = models.IntegerField(default=0, help_text="Approximate number of contributors")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.category})"
 
 
 class OsshDiscussionChannel(models.Model):
@@ -3671,3 +3748,7 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+
+    def __str__(self):
+        changer = self.changed_by.username if self.changed_by else "System"
+        return f"{self.field_name} changed by {changer}"

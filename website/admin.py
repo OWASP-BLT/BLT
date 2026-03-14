@@ -145,6 +145,7 @@ class WinnerAdmin(admin.ModelAdmin):
         "second_runner",
         "prize_distributed",
     )
+    list_select_related = ("hunt", "winner", "runner", "second_runner")
 
 
 class BidAdmin(admin.ModelAdmin):
@@ -158,18 +159,22 @@ class BidAdmin(admin.ModelAdmin):
         "created",
         "modified",
     )
+    list_select_related = ("user",)
 
 
 class WalletAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "current_balance", "created")
+    list_select_related = ("user",)
 
 
 class JoinRequestAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "team", "created_at", "is_accepted")
+    list_select_related = ("user", "team")
 
 
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ("id", "wallet", "value", "active")
+    list_select_related = ("wallet", "wallet__user")
 
 
 class ImageInline(admin.TabularInline):
@@ -184,6 +189,10 @@ class IssueAdmin(admin.ModelAdmin):
         "url",
         "domain",
         "description",
+        "spam_score",
+        "spam_reason",
+        "verified",
+        "is_hidden",
         "closed_by",
         "closed_date",
         "screenshot",
@@ -192,7 +201,26 @@ class IssueAdmin(admin.ModelAdmin):
     )
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
-    list_filter = ["domain", "user"]
+    list_filter = ("domain", "user", "verified", "is_hidden", "created")
+    actions = ("approve_issues", "mark_as_spam", "unmark_as_spam")
+
+    def approve_issues(self, request, queryset):
+        queryset.update(verified=True, is_hidden=False)
+        self.message_user(request, f"{queryset.count()} issues approved.")
+
+    approve_issues.short_description = "Approve selected issues"
+
+    def mark_as_spam(self, request, queryset):
+        queryset.update(is_hidden=True, verified=False)
+        self.message_user(request, f"{queryset.count()} issues marked as spam.")
+
+    mark_as_spam.short_description = "Mark as spam"
+
+    def unmark_as_spam(self, request, queryset):
+        queryset.update(is_hidden=False, verified=True)
+        self.message_user(request, f"{queryset.count()} issues unmarked as spam.")
+
+    unmark_as_spam.short_description = "Unmark as spam"
 
 
 class HuntAdmin(admin.ModelAdmin):
