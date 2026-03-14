@@ -376,12 +376,20 @@ admin.autodiscover()
 # Use the drf_yasg schema view
 schema_view = get_schema_view(
     openapi.Info(
-        title="API",
+        title="OWASP Bug Logging Tool (BLT) API",
         default_version="v1",
-        description="Test description",
-        terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@snippets.local"),
-        license=openapi.License(name="BSD License"),
+        description=(
+            "REST API for the OWASP Bug Logging Tool (BLT). "
+            "Provides endpoints for issue tracking, domain management, "
+            "organizations, bug hunts, leaderboards, and security research."
+        ),
+        terms_of_service="https://owasp.org/www-policy/",
+        contact=openapi.Contact(
+            name="OWASP BLT",
+            url="https://github.com/OWASP-BLT/BLT",
+            email="blt-project-leader@owasp.org",
+        ),
+        license=openapi.License(name="AGPL-3.0 License"),
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
