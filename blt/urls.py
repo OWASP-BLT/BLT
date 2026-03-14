@@ -175,8 +175,6 @@ from website.views.issue import (
     GitHubIssueBadgeView,
     GitHubIssueDetailView,
     GitHubIssuesView,
-    GsocView,
-    GithubIssueView,
     IssueCreate,
     IssueEdit,
     IssueView,
