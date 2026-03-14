@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import smtplib
+import secrets
 import socket
 import uuid
 from datetime import datetime, timedelta
@@ -397,7 +398,7 @@ def UpdateIssue(request):
         tokenauth = False
         if "token" in request.POST:
             for token in Token.objects.all():
-                if request.POST["token"] == token.key:
+                if secrets.compare_digest(request.POST["token"], token.key):
                     request.user = User.objects.get(id=token.user_id)
                     tokenauth = True
                     break
@@ -573,7 +574,7 @@ def remove_user_from_issue(request, id):
     tokenauth = False
     try:
         for token in Token.objects.all():
-            if request.POST.get("token") == token.key:
+            if secrets.compare_digest(request.POST["token"], token.key):
                 request.user = User.objects.get(id=token.user_id)
                 tokenauth = True
     except Exception:
@@ -1611,9 +1612,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 obj.user = self.request.user
             else:
                 for token in Token.objects.all():
-                    if self.request.POST.get("token") == token.key:
+                    token_provided = self.request.POST.get("token")
+                        if token_provided and secrets.compare_digest(token_provided, token.key):
                         obj.user = User.objects.get(id=token.user_id)
-                        tokenauth = True
+                            tokenauth = True
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
 
