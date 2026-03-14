@@ -1,5 +1,7 @@
+import re
 import time
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 import requests
 from dateutil.relativedelta import relativedelta
@@ -10,6 +12,10 @@ from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
 from website.models import Contributor, ContributorStats, Repo
+from website.utils import _sanitize_log
+
+# Pattern for validating GitHub owner/repo/login names
+SAFE_GITHUB_NAME = re.compile(r"^[a-zA-Z0-9._-]+$")
 
 
 class Command(LoggedBaseCommand):
@@ -36,7 +42,7 @@ class Command(LoggedBaseCommand):
         #     self.update_stats_for_repo(repo)
 
     def update_stats_for_repo(self, repo):
-        self.stdout.write(f"Updating stats for repository: {repo.name}")
+        self.stdout.write(f"Updating stats for repository: {_sanitize_log(repo.name)}")
 
         owner, repo_name = self.parse_github_url(repo.repo_url)
 
@@ -52,11 +58,25 @@ class Command(LoggedBaseCommand):
         self.update_monthly_stats(repo, current_month_start)
 
     def parse_github_url(self, url):
-        # Remove trailing slash if present
-        url = url.rstrip("/")
-        # Extract owner and repo name from GitHub URL
-        parts = url.split("/")
-        return parts[-2], parts[-1]
+        """Parse and validate a GitHub URL, returning (owner, repo_name).
+
+        Raises CommandError if the URL is not a valid GitHub repository URL
+        or if the owner/repo contain unsafe characters.
+        """
+        parsed = urlparse(url.rstrip("/"))
+        if parsed.hostname not in ("github.com", "www.github.com"):
+            raise CommandError(f"Invalid GitHub URL host: {_sanitize_log(url)}")
+
+        path_parts = [p for p in parsed.path.strip("/").split("/") if p]
+        if len(path_parts) < 2:
+            raise CommandError(f"Invalid GitHub repository URL: {_sanitize_log(url)}")
+
+        owner, repo_name = path_parts[0], path_parts[1]
+
+        if not SAFE_GITHUB_NAME.match(owner) or not SAFE_GITHUB_NAME.match(repo_name):
+            raise CommandError(f"Invalid characters in GitHub owner/repo: {owner}/{repo_name}")
+
+        return owner, repo_name
 
     def fetch_contributor_stats(self, owner, repo_name, start_date, end_date):
         """Fetch contributor statistics using GitHub REST API"""
@@ -71,6 +91,14 @@ class Command(LoggedBaseCommand):
         def get_paginated_data(url, params=None):
             all_data = []
             while url:
+                # Validate that the URL points to the GitHub API over HTTPS
+                parsed_url = urlparse(url)
+                if parsed_url.scheme != "https" or parsed_url.hostname != "api.github.com":
+                    self.stdout.write(
+                        self.style.WARNING(f"Skipping non-GitHub API URL: {_sanitize_log(parsed_url.hostname)}")
+                    )
+                    break
+
                 response = requests.get(url, headers=headers, params=params)
 
                 if response.status_code == 403:  # Rate limit exceeded
@@ -81,7 +109,9 @@ class Command(LoggedBaseCommand):
                     continue
 
                 if response.status_code != 200:
-                    self.stdout.write(self.style.WARNING(f"API error: {response.status_code} - {response.text}"))
+                    self.stdout.write(
+                        self.style.WARNING(f"API error: {response.status_code} - {_sanitize_log(response.text)}")
+                    )
                     break
 
                 data = response.json()
@@ -166,7 +196,7 @@ class Command(LoggedBaseCommand):
             return stats
 
         except requests.exceptions.RequestException as e:
-            self.stdout.write(self.style.ERROR(f"Network error: {str(e)}"))
+            self.stdout.write(self.style.ERROR(f"Network error: {_sanitize_log(e)}"))
             return {}
 
     def increment_stat(self, stats, date, login, stat_type):
@@ -213,13 +243,13 @@ class Command(LoggedBaseCommand):
                 response = requests.get(repo_api_url, headers=headers)
 
                 if response.status_code != 200:
-                    self.stdout.write(self.style.ERROR(f"Failed to fetch repo data: {response.text}"))
+                    self.stdout.write(self.style.ERROR(f"Failed to fetch repo data: {_sanitize_log(response.text)}"))
                     return
 
                 repo_data = response.json()
                 repo_created_at = datetime.strptime(repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f"Error fetching repo creation date: {str(e)}"))
+                self.stdout.write(self.style.ERROR(f"Error fetching repo creation date: {_sanitize_log(e)}"))
                 return
             # Start from repo creation date's month
             current_month_start = repo_created_at.replace(day=1)
@@ -254,6 +284,14 @@ class Command(LoggedBaseCommand):
         def get_paginated_data(url, params=None):
             all_data = []
             while url:
+                # Validate that the URL points to the GitHub API over HTTPS
+                parsed_url = urlparse(url)
+                if parsed_url.scheme != "https" or parsed_url.hostname != "api.github.com":
+                    self.stdout.write(
+                        self.style.WARNING(f"Skipping non-GitHub API URL: {_sanitize_log(parsed_url.hostname)}")
+                    )
+                    break
+
                 response = requests.get(url, headers=headers, params=params)
 
                 if response.status_code == 403:  # Rate limit exceeded
@@ -264,7 +302,9 @@ class Command(LoggedBaseCommand):
                     continue
 
                 if response.status_code != 200:
-                    self.stdout.write(self.style.WARNING(f"API error: {response.status_code} - {response.text}"))
+                    self.stdout.write(
+                        self.style.WARNING(f"API error: {response.status_code} - {_sanitize_log(response.text)}")
+                    )
                     break
 
                 data = response.json()
@@ -357,7 +397,7 @@ class Command(LoggedBaseCommand):
             return monthly_stats
 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Error fetching monthly stats: {str(e)}"))
+            self.stdout.write(self.style.ERROR(f"Error fetching monthly stats: {_sanitize_log(e)}"))
             return {}
 
     def increment_monthly_stat(self, stats, login, stat_type):
@@ -391,6 +431,19 @@ class Command(LoggedBaseCommand):
 
     def get_or_create_contributor(self, login):
         """Get or create a contributor record"""
+        if not SAFE_GITHUB_NAME.match(login):
+            self.stdout.write(self.style.WARNING(f"Skipping contributor with invalid login: {_sanitize_log(login)}"))
+            return Contributor.objects.get_or_create(
+                name=re.sub(r"[^\w._-]", "", login)[:100],
+                defaults={
+                    "github_id": 0,
+                    "github_url": "",
+                    "avatar_url": "",
+                    "contributor_type": "User",
+                    "contributions": 0,
+                },
+            )
+
         # Make a request to get contributor details from GitHub
         response = requests.get(
             f"https://api.github.com/users/{login}",

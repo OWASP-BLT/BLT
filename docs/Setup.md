@@ -434,3 +434,53 @@ Feel free to contribute by solving this [issue](https://github.com/OWASP-BLT/BLT
 ## Need more help?
 
 If you're still facing issues or need further assistance, feel free to reach out to the community on the [OWASP Slack channel](https://owasp.org/slack/invite).
+## Email Verification in Local Development
+
+This section explains how to handle email verification locally when
+verification emails are not actually delivered by default.
+
+When running BLT locally, you may encounter a **“Verify Your Email Address”**
+screen after creating a user or superuser.
+
+BLT uses `django-allauth`, which enforces email verification by default.
+In local development, BLT is configured to use the
+`SlackNotificationEmailBackend` with an SMTP host of `localhost:1025`.
+However, no SMTP server (and typically no Slack integration) is running
+by default, so the verification email is never actually delivered.
+
+### Local Development Workaround
+
+If you are running BLT locally (for example, using Docker) and want to log in
+immediately, you can manually mark your email as verified using the Django shell.
+
+Run:
+
+```bash
+docker-compose exec app python manage.py shell
+```
+
+Once inside the Django shell, run:
+
+```python
+from django.contrib.auth import get_user_model
+from allauth.account.models import EmailAddress
+
+User = get_user_model()
+
+username = "your_username"
+email = "your_email@example.com"
+
+user = User.objects.get(username=username)
+
+EmailAddress.objects.update_or_create(
+    user=user,
+    email=email,
+    defaults={
+        "verified": True,
+        "primary": True,
+    },
+)
+
+print("Email created and verified successfully.")
+exit()
+```

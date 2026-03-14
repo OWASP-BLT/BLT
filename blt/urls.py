@@ -55,6 +55,7 @@ from website.api.views import (
     SecurityIncidentViewSet,
     StatsApiViewset,
     TagApiViewset,
+    TeamMemberLeaderboardAPIView,
     TimeLogViewSet,
     UrlCheckApiViewset,
     UserIssueViewSet,
@@ -184,7 +185,6 @@ from website.views.issue import (
     GitHubIssueBadgeView,
     GitHubIssueDetailView,
     GitHubIssuesView,
-    GithubIssueView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -201,7 +201,6 @@ from website.views.issue import (
     fetch_current_bid,
     flag_issue,
     generate_bid_image,
-    get_github_issue,
     get_unique_issues,
     issue_count,
     like_issue,
@@ -210,6 +209,7 @@ from website.views.issue import (
     refresh_gsoc_project,
     remove_user_from_issue,
     resolve,
+    review_queue,
     save_issue,
     search_issues,
     select_bid,
@@ -293,6 +293,7 @@ from website.views.ossh import (
     ossh_home,
     ossh_results,
 )
+from website.views.ossh_catalog import ossh_catalog
 from website.views.project import (
     ProjectBadgeView,
     ProjectCompactListView,
@@ -333,6 +334,7 @@ from website.views.teams import (
     GiveKudosView,
     TeamChallenges,
     TeamLeaderboard,
+    TeamMemberLeaderboardView,
     TeamOverview,
     add_member,
     create_team,
@@ -385,12 +387,20 @@ admin.autodiscover()
 # Use the drf_yasg schema view
 schema_view = get_schema_view(
     openapi.Info(
-        title="API",
+        title="OWASP Bug Logging Tool (BLT) API",
         default_version="v1",
-        description="Test description",
-        terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@snippets.local"),
-        license=openapi.License(name="BSD License"),
+        description=(
+            "REST API for the OWASP Bug Logging Tool (BLT). "
+            "Provides endpoints for issue tracking, domain management, "
+            "organizations, bug hunts, leaderboards, and security research."
+        ),
+        terms_of_service="https://owasp.org/www-policy/",
+        contact=openapi.Contact(
+            name="OWASP BLT",
+            url="https://github.com/OWASP-BLT/BLT",
+            email="blt-project-leader@owasp.org",
+        ),
+        license=openapi.License(name="AGPL-3.0 License"),
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
@@ -1013,7 +1023,11 @@ urlpatterns = [
         name="toggle_job_status",
     ),
     path("jobs/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="public_job_list"),
-    path("jobs/<int:pk>/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="job_detail"),
+    path(
+        "jobs/<int:pk>/",
+        RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False),
+        name="job_detail",
+    ),
     path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
@@ -1129,6 +1143,7 @@ urlpatterns = [
     ),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
     path("open-source-sorting-hat/", ossh_home, name="ossh_home"),
+    path("api/ossh/catalog/", ossh_catalog, name="ossh_catalog"),
     path("open-source-sorting-hat/results", ossh_results, name="ossh_results"),
     path("get-github-data/", get_github_data, name="get_github_data"),
     path("get-recommended-repos/", get_recommended_repos, name="get_recommended_repos"),
@@ -1144,14 +1159,7 @@ urlpatterns = [
     path("stats/run-command/", run_management_command, name="run_management_command"),
     path("test-sentry/", test_sentry, name="test_sentry"),
     path("template_list/", template_list, name="template_list"),
-    path(
-        "github-issue-prompt/",
-        TemplateView.as_view(template_name="github_issue_prompt.html"),
-        name="github_issue_prompt",
-    ),
     path("check_owasp_compliance/", check_owasp_compliance, name="check_owasp_compliance"),
-    path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
-    path("get-github-issue/", get_github_issue, name="get_github_issue"),
     # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("add_repo", add_repo, name="add_repo"),
@@ -1219,6 +1227,7 @@ urlpatterns = [
     path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
     path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
     path("queue/<int:queue_id>/update-txid/", update_txid, name="queue_update_txid"),
+    path("review/queue/", review_queue, name="review_queue"),
     path("queue/launch-control/", queue_list, name="queue_launch_page"),
     # Chat room API endpoints
     path("api/send-message/", send_message_api, name="send_message_api"),
@@ -1251,6 +1260,8 @@ urlpatterns = [
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
+    path("teams/member-leaderboard/", TeamMemberLeaderboardView.as_view(), name="team_member_leaderboard"),
+    path("api/v1/team-member-leaderboard/", TeamMemberLeaderboardAPIView.as_view(), name="api_team_member_leaderboard"),
     path("like_issue/<int:issue_pk>/", like_issue, name="like_issue"),
     path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
     path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
