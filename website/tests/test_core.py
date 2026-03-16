@@ -187,7 +187,7 @@ class TopEarnersTests(TestCase):
 
     def test_top_earners_calculation(self):
         """Test that top earners are calculated correctly based on $5 issues and linked PRs"""
-        response = self.client.get(reverse("index"))
+        response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
 
         # Check if top_earners is in context
@@ -222,7 +222,7 @@ class TopEarnersTests(TestCase):
         )
         unmerged_pr.linked_issues.add(self.issue1)
 
-        response = self.client.get(reverse("index"))
+        response = self.client.get(reverse("home"))
         top_earners = response.context["top_earners"]
 
         # contributor1 should still have $10 (only 2 merged PRs counted)
@@ -261,7 +261,7 @@ class TopEarnersTests(TestCase):
         )
         pr_for_non_dollar.linked_issues.add(non_dollar_issue)
 
-        response = self.client.get(reverse("index"))
+        response = self.client.get(reverse("home"))
         top_earners = response.context["top_earners"]
 
         # contributor1 should still have $10 (only $5 labeled issues counted)
