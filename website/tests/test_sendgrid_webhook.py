@@ -208,3 +208,102 @@ class SendGridWebhookTestCase(TestCase):
         self.assertEqual(self.user_profile.email_status, "bounce")
         self.assertEqual(self.user_profile.email_last_event, "bounce")
         self.assertEqual(self.user_profile.email_bounce_reason, "Invalid mailbox")
+
+    def test_webhook_marks_user_unsubscribed(self):
+        """Test that unsubscribe events update the user profile"""
+        payload = [
+            {
+                "email": "test@example.com",
+                "event": "unsubscribe",
+                "timestamp": "2024-01-01 12:00:00",
+            }
+        ]
+
+        with patch.dict("os.environ", {}, clear=True):
+            response = self.client.post(
+                self.webhook_url,
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.user_profile.refresh_from_db()
+        self.assertEqual(self.user_profile.email_status, "unsubscribe")
+        self.assertEqual(self.user_profile.email_last_event, "unsubscribe")
+        self.assertTrue(self.user_profile.email_unsubscribed)
+
+    def test_webhook_marks_user_as_spam_reported(self):
+        """Test that spamreport events set the spam flag on the user profile"""
+        payload = [
+            {
+                "email": "test@example.com",
+                "event": "spamreport",
+                "timestamp": "2024-01-01 12:00:00",
+            }
+        ]
+
+        with patch.dict("os.environ", {}, clear=True):
+            response = self.client.post(
+                self.webhook_url,
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.user_profile.refresh_from_db()
+        self.assertEqual(self.user_profile.email_status, "spamreport")
+        self.assertEqual(self.user_profile.email_last_event, "spamreport")
+        self.assertTrue(self.user_profile.email_spam_report)
+
+    def test_webhook_tracks_click_counts_for_user_and_domain(self):
+        """Test that click events increment both the user and domain counters"""
+        payload = [
+            {
+                "email": "test@example.com",
+                "event": "click",
+                "url": "https://example.com/link",
+                "timestamp": "2024-01-01 12:00:00",
+            }
+        ]
+
+        with patch.dict("os.environ", {}, clear=True):
+            response = self.client.post(
+                self.webhook_url,
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.user_profile.refresh_from_db()
+        self.domain.refresh_from_db()
+        self.assertEqual(self.user_profile.email_status, "click")
+        self.assertEqual(self.user_profile.email_last_event, "click")
+        self.assertEqual(self.user_profile.email_click_count, 1)
+        self.assertEqual(self.domain.clicks, 1)
+
+    def test_webhook_tracks_open_event_count(self):
+        """Test that open events increment the user profile open counter"""
+        payload = [
+            {
+                "email": "test@example.com",
+                "event": "open",
+                "timestamp": "2024-01-01 12:00:00",
+            }
+        ]
+
+        with patch.dict("os.environ", {}, clear=True):
+            response = self.client.post(
+                self.webhook_url,
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.user_profile.refresh_from_db()
+        self.assertEqual(self.user_profile.email_status, "open")
+        self.assertEqual(self.user_profile.email_last_event, "open")
+        self.assertEqual(self.user_profile.email_open_count, 1)
