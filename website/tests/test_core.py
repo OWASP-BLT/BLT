@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -87,6 +88,14 @@ class TopEarnersTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+
+        # Patch external HTTP fetchers so tests are fast and network-independent
+        self._patch_devto = patch("website.views.core.fetch_devto_articles", return_value=[])
+        self._patch_job_board = patch("website.views.core.get_job_board_data", return_value=([], []))
+        self._patch_discussions = patch("website.views.core.fetch_github_discussions", return_value=[])
+        self._patch_devto.start()
+        self._patch_job_board.start()
+        self._patch_discussions.start()
 
         # Create test repository
         self.repo = Repo.objects.create(
@@ -185,9 +194,14 @@ class TopEarnersTests(TestCase):
         self.pr2.linked_issues.add(self.issue2)
         self.pr3.linked_issues.add(self.issue2)
 
+    def tearDown(self):
+        self._patch_devto.stop()
+        self._patch_job_board.stop()
+        self._patch_discussions.stop()
+
     def test_top_earners_calculation(self):
         """Test that top earners are calculated correctly based on $5 issues and linked PRs"""
-        response = self.client.get(reverse("index"))
+        response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
 
         # Check if top_earners is in context
@@ -222,7 +236,7 @@ class TopEarnersTests(TestCase):
         )
         unmerged_pr.linked_issues.add(self.issue1)
 
-        response = self.client.get(reverse("index"))
+        response = self.client.get(reverse("home"))
         top_earners = response.context["top_earners"]
 
         # contributor1 should still have $10 (only 2 merged PRs counted)
@@ -261,7 +275,7 @@ class TopEarnersTests(TestCase):
         )
         pr_for_non_dollar.linked_issues.add(non_dollar_issue)
 
-        response = self.client.get(reverse("index"))
+        response = self.client.get(reverse("home"))
         top_earners = response.context["top_earners"]
 
         # contributor1 should still have $10 (only $5 labeled issues counted)
