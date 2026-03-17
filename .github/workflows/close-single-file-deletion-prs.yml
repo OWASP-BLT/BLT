@@ -29,14 +29,24 @@ jobs:
   check_contributor_pr:
     runs-on: ubuntu-latest
     if: >
-      github.actor != 'dependabot[bot]'
+      github.event.pull_request.user.type != 'Bot'
+      && github.actor != 'dependabot[bot]'
       && github.actor != 'dependabot-preview[bot]'
       && github.actor != 'dependabot'
       && github.actor != github.repository_owner
       && github.actor != 'sentry-autofix'
+      && github.actor != 'sentry-io'
+      && github.actor != 'sentry-io[bot]'
       && github.actor != 'DonnieBLT'
       && github.actor != 'copilot-swe-agent[bot]'
       && github.actor != 'copilot-swe-agent'
+      && github.actor != 'coderabbitai[bot]'
+      && github.actor != 'coderabbitai'
+      && github.actor != 'renovate[bot]'
+      && github.actor != 'renovate'
+      && github.actor != 'snyk-bot'
+      && github.actor != 'github-actions[bot]'
+      && github.actor != 'allcontributors[bot]'
     steps:
       - name: Enforce first-time contributor PR policy
         uses: actions/github-script@v7

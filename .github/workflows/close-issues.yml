@@ -21,6 +21,28 @@ jobs:
             const owner = context.repo.owner;
             const author = context.payload.issue.user.login;
 
+            // Check if the issue author is a bot
+            const authorType = context.payload.issue.user.type;
+            const knownBots = [
+              'copilot', 'copilot-swe-agent',
+              'sentry-autofix', 'sentry-io',
+              'coderabbitai',
+              'dependabot', 'dependabot-preview',
+              'renovate', 'renovate-bot',
+              'snyk-bot',
+              'github-actions',
+              'allcontributors',
+            ];
+            const isBot =
+              authorType === 'Bot' ||
+              author.endsWith('[bot]') ||
+              knownBots.some(bot => author.toLowerCase() === bot);
+
+            if (isBot) {
+              console.log(`Issue #${issueNumber} created by bot ${author} (type: ${authorType}) — skipping auto-close.`);
+              return;
+            }
+
             // Check if the issue author is a maintainer/collaborator
             let isMaintainer = false;
             try {
