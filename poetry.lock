@@ -1578,14 +1578,14 @@ testing = ["pytest"]
 
 [[package]]
 name = "google-genai"
-version = "1.67.0"
+version = "1.68.0"
 description = "GenAI Python SDK"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_genai-1.67.0-py3-none-any.whl", hash = "sha256:58b0484ff2d4335fa53c724b489e9f807fcca8115d9cdbd8fdf341121fbd6d2d"},
-    {file = "google_genai-1.67.0.tar.gz", hash = "sha256:897195a6a9742deb6de240b99227189ada8b2d901d61bdfba836c3092021eab6"},
+    {file = "google_genai-1.68.0-py3-none-any.whl", hash = "sha256:a1bc9919c0e2ea2907d1e319b65471d3d6d58c54822039a249fe1323e4178d15"},
+    {file = "google_genai-1.68.0.tar.gz", hash = "sha256:ac30c0b8bc630f9372993a97e4a11dae0e36f2e10d7c55eacdca95a9fa14ca96"},
 ]
 
 [package.dependencies]
@@ -1597,7 +1597,7 @@ pydantic = ">=2.9.0,<3.0.0"
 requests = ">=2.28.1,<3.0.0"
 sniffio = "*"
 tenacity = ">=8.2.3,<9.2.0"
-typing-extensions = ">=4.11.0,<5.0.0"
+typing-extensions = ">=4.14.0,<5.0.0"
 websockets = ">=13.0.0,<17.0"
 
 [package.extras]
@@ -4242,4 +4242,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "2b54d53a3d0d90f7fde35e02d419d4045620d222539f22d02ee0d62ba97e93b1"
+content-hash = "1a9c359f2c31ddb7798b4ae0e9233f0b9aa53796bed623763f98c3fd6b8f5467"
