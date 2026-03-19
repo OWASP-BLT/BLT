@@ -14,6 +14,8 @@ from django.views.decorators.http import require_POST
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
 
+from website.bitcoin_utils import get_sighash_type
+
 from blt import settings as blt_settings
 from website.models import BaconEarning, BaconSubmission, Badge, Organization, SlackIntegration, UserBadge
 
@@ -44,8 +46,12 @@ def slack_escape(text):
 @require_POST
 def batch_send_bacon_tokens_view(request):
     # Get all users with non-zero tokens_earned
-    users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
+    mentor_badge = Badge.objects.filter(title="mentor").first()
 
+    if not UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists():
+        users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+    users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
     if not users_with_tokens.exists():
         return JsonResponse({"status": "error", "message": "No eligible users with tokens to send."})
 
@@ -99,6 +105,9 @@ def batch_send_bacon_tokens_view(request):
 
 @login_required
 def pending_transactions_view(request):
+    mentor_badge = Badge.objects.filter(title="mentor").first()
+    if not UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists():
+        return JsonResponse({"error": "Unauthorized"}, status=403)
     # Fetch all users with non-zero tokens_earned
     pending_transactions = BaconEarning.objects.filter(tokens_earned__gt=0)
     # Prepare a list of user: address: tokens data
@@ -375,10 +384,12 @@ def initiate_transaction(request):
                     if response.status_code == 200 and "txid" in response_data:
                         txid = response_data["txid"]
 
-                        # Update each selected user's BaconSubmission record
-                        usernames = [user["username"] for user in selected_users]
-                        BaconSubmission.objects.filter(user__username__in=usernames).update(
-                            transaction_id=txid, transaction_status="completed"
+                    sighash = get_sighash_type(txid)
+
+                    # Update each selected user's BaconSubmission record
+                    for user in selected_users:
+                        BaconSubmission.objects.filter(user__username=user["username"]).update(
+                            transaction_id=txid, transaction_status="completed", sighash_type=sighash
                         )
                         return JsonResponse(response_data)
                     else:

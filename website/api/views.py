@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from functools import wraps
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
 import django
 import psutil
@@ -1216,19 +1216,30 @@ class OwaspComplianceChecker(APIView):
             }
 
         try:
-            #added allow_redirects=False to prevent infinite redirects
             response = requests.get(safe_url, timeout=10, allow_redirects=False)
-            #this condition will help to check if the url is redirected to another url
-            if response.is_redirect:
-                new_url = response.headers.get('Location')
 
-                if rebuild_safe_url(new_url):
-                    response = requests.get(new_url, timeout=10, allow_redirects=False)
-                else:
-                    raise Exception ("Unsafe redirect detected.")
-            soup = BeautifulSoup(response.text, "html.parser")
-
+            if 300 <= response.status_code < 400:
+                location = response.headers.get("Location")
+                if not location:
+                    return{
+                        "has_owasp_mention":False,
+                        "has_project_link":False,
+                        "has_dates":False,
+                        "details":{"url_checked":safe_url,"error":"Redirect missing Location header."}
+                    }
+                redirect_url = urljoin(safe_url, location)
+                safe_redirect_url = rebuild_safe_url(redirect_url)
+                if not safe_redirect_url:
+                    return{
+                        "has_owasp_mention":False,
+                        "has_project_link":False,
+                        "has_dates":False,
+                        "details":{"url_checked":safe_url,"error":"Unsafe redirect detected."}
+                    }
+                response = requests.get(safe_redirect_url, timeout=10, allow_redirects=False)
+                
             # Check for OWASP mention
+            soup = BeautifulSoup(response.text, "html.parser")
             content = soup.get_text().lower()
             has_owasp_mention = "owasp" in content
 
