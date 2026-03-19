@@ -49,7 +49,6 @@ def batch_send_bacon_tokens_view(request):
     mentor_badge = Badge.objects.filter(title="mentor").first()
 
     if not UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists():
-        users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
         return JsonResponse({"error": "Unauthorized"}, status=403)
     users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
     if not users_with_tokens.exists():
@@ -381,16 +380,14 @@ def initiate_transaction(request):
                     except ValueError:
                         return JsonResponse({"error":"Invalid response format from Mainnet server"},status=502)
                     
-                    if response.status_code == 200 and "txid" in response_data:
-                        txid = response_data["txid"]
-
-                    sighash = get_sighash_type(txid)
-
-                    # Update each selected user's BaconSubmission record
-                    for user in selected_users:
-                        BaconSubmission.objects.filter(user__username=user["username"]).update(
-                            transaction_id=txid, transaction_status="completed", sighash_type=sighash
-                        )
+                    if response.status_code == 200:
+                        txid = response_data.get("txid")
+                        if txid:
+                            sighash = get_sighash_type(txid)
+                            for user in selected_users:
+                                BaconSubmission.objects.filter(user__username=user["username"]).update(
+                                    transaction_id=txid, transaction_status="completed", sighash_type=sighash
+                                )
                         return JsonResponse(response_data)
                     else:
                         return JsonResponse(
@@ -416,7 +413,7 @@ def initiate_transaction(request):
                         timeout=(3.05, 15),
                         allow_redirects=False
                     )
-                    if response.is_redirect:
+                    if 300 <= response.status_code < 400:
                         return JsonResponse({"error": "Unsafe redirect in regtest"}, status=500)
 
                     try:
@@ -424,6 +421,13 @@ def initiate_transaction(request):
                     except ValueError:
                         return JsonResponse({"error": "Invalid response from Regtest server"}, status=502)
                     if response.status_code == 200:
+                        txid = response_data.get("txid")
+                        if txid:
+                            sighash = get_sighash_type(txid)
+                            for user in selected_users:
+                                BaconSubmission.objects.filter(user__username=user["username"]).update(
+                                    transaction_id=txid, transaction_status="completed", sighash_type=sighash
+                                )
                         return JsonResponse(response_data)
                     else:
                         return JsonResponse(
@@ -473,7 +477,7 @@ def get_wallet_balance(request):
         return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
     try:
-        response = requests.get(f"{ord_server_url}/mainnet/wallet-balance")
+        response = requests.get(f"{ord_server_url}/mainnet/wallet-balance", timeout=(3.05, 10), allow_redirects=False)
         response_data = response.json()
         if response.status_code == 200 and response_data.get("success"):
             balance_data = json.loads(response_data["balance"])

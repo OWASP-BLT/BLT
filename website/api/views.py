@@ -1283,7 +1283,7 @@ class OwaspComplianceChecker(APIView):
             }
 
         try:
-            response = requests.get(safe_url, timeout=10)
+            response = requests.get(safe_url, timeout=10, allow_redirects=False)
             soup = BeautifulSoup(response.text, "html.parser")
 
             paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
@@ -1501,7 +1501,7 @@ def trademark_search_api(request):
             "x-rapidapi-key": settings.USPTO_API,
         }
 
-        available_response = requests.get(available_url, headers=headers, timeout=10)
+        available_response = requests.get(available_url, headers=headers, timeout=10, allow_redirects=False)
         available_data = safe_json(available_response)
         if available_data is None:
             return Response(
@@ -1518,7 +1518,7 @@ def trademark_search_api(request):
         if isinstance(available_data, list) and len(available_data) > 0:
             if available_data[0].get("available") == "no":
                 search_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/{query}/active"
-                search_response = requests.get(search_url, headers=headers, timeout=10)
+                search_response = requests.get(search_url, headers=headers, timeout=10,allow_redirects=False)
                 search_data = safe_json(search_response)
                 if search_data is None:
                     return Response(

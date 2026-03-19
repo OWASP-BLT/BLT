@@ -36,7 +36,40 @@ def create_bacon_token(user, contribution):
         logger.error(f"Error creating token: {e}")
         return None
 
+def get_sighash_type(txid):
+    """
+    Retrieves the SIGHASH type from the first input of a confirmed transaction.
+    """
+    rpc_client = get_rpc_client()
+    
+    SIGHASH_MAP = {
+        0x01: "SIGHASH_ALL",
+        0x02: "SIGHASH_NONE",
+        0x03: "SIGHASH_SINGLE",
+        0x80: "SIGHASH_ANYONECANPAY",
+        0x81: "SIGHASH_ALL_ANYONECANPAY",
+    }
+    
+    try:
+        tx = rpc_client.getrawtransaction(txid, True)
 
+        first_vin = tx.get('vin', [{}])[0]
+
+        witness = first_vin.get('txinwitness', [])
+        if witness:
+            signature_hex = witness[0]
+        else:
+            script_sig = first_vin.get('scriptSig',{}).get('hex','')
+            signature_hex = script_sig
+        if not signature_hex:
+            return "UNKNOWN"
+        sighash_byte = int(signature_hex[-2:], 16)
+        
+        return SIGHASH_MAP.get(sighash_byte, f"CUSTOM_{sighash_byte}")
+
+    except Exception as e:
+        logger.error(f"Failed to extract SIGHASH for {txid}: {e}")
+        return "ERROR"
 def issue_asset(asset_name, amount, identifier):
     """
     This function is custom script or RPC call that creates a new asset on Bitcoin using Runes.

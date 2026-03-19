@@ -2841,7 +2841,9 @@ class Rating(models.Model):
 
 
 class BaconSubmission(models.Model):
-    STATUS_CHOICES = (("in_review", "In Review"), ("accepted", "Accepted"), ("declined", "Declined"))
+    STATUS_CHOICES = (("in_review", "In Review"), ("accepted", "Accepted"), ("declined", "Declined"), ("new","New"))
+    SIGHASH_CHOICES = (("SIGHASH_ALL","ALL (0x01)"),("SIGHASH_NONE","NONE (0x02)"),("SIGHASH_SINGLE","SINGLE (0x03)"),("SIGHASH_ANYONECANPAY","ANYONECANPAY (0x80)"),("SIGHASH_ALL_ANYONECANPAY","ALL | ANYONECANPAY (0x81)"))
+   
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     github_url = models.URLField()
     contribution_type = models.CharField(
@@ -2854,6 +2856,7 @@ class BaconSubmission(models.Model):
         max_length=20, choices=[("pending", "Pending"), ("completed", "Completed")], default="pending"
     )
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    sighash_type = models.CharField(max_length=50, choices=SIGHASH_CHOICES, blank=True, null=True,help_text="The forensic signature hash type extracted from the transaction.")
     bacon_amount = models.IntegerField(default=0)
     modified_at = models.DateTimeField(auto_now=True)
 
