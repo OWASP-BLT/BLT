@@ -1216,7 +1216,16 @@ class OwaspComplianceChecker(APIView):
             }
 
         try:
-            response = requests.get(safe_url, timeout=10)
+            #added allow_redirects=False to prevent infinite redirects
+            response = requests.get(safe_url, timeout=10, allow_redirects=False)
+            #this condition will help to check if the url is redirected to another url
+            if response.is_redirect:
+                new_url = response.headers.get('Location')
+
+                if rebuild_safe_url(new_url):
+                    response = requests.get(new_url, timeout=10, allow_redirects=False)
+                else:
+                    raise Exception ("Unsafe redirect detected.")
             soup = BeautifulSoup(response.text, "html.parser")
 
             # Check for OWASP mention

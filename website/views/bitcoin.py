@@ -41,6 +41,7 @@ def slack_escape(text):
 
 
 @login_required
+@require_POST
 def batch_send_bacon_tokens_view(request):
     # Get all users with non-zero tokens_earned
     users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
@@ -69,9 +70,14 @@ def batch_send_bacon_tokens_view(request):
         response = requests.post(
             f"{ORD_SERVER_URL}/send-bacon-tokens",
             headers={"Content-Type": "application/json"},
-            data=json.dumps(payload),
+            json=payload,
+            timeout=(3.05, 27),
+            allow_redirects=False
         )
-        response_data = response.json()
+        try:
+            response_data = response.json()
+        except ValueError:
+            return JsonResponse({"status": "error", "message": "Invalid response from Bitcoin server"})
 
         # Reset the tokens_earned for all users if the request was successful
         if response.status_code == 200 and response_data.get("success"):
@@ -91,7 +97,7 @@ def batch_send_bacon_tokens_view(request):
             {"status": "error", "message": "An error occurred while sending tokens. Please try again later."}
         )
 
-
+@login_required
 def pending_transactions_view(request):
     # Fetch all users with non-zero tokens_earned
     pending_transactions = BaconEarning.objects.filter(tokens_earned__gt=0)
@@ -359,22 +365,30 @@ def initiate_transaction(request):
                 if not ord_server_url:
                     return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
-                response = requests.post(f"{ord_server_url}/mainnet/send-bacon-tokens", json=final_payload)
-                response_data = response.json()
-                if response.status_code == 200 and "txid" in response_data:
-                    txid = response_data["txid"]
+                try:
+                    response = requests.post(f"{ord_server_url}/mainnet/send-bacon-tokens", json=final_payload,timeout=(3.05, 27),allow_redirects=False)
+                    try:
+                        response_data = response.json()
+                    except ValueError:
+                        return JsonResponse({"error":"Invalid response format from Mainnet server"},status=502)
+                    
+                    if response.status_code == 200 and "txid" in response_data:
+                        txid = response_data["txid"]
 
-                    # Update each selected user's BaconSubmission record
-                    for user in selected_users:
-                        BaconSubmission.objects.filter(user__username=user["username"]).update(
+                        # Update each selected user's BaconSubmission record
+                        usernames = [user["username"] for user in selected_users]
+                        BaconSubmission.objects.filter(user__username__in=usernames).update(
                             transaction_id=txid, transaction_status="completed"
                         )
-                    return JsonResponse(response_data)
-                else:
-                    return JsonResponse(
-                        {"error": "Failed to process transaction on mainnet"}, status=response.status_code
-                    )
-
+                        return JsonResponse(response_data)
+                    else:
+                        return JsonResponse(
+                            {"error": "Failed to process transaction on mainnet"}, status=response.status_code
+                        )
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Request error in initiate_transaction: {str(e)}", exc_info=True)
+                    return JsonResponse({"error": "An error occurred while sending tokens. Please try again later."})
+                
             # REGTEST LOGIC: Send only required fields in JSON
             elif network == "regtest":
                 final_payload = {"num_users": len(selected_users), "fee_rate": fee_rate, "dry_run": dry_run}
@@ -384,15 +398,29 @@ def initiate_transaction(request):
                 if not ord_server_url:
                     return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
-                response = requests.post(f"{ord_server_url}/regtest/send-bacon-tokens", json=final_payload)
-                response_data = response.json()
-                if response.status_code == 200:
-                    return JsonResponse(response_data)
-                else:
-                    return JsonResponse(
-                        {"error": "Failed to process transaction on regtest"}, status=response.status_code
+                try:
+                    response = requests.post(
+                        f"{ord_server_url}/regtest/send-bacon-tokens",
+                        json=final_payload,
+                        timeout=(3.05, 15),
+                        allow_redirects=False
                     )
+                    if response.is_redirect:
+                        return JsonResponse({"error": "Unsafe redirect in regtest"}, status=500)
 
+                    try:
+                        response_data = response.json()
+                    except ValueError:
+                        return JsonResponse({"error": "Invalid response from Regtest server"}, status=502)
+                    if response.status_code == 200:
+                        return JsonResponse(response_data)
+                    else:
+                        return JsonResponse(
+                            {"error": "Failed to process transaction on regtest"}, status=response.status_code
+                        )
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Request error in initiate_transaction: {str(e)}", exc_info=True)
+                    return JsonResponse({"error": "An error occurred while sending tokens. Please try again later."})
             else:
                 return JsonResponse({"error": "Invalid network specified"}, status=400)
 
