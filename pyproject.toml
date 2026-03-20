@@ -78,7 +78,7 @@ opencv-python-headless = "^4.13.0.92"
 [tool.poetry.group.dev.dependencies]
 black = "^26.3.1"
 isort = "^8.0.1"
-ruff = "^0.15.6"
+ruff = "^0.15.7"
 pre-commit = "^4.5.0"
 selenium = "^4.41.0"
 webdriver-manager = "^4.0.2"
