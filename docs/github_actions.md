@@ -313,9 +313,8 @@ When a PR contains migrations with numbers that overlap existing migrations (e.g
 **AI Relevance**: Maintains traceability—every PR should solve a specific problem defined in an issue.
 
 #### 2.11 Close PRs from Non-First-Time Contributors (`close-single-file-deletion-prs.yml`)
+*Note: The workflow filename is historical—despite the "single-file" name, this policy applies to deletion-only PRs deleting between 1 and 20 files.*
 **Purpose**: Enforce a first-time contributor–only PR policy
-
-**Triggers**:
 - Pull request opened, synchronized, or reopened
 
 **Key Features**:
