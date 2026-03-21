@@ -5,9 +5,9 @@ name: Close PRs from Non-First-Time Contributors
 #
 # Accepted PR policy:
 #   Only pull requests from first-time contributors (FIRST_TIMER or
-#   FIRST_TIME_CONTRIBUTOR) that delete exactly one file are accepted.
-#   Everything else is automatically closed:
-#     - First-time contributor with any change other than a single-file deletion.
+#   FIRST_TIME_CONTRIBUTOR) that delete between 1 and 20 files (no other changes)
+#   are accepted. Everything else is automatically closed:
+#     - First-time contributor with any change other than file-only deletions (1–20 files).
 #     - Any contributor who has previously contributed to this repository.
 on:
   pull_request_target:
@@ -84,7 +84,11 @@ jobs:
             core.info(`PR #${pull_number} changes ${files.length} file(s).`);
             files.forEach(f => core.info(`  ${f.status}: ${f.filename}`));
 
-            const onlyOneFileDeleted = files.length === 1 && files[0].status === 'removed';
+            // Accept PRs that only delete files, with a count between 1 and 20
+            const MAX_DELETIONS = 20;
+            const allFilesDeleted = files.length >= 1 && files.every(f => f.status === 'removed');
+            const withinDeletionLimit = files.length <= MAX_DELETIONS;
+            const onlyFileDeletions = allFilesDeleted && withinDeletionLimit;
 
             let closeReason = null;
             let message = null;
@@ -92,12 +96,39 @@ jobs:
             if (!isFirstTimeContributor) {
               // Any PR from a returning contributor is automatically closed.
               closeReason = `returning contributor (${authorAssociation}) — only first-time contributors may submit PRs`;
+
+              // Look up the author's previous merged PRs in this repository
+              let previousPRsSection = '';
+              try {
+                const previousPRs = await github.rest.search.issuesAndPullRequests({
+                  q: `repo:${owner}/${repo} is:pr is:merged author:${author}`,
+                  per_page: 5,
+                  sort: 'updated',
+                  order: 'desc',
+                });
+                const mergedPRs = previousPRs.data.items;
+                if (mergedPRs.length > 0) {
+                  const prLinks = mergedPRs
+                    .map(p => `  - [#${p.number}: ${p.title}](${p.html_url})`)
+                    .join('\n');
+                  previousPRsSection = [
+                    '',
+                    '📋 **Your previous merged contributions to this repository:**',
+                    prLinks,
+                  ].join('\n');
+                }
+              } catch (searchErr) {
+                core.warning(`Could not fetch previous PRs for ${author}.`);
+                core.debug(`Search error details: ${searchErr.message}`);
+              }
+
               message = [
                 `👋 Hi @${author},`,
                 '',
                 '🚫 **This pull request has been automatically closed** because only **first-time contributors** (`FIRST_TIMER` or `FIRST_TIME_CONTRIBUTOR`) may submit pull requests to this repository at this time.',
                 '',
                 'Your GitHub account has previously contributed to this repository, so this PR does not qualify for automatic acceptance.',
+                previousPRsSection,
                 '',
                 '⚠️ **Please note:** Closed pull requests of this type are recorded and will count toward **negative scoring** on your contributor profile.',
                 '',
@@ -105,20 +136,27 @@ jobs:
                 '',
                 'Thank you for your understanding! 🙏',
               ].join('\n');
-            } else if (isFirstTimeContributor && !onlyOneFileDeleted) {
-              // First-time contributor whose PR is NOT a single-file deletion
-              closeReason = `first-time contributor submitting a non-single-file-deletion PR`;
+            } else if (isFirstTimeContributor && !onlyFileDeletions) {
+              // First-time contributor whose PR is NOT a valid file-deletion PR
+              closeReason = `first-time contributor submitting a non-deletion or oversized PR`;
+              const tooManyFiles = allFilesDeleted && !withinDeletionLimit;
+              let condition2Text;
+              if (tooManyFiles) {
+                condition2Text = `Your PR deletes ${files.length} files, which exceeds the maximum of ${MAX_DELETIONS}.`;
+              } else {
+                condition2Text = 'Your PR contains changes other than file deletions (e.g., modifications or additions).';
+              }
               message = [
                 `👋 Hi @${author}, thank you for your interest in contributing!`,
                 '',
-                '🚫 **This pull request has been automatically closed** because pull requests from first-time contributors are only accepted when they **delete exactly one file**.',
+                `🚫 **This pull request has been automatically closed** because pull requests from first-time contributors are only accepted when they **delete between 1 and ${MAX_DELETIONS} files** with no other changes.`,
                 '',
                 'The conditions that must both be true for a first-time contributor\'s PR to be accepted are:',
                 '',
                 '1. **You have not previously contributed** to this repository',
-                '2. **The PR deletes exactly one file** with no other changes',
+                `2. **The PR deletes between 1 and ${MAX_DELETIONS} files** with no other changes`,
                 '',
-                'Your PR does not meet condition 2.',
+                `Your PR does not meet condition 2. ${condition2Text}`,
                 '',
                 '⚠️ **Please note:** Closed pull requests of this type are recorded and will count toward **negative scoring** on your contributor profile.',
                 '',
