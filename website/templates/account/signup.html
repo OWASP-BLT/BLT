@@ -5,7 +5,8 @@
     Sign Up | {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block description %}
-    Create an account to join the gamified crowd-sourced QA testing community. Sign up to test websites, apps, git repositories, and more.
+    Create an account to join the gamified crowd-sourced QA testing community. Sign up to test websites, apps, git
+    repositories, and more.
 {% endblock description %}
 {% block keywords %}
     Sign Up, Create Account, Join Community, Email, Username, Discover Bugs, Report Bugs
@@ -14,7 +15,8 @@
     Sign Up - Join Our Community
 {% endblock og_title %}
 {% block og_description %}
-    Create an account to join the gamified crowd-sourced QA testing community. Sign up to test websites, apps, git repositories, and more.
+    Create an account to join the gamified crowd-sourced QA testing community. Sign up to test websites, apps, git
+    repositories, and more.
 {% endblock og_description %}
 {% load i18n %}
 {% load custom_tags %}
@@ -26,18 +28,22 @@
             <div class="p-4 py-6 text-white bg-red-500 md:w-96 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
                 <div class="my-3 text-4xl font-bold tracking-wider text-center">
                     <a href="{% url 'home' %}"
-                       class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
+                       class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME'
+                    %}</a>
                 </div>
                 <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
-                    {% env 'PROJECT_NAME' %} {% trans "is a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more" %}.
+                    {% env 'PROJECT_NAME' %} {% trans "is a gamified crowd-sourced QA testing and vulnerability disclosure
+                    platform for websites, apps, git repositories, and more" %}.
                 </p>
                 <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
                     <span>{% trans "Already have an account" %}?</span>
                     <a href="{% url 'account_login' %}?next={{ request.path }}"
-                       class="underline text-white">{% trans "Login" %}!</a>
+                       class="underline text-white">{% trans
+                    "Login" %}!</a>
                 </p>
                 <p class="mt-6 text-sm text-center text-white">
-                    {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline">{% trans "conditions" %}</a>
+                    {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline">{% trans "terms" %}</a> {% trans
+                    "and" %} <a href="{% url 'terms' %}" class="underline">{% trans "conditions" %}</a>
                 </p>
             </div>
             <!-- Right Section -->
@@ -72,7 +78,8 @@
                         <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z">
                         </path>
                     </svg>
-                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-white">{% trans "GitHub" %}</span>
+                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-white">{% trans
+                    "GitHub" %}</span>
                 </a>
                 <!-- Divider -->
                 <div class="relative mb-4">
@@ -80,7 +87,8 @@
                         <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
                     </div>
                     <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">{% trans "Or sign up with email" %}</span>
+                        <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">{% trans "Or sign up
+                        with email" %}</span>
                     </div>
                 </div>
                 <form class="flex flex-col space-y-5 login"
@@ -89,7 +97,7 @@
                     {% csrf_token %}
                     <!-- Username Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="email"
+                        <label for="id_username"
                                class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username</label>
                         <input autofocus
                                type="text"
@@ -101,7 +109,7 @@
                     </div>
                     <!-- Email Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="email"
+                        <label for="id_email"
                                class="text-sm font-semibold text-gray-500 dark:text-gray-500">Email</label>
                         <input type="email"
                                id="id_email"
@@ -113,7 +121,7 @@
                     <!-- Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="password"
+                            <label for="id_password"
                                    class="text-sm font-semibold text-gray-500 dark:text-gray-500">Password</label>
                         </div>
                         <div class="relative">
@@ -142,7 +150,7 @@
                     <!-- Confirm Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="password"
+                            <label for="id_password2"
                                    class="text-sm font-semibold text-gray-500 dark:text-gray-500">
                                 Confirm Password
                             </label>
@@ -154,14 +162,14 @@
                                    value="{{ form.password2.value|default:'' }}"
                                    class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                             <button type="button"
-                                    id="togglePassword"
+                                    id="togglePasswordConfirm"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-500 hover:text-gray-800 focus:outline-none"
                                     data-target="id_password2">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                      viewBox="0 0 24 24"
                                      fill="currentColor"
                                      class="size-6"
-                                     id="svg-eye">
+                                     id="svg-eye-confirm">
                                     <path d="M3.53 2.47a.75.75 0 0 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-18-18ZM22.676 12.553a11.249 11.249 0 0 1-2.631 4.31l-3.099-3.099a5.25 5.25 0 0 0-6.71-6.71L7.759 4.577a11.217 11.217 0 0 1 4.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113Z" />
                                     <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0 1 15.75 12ZM12.53 15.713l-4.243-4.244a3.75 3.75 0 0 0 4.244 4.243Z" />
                                     <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 0 0-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 0 1 6.75 12Z" />
@@ -224,14 +232,14 @@
     </div>
     <!-- Captcha Refresh Script -->
     <script>
-        function refreshCaptcha() {
-            const captchaContainer = document.querySelector('.captcha-container');
-            
-            fetch('/captcha/refresh/', {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
-            })
+    function refreshCaptcha() {
+        const captchaContainer = document.querySelector('.captcha-container');
+
+        fetch('/captcha/refresh/', {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
             .then(response => response.json())
             .then(data => {
                 captchaContainer.innerHTML = `
@@ -240,13 +248,13 @@
                 `;
             })
             .catch(error => console.error('Error:', error));
+    }
+
+    window.addEventListener('load', function () {
+        const captchaImg = document.getElementById('captcha-image');
+        if (!captchaImg || !captchaImg.getAttribute('src').trim()) {
+            refreshCaptcha();
         }
-        
-        window.addEventListener('load', function() {
-            const captchaImg = document.getElementById('captcha-image');
-            if (!captchaImg || !captchaImg.getAttribute('src').trim()) {
-                refreshCaptcha();
-            }
-        });
+    });
     </script>
 {% endblock natural_content %}
