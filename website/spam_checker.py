@@ -41,6 +41,46 @@ RAPID_SUBMISSION_LIMIT = 3  # Max submissions in rapid window
 SPAM_SCORE_THRESHOLD = 3  # Score at or above this is flagged as spam
 
 
+def normalize_homoglyphs(text):
+    """
+    Normalizes common homoglyphs used to bypass spam filters.
+    Example: 'Fr€€' becomes 'Free', 'B0TC0IN' becomes 'Bitcoin'
+    """
+    if not text:
+        return ""
+    # Expanded mapping for better coverage
+    homoglyphs = {
+        "0": "o",
+        "1": "i",
+        "3": "e",
+        "4": "a",
+        "5": "s",
+        "7": "t",
+        "8": "b",
+        "€": "e",
+        "£": "l",
+        "@": "a",
+        "$": "s",
+        "!": "i",
+        "v": "v",
+        "x": "x",
+        "|": "i",
+        "¡": "i",
+        "¿": "i",
+        "z": "z",
+        "w": "w",
+        "m": "m",
+    }
+    normalized = text.lower()
+    for char, replacement in homoglyphs.items():
+        normalized = normalized.replace(char, replacement)
+    # Strip non-alphanumeric to catch "F.R.E.E" style bypasses
+    import re
+
+    normalized = re.sub(r"[^a-z0-9\s]", "", normalized)
+    return normalized
+
+
 def count_urls(text):
     """Count the number of URLs in the given text."""
     if not text:
@@ -123,11 +163,14 @@ def calculate_spam_score(description, markdown_description, user, reporter_ip):
         score += 2
         reasons.append(f"High URL density ({url_count} URLs found)")
 
-    # Check spam keywords
-    keyword_matches = check_spam_keywords(combined_text)
+    # Check spam keywords (with homoglyph normalization)
+    normalized_description = normalize_homoglyphs(combined_text)
+    keyword_matches = check_spam_keywords(normalized_description)
     if keyword_matches > 0:
         score += keyword_matches
         reasons.append(f"Matched {keyword_matches} spam keyword pattern(s)")
+        if combined_text != normalized_description:
+            reasons.append("Obfuscated spam keywords detected (homoglyphs)")
 
     # Check description quality
     desc_text = (description or "").strip()
