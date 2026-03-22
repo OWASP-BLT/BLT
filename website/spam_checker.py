@@ -41,6 +41,49 @@ RAPID_SUBMISSION_LIMIT = 3  # Max submissions in rapid window
 SPAM_SCORE_THRESHOLD = 3  # Score at or above this is flagged as spam
 
 
+def normalize_homoglyphs(text):
+    """
+    Normalizes common homoglyphs used to bypass spam filters.
+    Example: 'Fr€€' becomes 'Free', 'B0TC0IN' becomes 'Bitcoin'
+    """
+    if not text:
+        return "", False  # Return a flag indicating if a swap happened
+    homoglyphs = {
+        "0": "o",
+        "1": "i",
+        "3": "e",
+        "4": "a",
+        "5": "s",
+        "7": "t",
+        "8": "b",
+        "€": "e",
+        "£": "l",
+        "@": "a",
+        "$": "s",
+        "!": "i",
+        "v": "v",
+        "x": "x",
+        "|": "i",
+        "¡": "i",
+        "¿": "i",
+        "z": "z",
+        "w": "w",
+        "m": "m",
+    }
+    has_homoglyph = False
+    normalized = text.lower()
+    # Check if any forbidden character exists before we strip punctuation
+    for char in homoglyphs.keys():
+        if char in text:
+            has_homoglyph = True
+            break
+    for char, replacement in homoglyphs.items():
+        normalized = normalized.replace(char, replacement)
+    import re
+    normalized = re.sub(r"[^a-z0-9\s]", "", normalized)
+    return normalized, has_homoglyph
+
+
 def count_urls(text):
     """Count the number of URLs in the given text."""
     if not text:
@@ -102,8 +145,6 @@ def is_repetitive_content(text):
     unique_words = set(words)
     unique_ratio = len(unique_words) / len(words)
     return unique_ratio < 0.3  # Less than 30% unique words
-
-
 def calculate_spam_score(description, markdown_description, user, reporter_ip):
     """Calculate a spam score for a bug report submission.
 
@@ -123,11 +164,14 @@ def calculate_spam_score(description, markdown_description, user, reporter_ip):
         score += 2
         reasons.append(f"High URL density ({url_count} URLs found)")
 
-    # Check spam keywords
-    keyword_matches = check_spam_keywords(combined_text)
+    # Check spam keywords (with homoglyph normalization)
+    normalized_description, homoglyph_detected = normalize_homoglyphs(combined_text)
+    keyword_matches = check_spam_keywords(normalized_description)
     if keyword_matches > 0:
         score += keyword_matches
         reasons.append(f"Matched {keyword_matches} spam keyword pattern(s)")
+        if homoglyph_detected:
+            reasons.append("Obfuscated spam keywords detected (homoglyphs)")
 
     # Check description quality
     desc_text = (description or "").strip()

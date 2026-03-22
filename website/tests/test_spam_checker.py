@@ -11,6 +11,7 @@ from website.spam_checker import (
     count_urls,
     is_new_account,
     is_repetitive_content,
+    normalize_homoglyphs,
 )
 
 
@@ -34,6 +35,14 @@ class TestCountUrls(TestCase):
 
 
 class TestCheckSpamKeywords(TestCase):
+    def test_homoglyph_spam(self):
+        """Detects spam using homoglyphs like 'Fr€€'"""
+        text = "Get Fr€€ Mon€y now!"
+        normalized, _ = normalize_homoglyphs(text)
+        self.assertIn("free", normalized)
+        self.assertIn("money", normalized)
+        self.assertGreater(check_spam_keywords(normalized), 0)
+
     def test_no_spam(self):
         self.assertEqual(check_spam_keywords("Found a bug on the login page"), 0)
 
