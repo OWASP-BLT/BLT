@@ -369,7 +369,6 @@ from website.views.user import (
     users_view,
     view_thread,
 )
-from website.views.video_call import video_call
 
 admin.autodiscover()
 
@@ -692,7 +691,7 @@ urlpatterns = [
     re_path(r"^invite/$", invite_organization, name="invite"),
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
-    re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
+    re_path(r"^teams/$", TemplateView.as_view(template_name="coming_soon.html"), name="teams"),
     path("notifications/fetch/", fetch_notifications, name="fetch_notifications"),
     path("notifications/mark_all_read", mark_as_read, name="mark_all_read"),
     path("notifications/delete_notification/<int:notification_id>", delete_notification, name="delete_notification"),
@@ -703,7 +702,7 @@ urlpatterns = [
     ),
     re_path(r"^projects/$", ProjectView.as_view(), name="project_list"),
     re_path(r"^projects/compact/$", ProjectCompactListView.as_view(), name="project_compact_list"),
-    re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
+    re_path(r"^apps/$", TemplateView.as_view(template_name="coming_soon.html"), name="apps"),
     re_path(
         r"^deletions/$",
         deletions,
@@ -1118,7 +1117,7 @@ urlpatterns = [
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
-    path("video_call/", video_call, name="video_call"),
+    path("video_call/", TemplateView.as_view(template_name="video_call.html"), name="video_call"),
     path(
         "batch-send-bacon-tokens/",
         batch_send_bacon_tokens_view,
