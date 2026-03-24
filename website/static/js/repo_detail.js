@@ -1,3 +1,4 @@
+const i18n = document.getElementById('repo-detail-container')?.dataset || {};
 // Function to copy text to clipboard
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
@@ -14,7 +15,7 @@ function copyToClipboard(elementId) {
             const originalText = button.textContent;
 
             // Change button style to show success
-            button.textContent = 'Copied!';
+             button.textContent = i18n.copied || 'Copied!';
             button.classList.remove('bg-red-500', 'hover:bg-red-600');
             button.classList.add('bg-green-500', 'hover:bg-green-600');
 
@@ -137,12 +138,12 @@ async function refreshSection(button, section) {
                 // Safely update the content
                 summaryContainer.innerHTML = data.data.ai_summary;
             } else {
-                summaryContainer.innerHTML = '<p class="text-gray-600 italic">AI summary unavailable for this repo.</p>';
+                summaryContainer.innerHTML = `<p class="text-gray-600 italic">${i18n.aiUnavailable || 'AI summary unavailable for this repo.'}</p>`;
             }
 
             // Show success message
             messageContainer.className = 'absolute top-full right-0 mt-2 text-sm whitespace-nowrap z-10 text-green-600';
-            messageContainer.textContent = data.message || 'AI summary regenerated successfully';
+            messageContainer.textContent = data.message || i18n.aiSuccess || 'AI summary regenerated successfully';
         } else if (sectionValue === 'basic') {
             // Update stats with new data
             const updates = {
@@ -218,7 +219,7 @@ async function refreshSection(button, section) {
             // Update total count
             const totalCountEl = document.querySelector('[data-community="total-count"]');
             if (totalCountEl) {
-                totalCountEl.textContent = `${communityData.total_contributors.toLocaleString()} total contributors`;
+                  totalCountEl.textContent = `${communityData.total_contributors.toLocaleString()} ${i18n.totalContributors || 'total contributors'}`;
             }
 
             // Update contributors grid
@@ -230,9 +231,9 @@ async function refreshSection(button, section) {
                         <div class="flex-grow">
                             <div class="font-medium text-gray-900">
                                 ${contributor.name}
-                                ${contributor.verified ? '<span class="ml-1 text-green-500" title="Verified Contributor">✓</span>' : ''}
+                                ${contributor.verified ? `<span class="ml-1 text-green-500" title="${i18n.verifiedContributor || 'Verified Contributor'}">✓</span>` : ''}
                             </div>
-                            <div class="text-sm text-gray-500">${contributor.contributions.toLocaleString()} commits</div>
+                            <div class="text-sm text-gray-500">${contributor.contributions.toLocaleString()} ${i18n.commits || 'commits'}</div>
                         </div>
                         <a href="${contributor.github_url}" target="_blank" class="p-2 text-gray-400 hover:text-gray-600">
                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -297,15 +298,15 @@ async function refreshSection(button, section) {
                 statsTableBody.innerHTML = `
                     <tr>
                         <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                            No contributor statistics available for this period
-                        </td>
+                             ${i18n.noStats || 'No contributor statistics available for this period'}
+                         </td> 
                     </tr>
                 `;
             }
 
             // Show success message
             messageContainer.className = 'absolute top-full right-0 mt-2 text-sm whitespace-nowrap z-10 text-green-600';
-            messageContainer.textContent = data.message || 'Contributor statistics refreshed successfully';
+            messageContainer.textContent = data.message || i18n.statsSuccess || 'Contributor statistics refreshed successfully';
         }
 
     } catch (error) {

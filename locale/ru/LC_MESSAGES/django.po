@@ -2,13 +2,13 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Sourav Badami <souravbadami@gmail.com>, 2017.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-09 07:37+0000\n"
+"POT-Creation-Date: 2026-02-16 14:04-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,107 +18,358 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: blt/settings.py:224
+#: .\blt\settings.py:249
 msgid "English"
 msgstr "Английский"
 
-#: blt/settings.py:225
+#: .\blt\settings.py:250
 msgid "French"
 msgstr "Французский"
 
-#: blt/settings.py:226
+#: .\blt\settings.py:251
 msgid "Chinese"
 msgstr "Китайский"
 
-#: blt/settings.py:227
+#: .\blt\settings.py:252
 msgid "German"
 msgstr "Немецкий"
 
-#: blt/settings.py:228
+#: .\blt\settings.py:253
 msgid "Japanese"
 msgstr "Японский"
 
-#: blt/settings.py:229
+#: .\blt\settings.py:254
 msgid "Russian"
 msgstr "Русский"
 
-#: blt/settings.py:230
+#: .\blt\settings.py:255
 msgid "Hindi"
 msgstr "Хинди"
 
-#: company/templates/company/register_company.html:9
-#: company/templates/company/register_company.html:31
-msgid "Register Company"
-msgstr "Зарегистрировать компанию"
+#: .\website\templates\about.html:11 .\website\templates\mobile_about.html:11
+msgid ""
+"OWASP Bug Logging Tool (BLT) - A gamified crowd-sourced QA testing and "
+"vulnerability disclosure platform for websites, apps, git repositories, and "
+"more"
+msgstr ""
 
-#: company/templates/company/register_company.html:37
-msgid "Company Information"
+#: .\website\templates\about.html:20 .\website\templates\mobile_about.html:20
+msgid ""
+"Learn about BLT - The gamified crowd-sourced QA testing and vulnerability "
+"disclosure platform with AI-powered tools for efficient testing and "
+"development"
+msgstr ""
+
+#: .\website\templates\about.html:31 .\website\templates\mobile_about.html:28
+msgid "About"
+msgstr ""
+
+#: .\website\templates\about.html:35 .\website\templates\mobile_about.html:31
+#, python-format
+msgid ""
+"is a 100%% free to use, open-source, non-commercial and non-profit gamified "
+"crowd-sourced QA testing and vulnerability disclosure platform."
+msgstr ""
+
+#: .\website\templates\about.html:38 .\website\templates\mobile_about.html:34
+msgid ""
+"We help coders and security researchers discover organizations, "
+"repositories, and projects to test and report to, making it easier to find "
+"meaningful security work and contribute to the community."
+msgstr ""
+
+#: .\website\templates\about.html:41 .\website\templates\mobile_about.html:37
+msgid ""
+"We support testing across websites, apps, git repositories, and other "
+"projects. Our team has created dozens of open-source tools and embraces AI-"
+"powered processes for efficient testing and development."
+msgstr ""
+
+#: .\website\templates\about.html:43 .\website\templates\mobile_about.html:39
+msgid ""
+"Every reward goes directly to the testers and security researchers who find "
+"and report issues."
+msgstr ""
+
+#: .\website\templates\about.html:53 .\website\templates\mobile_about.html:45
+msgid "Our Mission"
+msgstr ""
+
+#: .\website\templates\about.html:56
+msgid ""
+"To create a secure digital environment through gamified crowd-sourced "
+"testing. From websites and apps to git repositories and projects, we believe "
+"every digital platform should be thoroughly tested and secure. We leverage "
+"AI and open-source tools to make quality assurance accessible and rewarding "
+"for everyone."
+msgstr ""
+
+#: .\website\templates\about.html:64 .\website\templates\mobile_about.html:51
+msgid "What We Do"
+msgstr ""
+
+#: .\website\templates\about.html:67
+msgid ""
+"BLT provides a comprehensive gamified platform for crowd-sourced QA testing "
+"and vulnerability disclosure across websites, apps, git repositories, and "
+"projects. We've developed dozens of open-source tools and AI-powered "
+"features to enhance testing efficiency and collaboration."
+msgstr ""
+
+#: .\website\templates\about.html:75 .\website\templates\mobile_about.html:59
+#, fuzzy
+#| msgid "What’s in it for you"
+msgid "What's in it for you?"
+msgstr "что в этом для вас"
+
+#: .\website\templates\about.html:82 .\website\templates\mobile_about.html:62
+msgid "Points"
+msgstr "баллы"
+
+#: .\website\templates\about.html:83 .\website\templates\mobile_about.html:63
+msgid "Earn points for every verified bug report"
+msgstr ""
+
+#: .\website\templates\about.html:89 .\website\templates\mobile_about.html:66
+msgid "Bug Bounty Rewards"
+msgstr ""
+
+#: .\website\templates\about.html:90 .\website\templates\mobile_about.html:67
+#, fuzzy
+#| msgid "Win money through company-sponsored Bug Bounties"
+msgid "Money if you join a BLT Sponsored Bug Bounty"
+msgstr "Выиграйте деньги через спонсируемые компанией охоты на баги"
+
+#: .\website\templates\about.html:96 .\website\templates\mobile_about.html:70
+msgid "Jackpot"
+msgstr ""
+
+#: .\website\templates\about.html:97 .\website\templates\mobile_about.html:71
+msgid "Jackpot money listed on the Leaderboard"
+msgstr "Деньги от джекпота, указанные в таблице лидеров"
+
+#: .\website\templates\about.html:103 .\website\templates\mobile_about.html:74
+msgid "Tips"
+msgstr ""
+
+#: .\website\templates\about.html:104 .\website\templates\mobile_about.html:75
+#, fuzzy
+#| msgid "Money if someone tips you for finding a bug through the tip button"
+msgid "Money if someone tips you for finding a bug"
+msgstr ""
+"Деньги, если кто-то дает вам чаевые за нахождение ошибки через кнопку чаевых"
+
+#: .\website\templates\about.html:116 .\website\templates\mobile_about.html:82
+msgid "For Security Researchers (Testers)"
+msgstr ""
+
+#: .\website\templates\about.html:122 .\website\templates\mobile_about.html:84
+#, fuzzy
+#| msgid "Create a User Account to log into"
+msgid "Create a User Account to log into BLT"
+msgstr "Создайте учетную запись пользователя для входа"
+
+#: .\website\templates\about.html:126 .\website\templates\mobile_about.html:85
+msgid "Describe the software or hardware bug you found"
+msgstr "Опишите найденную вами программную или аппаратную ошибку"
+
+#: .\website\templates\about.html:130 .\website\templates\mobile_about.html:86
+msgid "Attach a screenshot of the bug"
+msgstr "Прикрепите снимок экрана ошибки"
+
+#: .\website\templates\about.html:134 .\website\templates\mobile_about.html:87
+msgid "Submit the information"
+msgstr "Отправьте информацию"
+
+#: .\website\templates\about.html:138 .\website\templates\mobile_about.html:88
+#, fuzzy
+#| msgid "Win money through company-sponsored Bug Bounties"
+msgid "Win money through sponsored Bug Bounties, tips or the Jackpot"
+msgstr "Выиграйте деньги через спонсируемые компанией охоты на баги"
+
+#: .\website\templates\about.html:142 .\website\templates\mobile_about.html:90
+#, fuzzy
+#| msgid ""
+#| "We may also have \"heists\" where each bug is worth a specific amount "
+#| "based on what the company sets"
+msgid ""
+"We may also have 'heists' where each bug is worth a specific amount based on "
+"what the Organization sets."
+msgstr ""
+"У нас также могут быть \"ограбления\", где каждая ошибка стоит определенную "
+"сумму в зависимости от установленного компанией значения"
+
+#: .\website\templates\about.html:151 .\website\templates\mobile_about.html:95
+#, fuzzy
+#| msgid "Organizations"
+msgid "For Organizations"
+msgstr "Организации"
+
+#: .\website\templates\about.html:154 .\website\templates\mobile_about.html:97
+#, fuzzy
+#| msgid "We want everyone to love your website"
+msgid "We want everyone to love your website."
+msgstr "Мы хотим, чтобы каждому нравился ваш сайт"
+
+#: .\website\templates\about.html:156 .\website\templates\mobile_about.html:99
+#, fuzzy
+#| msgid ""
+#| "offers monthly Bug Bounties through 4 different subscription plans to "
+#| "help you achieve this"
+msgid ""
+"You want to keep your customers happy by giving them a consistent bug-free "
+"user experience. BLT offers monthly Bug Bounties through 4 different "
+"subscription plans to help you achieve this."
+msgstr ""
+"предлагает месячные охоты на баги через 4 различных плана подписки, чтобы "
+"помочь вам в этом"
+
+#: .\website\templates\about.html:161
+msgid "Learn More"
+msgstr ""
+
+#: .\website\templates\about.html:171 .\website\templates\mobile_about.html:106
+#, fuzzy
+#| msgid "Features"
+msgid "Features of BLT"
+msgstr "Возможности"
+
+#: .\website\templates\about.html:181 .\website\templates\mobile_about.html:110
+#, fuzzy
+#| msgid "Bugs Reported"
+msgid "Bug Reporting"
+msgstr "Сообщенные баги"
+
+#: .\website\templates\about.html:186 .\website\templates\mobile_about.html:113
+#, fuzzy
+#| msgid "Describe the software or hardware bug you found"
+msgid "Users can report software or hardware bugs found on any website:"
+msgstr "Опишите найденную вами программную или аппаратную ошибку"
+
+#: .\website\templates\about.html:191 .\website\templates\mobile_about.html:116
+msgid "Simple bug submission process"
+msgstr ""
+
+#: .\website\templates\about.html:195 .\website\templates\mobile_about.html:117
+msgid "Screenshot attachment capability"
+msgstr ""
+
+#: .\website\templates\about.html:199 .\website\templates\mobile_about.html:118
+msgid "Detailed bug description support"
+msgstr ""
+
+#: .\website\templates\about.html:211 .\website\templates\mobile_about.html:124
+msgid "Verification Process"
+msgstr ""
+
+#: .\website\templates\about.html:216 .\website\templates\mobile_about.html:126
+msgid "Bugs are verified through a community-driven process:"
+msgstr ""
+
+#: .\website\templates\about.html:221 .\website\templates\mobile_about.html:128
+msgid "Community verification of reported issues"
+msgstr ""
+
+#: .\website\templates\about.html:225 .\website\templates\mobile_about.html:129
+#, fuzzy
+#| msgid "Company Information"
+msgid "Company confirmation of bug validity"
 msgstr "Информация о компании"
 
-#: company/templates/company/register_company.html:45
-msgid "Company Name"
-msgstr "Название компании"
-
-#: company/templates/company/register_company.html:64
-msgid "Company Url"
-msgstr "URL компании"
-
-#: company/templates/company/register_company.html:83
-msgid "Company Support Email (Optional)"
-msgstr "Электронная почта поддержки компании (необязательно)"
-
-#: company/templates/company/register_company.html:101
-msgid "Company Twitter URL (Optional)"
-msgstr "URL Twitter компании (необязательно)"
-
-#: company/templates/company/register_company.html:119
-msgid "Company Facebook URL (Optional)"
-msgstr "URL Facebook компании (необязательно)"
-
-#: company/templates/company/register_company.html:142
-msgid "Company Logo"
-msgstr "Логотип компании"
-
-#: company/templates/company/register_company.html:162
-msgid "Upload logo"
-msgstr "Загрузить логотип"
-
-#: company/templates/company/register_company.html:178
-msgid "Company Managers"
-msgstr "Менеджеры компании"
-
-#: company/templates/company/register_company.html:181
-msgid "Add Emails which will be allowed to add domains"
+#: .\website\templates\about.html:237 .\website\templates\mobile_about.html:135
+msgid "Rewards System"
 msgstr ""
-"Добавьте адреса электронной почты, которым будет разрешено добавлять домены"
 
-#: company/templates/company/register_company.html:182
+#: .\website\templates\about.html:241 .\website\templates\mobile_about.html:137
+msgid "Users earn rewards for reporting bugs:"
+msgstr ""
+
+#: .\website\templates\about.html:245 .\website\templates\mobile_about.html:139
+msgid "Points for verified bug reports"
+msgstr ""
+
+#: .\website\templates\about.html:249 .\website\templates\mobile_about.html:140
+msgid "Bug bounty rewards from sponsored hunts"
+msgstr ""
+
+#: .\website\templates\about.html:253 .\website\templates\mobile_about.html:141
+msgid "Tips from appreciative users"
+msgstr ""
+
+#: .\website\templates\about.html:257 .\website\templates\mobile_about.html:142
+msgid "Jackpot opportunities"
+msgstr ""
+
+#: .\website\templates\about.html:269 .\website\templates\mobile_about.html:148
 #, fuzzy
-#| msgid "Email should be registered user on BLT"
-msgid "Email should be registerd user on BLT"
+#| msgid "User Profile"
+msgid "User Profiles"
+msgstr "Профиль пользователя"
+
+#: .\website\templates\about.html:274 .\website\templates\mobile_about.html:150
+msgid "Manage bug reporting activities and personal information:"
 msgstr ""
-"Электронная почта должна быть зарегистрированным пользователем на BLT"
 
-#: company/templates/company/register_company.html:186
-#: website/templates/report.html:286
-msgid "Add Email"
-msgstr "Добавить адрес электронной почты"
+#: .\website\templates\about.html:279 .\website\templates\mobile_about.html:152
+msgid "Track your reported bugs"
+msgstr ""
 
-#: company/templates/company/register_company.html:193
-#: website/templates/report.html:299
-msgid "Email address"
-msgstr "Адрес электронной почты"
+#: .\website\templates\about.html:283 .\website\templates\mobile_about.html:153
+msgid "Manage personal information"
+msgstr ""
 
-#: company/templates/company/register_company.html:205
-#: website/templates/account/logout.html:14 website/templates/report.html:328
-msgid "Cancel"
-msgstr "Отмена"
+#: .\website\templates\about.html:287 .\website\templates\mobile_about.html:154
+msgid "View earned rewards"
+msgstr ""
 
-#: company/templates/company/register_company.html:211
-msgid "Save"
-msgstr "Сохранить"
+#: .\website\templates\about.html:299 .\website\templates\mobile_about.html:160
+#, fuzzy
+#| msgid "Community"
+msgid "Community Engagement"
+msgstr "Сообщество"
 
-#: website/templates/account/email/email_confirmation_message.txt:5
+#: .\website\templates\about.html:303 .\website\templates\mobile_about.html:162
+msgid "Collaboration and knowledge sharing features:"
+msgstr ""
+
+#: .\website\templates\about.html:307 .\website\templates\mobile_about.html:164
+msgid "Community-driven bug verification"
+msgstr ""
+
+#: .\website\templates\about.html:311 .\website\templates\mobile_about.html:165
+msgid "Knowledge sharing opportunities"
+msgstr ""
+
+#: .\website\templates\about.html:315 .\website\templates\mobile_about.html:166
+msgid "Collaborative environment"
+msgstr ""
+
+#: .\website\templates\about.html:327
+#: .\website\templates\includes\sidenav.html:303
+#: .\website\templates\includes\sidenav.html:368
+#: .\website\templates\mobile_about.html:172
+msgid "Leaderboard"
+msgstr "Таблица лидеров"
+
+#: .\website\templates\about.html:331 .\website\templates\mobile_about.html:174
+msgid "Ranks users based on their contributions:"
+msgstr ""
+
+#: .\website\templates\about.html:335 .\website\templates\mobile_about.html:176
+#, fuzzy
+#| msgid "Contributors"
+msgid "Track top contributors"
+msgstr "Участники"
+
+#: .\website\templates\about.html:339 .\website\templates\mobile_about.html:177
+msgid "View point rankings"
+msgstr ""
+
+#: .\website\templates\about.html:343 .\website\templates\mobile_about.html:178
+msgid "Jackpot eligibility tracking"
+msgstr ""
+
+#: .\website\templates\account\email\email_confirmation_message.txt:5
 #, python-format
 msgid ""
 "You're receiving this e-mail because user %(user_display)s has given your e-"
@@ -132,764 +383,1591 @@ msgstr ""
 "\n"
 "Чтобы подтвердить это, перейдите по ссылке %(activate_url)s"
 
-#: website/templates/account/login.html:21
-#: website/templates/account/signup.html:17
-msgid ""
-"is a bug logging tool to report issues and get points, companies are held "
-"accountable"
-msgstr ""
-"- это инструмент для регистрации ошибок, предназначенный для сообщения о "
-"проблемах и получения баллов; компании несут ответственность"
+#: .\website\templates\account\email_confirm.html:36
+#, fuzzy
+#| msgid "Email address"
+msgid "Confirm Email Address"
+msgstr "Адрес электронной почты"
 
-#: website/templates/account/login.html:24
+#: .\website\templates\account\email_confirm.html:41
+msgid "Email Already Verified"
+msgstr ""
+
+#: .\website\templates\account\email_confirm.html:43
+#, python-format
+msgid "Your email address %(email)s has already been confirmed."
+msgstr ""
+
+#: .\website\templates\account\email_confirm.html:48
+#: .\website\templates\account\verification_sent.html:57
+#, fuzzy
+#| msgid "Sign Up"
+msgid "Sign In"
+msgstr "Зарегистрироваться"
+
+#: .\website\templates\account\email_confirm.html:54
+#, python-format
+msgid ""
+"Please confirm that <strong class=\"text-gray-900 dark:text-"
+"gray-100\">%(email)s</strong> is an email address for user "
+"%(confirmation.email_address.user)s."
+msgstr ""
+
+#: .\website\templates\account\email_confirm.html:62
+msgid "Confirm"
+msgstr ""
+
+#: .\website\templates\account\email_confirm.html:67
+#: .\website\templates\account\logout.html:33
+#: .\website\templates\organization\register_organization.html:214
+#: .\website\templates\report.html:394
+#: .\website\templates\socialaccount\login.html:31
+#: .\website\templates\user_deletion.html:75
+msgid "Cancel"
+msgstr "Отмена"
+
+#: .\website\templates\account\email_confirm.html:82
+msgid "Invalid Verification Link"
+msgstr ""
+
+#: .\website\templates\account\email_confirm.html:84
+msgid ""
+"This email confirmation link expired or is invalid. Please request a new "
+"verification email."
+msgstr ""
+
+#: .\website\templates\account\email_confirm.html:90
+msgid "Request New Verification Email"
+msgstr ""
+
+#: .\website\templates\account\email_confirm.html:94
+#: .\website\templates\account\verification_sent.html:53
+#, fuzzy
+#| msgid "Featured on Homepage"
+msgid "Return to Home"
+msgstr "Рекомендуется на главной странице"
+
+#: .\website\templates\account\login.html:35
+#: .\website\templates\account\signup.html:32
+#: .\website\templates\allauth\layouts\base.html:42
+msgid ""
+"is a gamified crowd-sourced QA testing and vulnerability disclosure platform "
+"for websites, apps, git repositories, and more"
+msgstr ""
+
+#: .\website\templates\account\login.html:39
 #, fuzzy
 #| msgid "Already have an account"
 msgid "Don't have an account"
 msgstr "Уже есть аккаунт"
 
-#: website/templates/account/login.html:25
-#: website/templates/includes/footer.html:30
+#: .\website\templates\account\login.html:41
 msgid "Get Started"
 msgstr "Начать"
 
-#: website/templates/account/login.html:28
-#: website/templates/account/signup.html:24
+#: .\website\templates\account\login.html:45
+#: .\website\templates\account\signup.html:40
 msgid "Read our"
 msgstr "Прочтите наши"
 
-#: website/templates/account/login.html:28
-#: website/templates/account/signup.html:24
+#: .\website\templates\account\login.html:45
+#: .\website\templates\account\signup.html:40
 msgid "terms"
 msgstr "условия"
 
-#: website/templates/account/login.html:28
-#: website/templates/account/signup.html:24
+#: .\website\templates\account\login.html:45
+#: .\website\templates\account\signup.html:40
 msgid "and"
 msgstr "и"
 
-#: website/templates/account/login.html:28
-#: website/templates/account/signup.html:24
+#: .\website\templates\account\login.html:45
+#: .\website\templates\account\signup.html:40
 msgid "conditions"
 msgstr "условия"
 
-#: website/templates/account/login.html:32
+#: .\website\templates\account\login.html:50
 msgid "Account Login"
 msgstr "Вход в аккаунт"
 
-#: website/templates/account/login.html:48
+#: .\website\templates\account\login.html:77
 msgid "Forgot Password?"
 msgstr "Забыли пароль?"
 
-#: website/templates/account/login.html:73
+#: .\website\templates\account\login.html:117
 msgid "Log in"
 msgstr "Войти"
 
-#: website/templates/account/login.html:86
+#: .\website\templates\account\login.html:124
 msgid "or login with"
 msgstr "или войдите с помощью"
 
-#: website/templates/account/logout.html:6
+#: .\website\templates\account\logout.html:22
 msgid "Sign Out"
 msgstr "Выйти"
 
-#: website/templates/account/logout.html:7
+#: .\website\templates\account\logout.html:23
 msgid "Are you sure?"
 msgstr "Вы уверены?"
 
-#: website/templates/account/logout.html:13
+#: .\website\templates\account\logout.html:32
 msgid "Yes"
 msgstr "Да"
 
-#: website/templates/account/password_change.html:39
-#: website/templates/account/password_change.html:67
-#: website/templates/account/password_reset_from_key.html:41
-#: website/templates/account/password_reset_from_key.html:67
-#: website/templates/base_dashboard.html:109
-#: website/templates/base_dashboard.html:134
-#: website/templates/base_dashboard.html:116
-#: website/templates/includes/navbar.html:125
+#: .\website\templates\account\password_change.html:23
+#: .\website\templates\account\password_change.html:70
+#: .\website\templates\account\password_reset_from_key.html:26
+#: .\website\templates\account\password_reset_from_key.html:62
+#: .\website\templates\allauth\layouts\manage.html:18
+#: .\website\templates\base_dashboard.html:128
+#: .\website\templates\includes\header.html:843
+#: .\website\templates\includes\navbar.html:174
 msgid "Change Password"
 msgstr "Изменить пароль"
 
-#: website/templates/account/password_reset.html:42
-msgid "Password Reset"
-msgstr "Сброс пароля"
+#: .\website\templates\account\password_change.html:65
+#, fuzzy
+#| msgid "Change Password"
+msgid "Show Password"
+msgstr "Изменить пароль"
 
-#: website/templates/account/password_reset.html:44
-msgid ""
-"Forgotten your password? Enter your e-mail address below, and we'll send you "
-"an e-mail allowing you to reset it."
+#: .\website\templates\account\password_reset.html:36
+msgid "Back"
 msgstr ""
-"Забыли пароль? Введите ваш адрес электронной почты ниже, и мы отправим вам "
-"письмо, позволяющее сбросить его."
 
-#: website/templates/account/password_reset.html:54
-msgid "Reset My Password"
+#: .\website\templates\account\password_reset.html:38
+#, fuzzy
+#| msgid "Reset My Password"
+msgid "Reset your password"
 msgstr "Сбросить мой пароль"
 
-#: website/templates/account/password_reset_from_key.html:39
+#: .\website\templates\account\password_reset.html:40
+msgid "We will send you an email to reset your password"
+msgstr ""
+
+#: .\website\templates\account\password_reset.html:49
+#, fuzzy
+#| msgid "Add Email"
+msgid "Email"
+msgstr "Добавить адрес электронной почты"
+
+#: .\website\templates\account\password_reset.html:73
+#, fuzzy
+#| msgid "Email address"
+msgid "Email me"
+msgstr "Адрес электронной почты"
+
+#: .\website\templates\account\password_reset_from_key.html:24
 msgid "Bad Token"
 msgstr "Неверный токен"
 
-#: website/templates/account/password_reset_from_key.html:70
+#: .\website\templates\account\password_reset_from_key.html:67
 msgid "Your password is now changed!"
 msgstr "Ваш пароль теперь изменен!"
 
-#: website/templates/account/signup.html:20
+#: .\website\templates\account\signup.html:35
 msgid "Already have an account"
 msgstr "Уже есть аккаунт"
 
-#: website/templates/account/signup.html:21
-#: website/templates/includes/navbar.html:49
-#: website/templates/includes/navbar.html:150
+#: .\website\templates\account\signup.html:37
+#: .\website\templates\includes\header.html:887
+#: .\website\templates\includes\navbar.html:79
+#: .\website\templates\includes\navbar.html:211
+#: .\website\templates\invite.html:36
 msgid "Login"
 msgstr "Вход"
 
-#: website/templates/account/signup.html:28
+#: .\website\templates\account\signup.html:45
 msgid "Account SignUp"
 msgstr "Регистрация учетной записи"
 
-#: website/templates/account/signup.html:85
-#: website/templates/includes/navbar.html:44
+#: .\website\templates\account\signup.html:57
+msgid "Sign up with GitHub and earn 10 BACON tokens!"
+msgstr ""
+
+#: .\website\templates\account\signup.html:60
+msgid "Connect your GitHub account to get started with rewards"
+msgstr ""
+
+#: .\website\templates\account\signup.html:75
+#: .\website\templates\includes\sidenav.html:502
+#: .\website\templates\includes\sidenav.html:511
+#: .\website\templates\profile.html:112
+msgid "GitHub"
+msgstr ""
+
+#: .\website\templates\account\signup.html:83
+msgid "Or sign up with email"
+msgstr ""
+
+#: .\website\templates\account\signup.html:218
+#: .\website\templates\includes\navbar.html:74
 msgid "Sign Up"
 msgstr "Зарегистрироваться"
 
-#: website/templates/base_dashboard.html:107
-#: website/templates/base_dashboard.html:132
-#: website/templates/base_dashboard.html:114
-#: website/templates/includes/navbar.html:102
+#: .\website\templates\account\verification_sent.html:36
+#, fuzzy
+#| msgid "Email address"
+msgid "Verify Your Email Address"
+msgstr "Адрес электронной почты"
+
+#: .\website\templates\account\verification_sent.html:40
+msgid ""
+"We have sent an email to you for verification. Follow the link provided to "
+"finalize the signup process."
+msgstr ""
+
+#: .\website\templates\account\verification_sent.html:43
+msgid ""
+"If you do not see the verification email in your main inbox, check your spam "
+"folder."
+msgstr ""
+
+#: .\website\templates\account\verification_sent.html:46
+msgid ""
+"Please contact us if you do not receive the verification email within a few "
+"minutes."
+msgstr ""
+
+#: .\website\templates\account\verification_sent.html:62
+msgid "Didn't receive the email?"
+msgstr ""
+
+#: .\website\templates\account\verification_sent.html:65
+msgid "Resend verification email"
+msgstr ""
+
+#: .\website\templates\allauth\layouts\entrance.html:6
+msgid "Welcome back"
+msgstr ""
+
+#: .\website\templates\allauth\layouts\entrance.html:8
+msgid "Join our community"
+msgstr ""
+
+#: .\website\templates\allauth\layouts\manage.html:5
+#, fuzzy
+#| msgid "Already have an account"
+msgid "Manage your account"
+msgstr "Уже есть аккаунт"
+
+#: .\website\templates\allauth\layouts\manage.html:11
+msgid "Change Email"
+msgstr ""
+
+#: .\website\templates\allauth\layouts\manage.html:25
+#: .\website\templates\socialaccount\connections.html:7
+#: .\website\templates\socialaccount\connections.html:30
+#, fuzzy
+#| msgid "Account Login"
+msgid "Account Connections"
+msgstr "Вход в аккаунт"
+
+#: .\website\templates\base_dashboard.html:98
+msgid ""
+"<span class='font-bold text-[#e11d48]'>B</span>ugs, <span class='font-bold "
+"text-[#e11d48]'>B</span>ounties, and <span class='font-bold text-"
+"[#e11d48]'>B</span>eyond..."
+msgstr ""
+"<span class='font-bold text-[#e11d48]'>Б</span>аги, <span class='font-bold "
+"text-[#e11d48]'>Б</span>аунти и <span class='font-bold text-[#e11d48]'>Б</"
+"span>ольше..."
+
+#: .\website\templates\base_dashboard.html:124
+#: .\website\templates\includes\header.html:811
+#: .\website\templates\includes\navbar.html:150
 msgid "User Profile"
 msgstr "Профиль пользователя"
 
-#: website/templates/base_dashboard.html:111
-#: website/templates/base_dashboard.html:136
-#: website/templates/base_dashboard.html:118
-#: website/templates/includes/navbar.html:36
-#: website/templates/includes/navbar.html:141
+#: .\website\templates\base_dashboard.html:132
+#: .\website\templates\includes\header.html:868
+#: .\website\templates\includes\navbar.html:67
+#: .\website\templates\includes\navbar.html:196
 msgid "Logout"
 msgstr "Выйти"
 
-# Russian (ru)
-#: website/templates/hunt.html:182
-msgid "Enter URL, APP name or GPS location of issue"
-msgstr "Введите URL, название приложения или GPS-местоположение проблемы"
+#: .\website\templates\bounties_list.html:228
+#: .\website\templates\includes\navbar.html:60
+msgid "Search"
+msgstr "Поиск"
 
-#: website/templates/hunt.html:229
+#: .\website\templates\bounties_list.html:233
+#, fuzzy
+#| msgid "Filter Hunts"
+msgid "Filter Results"
+msgstr "Фильтровать охоты"
+
+#: .\website\templates\domain.html:90 .\website\templates\profile.html:365
+#, fuzzy
+#| msgid "No Activity Yet"
+msgid "No Activity Yet!"
+msgstr "Активность отсутствует"
+
+#: .\website\templates\domain.html:154 .\website\templates\profile.html:372
+msgid "Issue Stats"
+msgstr ""
+
+#: .\website\templates\domain.html:165
+#, fuzzy
+#| msgid "Domains"
+msgid "Domain Stats"
+msgstr "Домены"
+
+#: .\website\templates\domain.html:168 .\website\templates\profile.html:409
+msgid "Bugs Reported"
+msgstr "Сообщенные баги"
+
+#: .\website\templates\domain.html:171 .\website\templates\profile.html:413
+msgid "Open Issues"
+msgstr "Открытые задачи"
+
+#: .\website\templates\domain.html:174 .\website\templates\profile.html:417
+msgid "Closed Issues"
+msgstr "Закрытые задачи"
+
+#: .\website\templates\domain.html:177
+#, fuzzy
+#| msgid "View All"
+msgid "Views"
+msgstr "Просмотреть все"
+
+#: .\website\templates\domain.html:331
+#, fuzzy
+#| msgid "Hunts"
+msgid "Top Hunters"
+msgstr "Поиск багов"
+
+#: .\website\templates\domain.html:367
+msgid "Nothing Found"
+msgstr "Ничего не найдено"
+
+#: .\website\templates\donate.html:6
+#, fuzzy
+#| msgid "conditions"
+msgid "Donation Options"
+msgstr "условия"
+
+#: .\website\templates\donate.html:9
+msgid ""
+"Support the ongoing development of the OWASP Bug Logging Tool by choosing a "
+"sponsorship plan. Help us grow and improve with your contribution."
+msgstr ""
+
+#: .\website\templates\donate.html:12
+msgid "donation, OWASP, sponsorship, Bug Logging Tool, support, development"
+msgstr ""
+
+#: .\website\templates\donate.html:15 .\website\templates\donate.html:25
+msgid "Support OWASP with a Donation"
+msgstr ""
+
+#: .\website\templates\donate.html:18
+msgid ""
+"Choose a sponsorship plan and support the OWASP Bug Logging Tool's "
+"development. Your contribution helps improve."
+msgstr ""
+
+#: .\website\templates\donate.html:30
+msgid ""
+"Contribute directly to the ongoing development of the OWASP Bug Logging Tool "
+"(BLT). Choose a sponsorship plan and help us continue to grow and improve."
+msgstr ""
+
+#: .\website\templates\donate.html:32
+msgid "Your support makes a difference."
+msgstr ""
+
+#: .\website\templates\donate.html:35
+#, fuzzy
+#| msgid "Scorpion Plan"
+msgid "Sponsorship Plans"
+msgstr "План скорпиона"
+
+#: .\website\templates\donate.html:38 .\website\templates\hunt.html:79
 msgid "Flea Plan"
 msgstr "План блохи"
 
-#: website/templates/hunt.html:229 website/templates/hunt.html:230
-#: website/templates/hunt.html:231 website/templates/hunt.html:232
+#: .\website\templates\donate.html:40
+msgid "$25.00"
+msgstr ""
+
+#: .\website\templates\donate.html:40 .\website\templates\donate.html:53
+#: .\website\templates\donate.html:64 .\website\templates\donate.html:75
+#: .\website\templates\hunt.html:79 .\website\templates\hunt.html:80
+#: .\website\templates\hunt.html:81 .\website\templates\hunt.html:82
 msgid "Month"
 msgstr "Месяц"
 
-#: website/templates/hunt.html:230
+#: .\website\templates\donate.html:43
+msgid "Perfect for individuals who want to support our mission."
+msgstr ""
+
+#: .\website\templates\donate.html:47 .\website\templates\donate.html:58
+#: .\website\templates\donate.html:69 .\website\templates\donate.html:80
+msgid "Support Now"
+msgstr ""
+
+#: .\website\templates\donate.html:51 .\website\templates\hunt.html:80
 msgid "Ant Plan"
 msgstr "План муравья"
 
-#: website/templates/hunt.html:231
+#: .\website\templates\donate.html:53
+msgid "$50.00"
+msgstr ""
+
+#: .\website\templates\donate.html:55
+msgid "Great for small teams and growing organizations."
+msgstr ""
+
+#: .\website\templates\donate.html:62 .\website\templates\hunt.html:81
 msgid "Wasp Plan"
 msgstr "План оси"
 
-#: website/templates/hunt.html:232
+#: .\website\templates\donate.html:64
+msgid "$100.00"
+msgstr ""
+
+#: .\website\templates\donate.html:66
+msgid "Ideal for established organizations and companies."
+msgstr ""
+
+#: .\website\templates\donate.html:73 .\website\templates\hunt.html:82
 msgid "Scorpion Plan"
 msgstr "План скорпиона"
 
-#: website/templates/hunt.html:236
+#: .\website\templates\donate.html:75
+msgid "$500.00"
+msgstr ""
+
+#: .\website\templates\donate.html:77
+msgid "For major supporters and enterprise organizations."
+msgstr ""
+
+#: .\website\templates\donate.html:86
+msgid "Why Support Us?"
+msgstr ""
+
+#: .\website\templates\donate.html:88
+msgid "Help maintain and improve the OWASP Bug Logging Tool"
+msgstr ""
+
+#: .\website\templates\donate.html:89
+#, fuzzy
+#| msgid "not for profit initiative"
+msgid "Support open source security initiatives"
+msgstr "инициатива без извлечения прибыли"
+
+#: .\website\templates\donate.html:90
+msgid "Enable new feature development and community growth"
+msgstr ""
+
+#: .\website\templates\donate.html:91
+msgid "Contribute to better security practices across the web"
+msgstr ""
+
+#: .\website\templates\hunt.html:20
+#, fuzzy
+#| msgid "Start a Bug Hunt"
+msgid "Start a"
+msgstr "Начать поиск багов"
+
+#: .\website\templates\hunt.html:21 .\website\templates\report.html:292
+msgid "Bug Bounty"
+msgstr ""
+
+# Russian (ru)
+#: .\website\templates\hunt.html:24
+#, fuzzy
+#| msgid "Enter URL, APP name or GPS location of issue"
+msgid "Enter URL, APP name or GPS location of issue."
+msgstr "Введите URL, название приложения или GPS-местоположение проблемы"
+
+#: .\website\templates\hunt.html:87
 msgid "Grand Prize"
 msgstr "Главный приз"
 
-#: website/templates/hunt.html:237
+#: .\website\templates\hunt.html:88
 #, fuzzy
 #| msgid "Max amount awarded to winner"
-msgid "Max amout awarded to winner"
+msgid "Max amount awarded to winner"
 msgstr "Максимальная сумма, выделяемая победителю"
 
-#: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+#: .\website\templates\hunt.html:113
+#, fuzzy
+#| msgid "Start a Bug Hunt"
+msgid "Start Bug Bounty"
 msgstr "Начать поиск багов"
 
-#: website/templates/hunt.html:256 website/templates/index.html:284
-#: website/templates/mobile_about.html:4
+#: .\website\templates\hunt.html:119
 msgid "free to use"
 msgstr "бесплатно для использования"
 
-#: website/templates/hunt.html:256 website/templates/index.html:284
-#: website/templates/mobile_about.html:4
+#: .\website\templates\hunt.html:119
 #, fuzzy
 #| msgid "Open Source and a non-commercials"
 msgid "Open Source and a non-commercial"
 msgstr "Open Source и без коммерческих целей"
 
-#: website/templates/hunt.html:256 website/templates/index.html:284
-#: website/templates/mobile_about.html:4
+#: .\website\templates\hunt.html:119
 msgid "not for profit initiative"
 msgstr "инициатива без извлечения прибыли"
 
-#: website/templates/hunt_list.html:29
-#: website/templates/includes/navbar.html:29
-#: website/templates/includes/navbar.html:67
-msgid "Search"
-msgstr "Поиск"
-
-#: website/templates/hunt_list.html:37
-msgid "Filter Hunts"
-msgstr "Фильтровать охоты"
-
-#: website/templates/includes/footer.html:13
-msgid "Community"
-msgstr "Сообщество"
-
-#: website/templates/includes/footer.html:14
-msgid "Contributors"
-msgstr "Участники"
-
-#: website/templates/includes/footer.html:18
-msgid "Company"
-msgstr "Компания"
-
-#: website/templates/includes/footer.html:19
-msgid "Features"
-msgstr "Возможности"
-
-#: website/templates/includes/footer.html:20 website/templates/profile.html:269
-msgid "Stats"
-msgstr ""
-
-#: website/templates/includes/footer.html:21
-msgid "Company Scoreboard"
-msgstr "Таблица результатов компании"
-
-#: website/templates/includes/footer.html:24
-msgid "Legal"
-msgstr "Правовая информация"
-
-#: website/templates/includes/footer.html:25
-#: website/templates/mobile_about.html:3
-msgid "About"
-msgstr ""
-
-#: website/templates/includes/footer.html:26
-msgid "Privacy"
-msgstr "Конфиденциальность"
-
-#: website/templates/includes/footer.html:27
-msgid "Terms of Service"
-msgstr ""
-
-#: website/templates/includes/footer.html:31
-msgid "Developer API"
-msgstr "API для разработчиков"
-
-#: website/templates/includes/footer.html:32
-msgid "Documentation"
-msgstr "Документация"
-
-#: website/templates/includes/footer.html:33
-msgid "Guides"
-msgstr "Руководства"
-
-#: website/templates/includes/footer.html:37
-msgid "Follow Us"
-msgstr "Подписывайтесь на нас"
-
-#: website/templates/includes/footer.html:62
-msgid "Powered by"
-msgstr "Работает на"
-
-#: website/templates/includes/navbar.html:23
-#: website/templates/includes/navbar.html:69
-msgid "Report a Bug"
-msgstr "Сообщить о баге"
-
-#: website/templates/includes/navbar.html:72
-msgid "Bughunts"
-msgstr "Поиск багов"
-
-#: website/templates/includes/navbar.html:109
-msgid "Add to chrome"
-msgstr "Добавить в Chrome"
-
-#: website/templates/includes/navbar.html:114
-msgid "Start a Bug Hunt"
-msgstr "Начать поиск багов"
-
-#: website/templates/includes/navbar.html:120
-msgid "Social"
-msgstr "Социальные сети"
-
-#: website/templates/includes/navbar.html:130
-msgid "Invite Friends"
-msgstr "Пригласить друзей"
-
-#: website/templates/includes/navbar.html:135
-msgid "Company Dashboard"
-msgstr "Панель управления компании"
-
-#: website/templates/includes/navbar.html:149
-msgid "Signup"
-msgstr "Зарегистрироваться"
-
-#: website/templates/index.html:12
-msgid "Find Bugs, Win Points and Prizes"
-msgstr "Находите баги, зарабатывайте очки и призы"
-
-#: website/templates/index.html:20
-msgid "Fix issues on websites, apps or hardware (+3 points)"
-msgstr ""
-"Исправление проблем на веб-сайтах, в приложениях или аппаратных средствах "
-"(+3 балла)"
-
-#: website/templates/index.html:23
-msgid "Verify other bug reports(+2 points)"
-msgstr "Проверка других отчетов о багах (+2 балла)"
-
-#: website/templates/index.html:26
-msgid "Invite friends (when they signup , get +1 point)"
-msgstr "Пригласите друзей (когда они регистрируются, вы получаете +1 балл)"
-
-#: website/templates/index.html:29
-msgid "Find a bug on a new site or app (+4 points)"
-msgstr "Найти баг на новом сайте или в приложении (+4 балла)"
-
-#: website/templates/index.html:42
-msgid "Number Error"
-msgstr "Ошибка числа"
-
-#: website/templates/index.html:43
-msgid "For pages where you see a number 404, 500."
-msgstr "Для страниц, где вы видите число 404, 500."
-
-#: website/templates/index.html:44 website/templates/index.html:51
-#: website/templates/index.html:58 website/templates/index.html:65
-#: website/templates/index.html:72 website/templates/index.html:79
-#: website/templates/index.html:86
-msgid "Examples"
-msgstr "Примеры"
-
-#: website/templates/index.html:49 website/templates/profile.html:238
-msgid "Functional"
-msgstr "Функциональный"
-
-#: website/templates/index.html:50
-msgid "Something doesn't work as intended"
-msgstr "Что-то работает не так, как задумано"
-
-#: website/templates/index.html:56 website/templates/profile.html:243
-msgid "Performance"
-msgstr "Производительность"
-
-#: website/templates/index.html:57
-msgid "Any process that takes over 5 seconds."
-msgstr "Любой процесс, занимающий более 5 секунд."
-
-#: website/templates/index.html:63 website/templates/profile.html:249
-msgid "Security"
-msgstr "Безопасность"
-
-#: website/templates/index.html:64
-msgid "Data leaks, exploits or anything smelly."
-msgstr "Утечки данных, эксплойты или что-то подозрительное."
-
-#: website/templates/index.html:70 website/templates/profile.html:254
-msgid "Typo"
-msgstr "Опечатка"
-
-#: website/templates/index.html:71
-msgid "Miss-spellings, miss-grammar and more."
-msgstr "Опечатки, ошибка в грамматике и многое другое."
-
-#: website/templates/index.html:77 website/templates/profile.html:261
-msgid "Design"
-msgstr "Дизайн"
-
-#: website/templates/index.html:78
-msgid "Layout, responsiveness and improvements"
-msgstr "Макет, адаптивность и улучшения"
-
-#: website/templates/index.html:84
-msgid "Server Down"
-msgstr "Сервер недоступен"
-
-#: website/templates/index.html:85
-msgid "500 Server Error and Downtime"
-msgstr "Ошибка сервера 500 и простой"
-
-#: website/templates/index.html:95
-msgid "Bugs"
-msgstr ""
-
-#: website/templates/index.html:98
-msgid "Users"
-msgstr "Пользователи"
-
-#: website/templates/index.html:101
-msgid "Hunts"
-msgstr "Поиск багов"
-
-#: website/templates/index.html:104
-msgid "Domains"
-msgstr "Домены"
-
-#: website/templates/index.html:111
+#: .\website\templates\includes\admin_sidenav.html:8
 #, fuzzy
-#| msgid "LATEST HUNTS"
-msgid "ENDED HUNTS"
-msgstr "ПОСЛЕДНИЕ ПОИСКИ"
+#| msgid "Organizations"
+msgid "Organization"
+msgstr "Организации"
 
-#: website/templates/index.html:113
-#, fuzzy
-#| msgid "View Ended Hunts"
-msgid "View Ongoing Hunts"
-msgstr "Просмотр завершенных поисков"
-
-#: website/templates/index.html:116
-msgid "LATEST HUNTS"
-msgstr "ПОСЛЕДНИЕ ПОИСКИ"
-
-#: website/templates/index.html:118
-msgid "View Ended Hunts"
-msgstr "Просмотр завершенных поисков"
-
-#: website/templates/index.html:131
-#, fuzzy
-#| msgid "LATEST HUNTS"
-msgid "LATEST"
-msgstr "ПОСЛЕДНИЕ ПОИСКИ"
-
-#: website/templates/index.html:177
-msgid "No ongoing hunt's found"
-msgstr "Нет текущих поисков"
-
-#: website/templates/index.html:187
-msgid "LEADER BOARDS"
-msgstr "ТАБЛИЦЫ ЛИДЕРОВ"
-
-#: website/templates/index.html:192
-msgid "TOP COMPANY"
-msgstr "ТОП КОМПАНИЯ"
-
-#: website/templates/index.html:202
-msgid "SUBMIT A BUG"
+#: .\website\templates\includes\header.html:673
+#: .\website\templates\includes\header.html:683
+msgid "All"
 msgstr ""
 
-#: website/templates/index.html:210
-msgid "TOP TESTER"
-msgstr "ТОП ТЕСТЕР"
-
-#: website/templates/index.html:220
-msgid "VIEW PROFILE"
-msgstr ""
-
-#: website/templates/index.html:232
-msgid "Latest activity"
-msgstr "Последняя активность"
-
-#: website/templates/index.html:238
-msgid "View All Activity"
-msgstr "Просмотреть всю активность"
-
-#: website/templates/index.html:244
-msgid "Leaderboard"
-msgstr "Таблица лидеров"
-
-#: website/templates/index.html:248
-msgid "The 1st Place Hunter for"
-msgstr "Первое место для"
-
-#: website/templates/index.html:248
-msgid "will receive"
-msgstr "получит"
-
-#: website/templates/index.html:250
-msgid "No sponsored prizes this month"
-msgstr "Нет спонсорских призов в этом месяце"
-
-#: website/templates/index.html:251
-msgid "Sponsor a Prize"
-msgstr "Стать спонсором приза"
-
-#: website/templates/index.html:267 website/templates/mobile_about.html:19
-#: website/templates/profile.html:345
-msgid "Points"
-msgstr "баллы"
-
-#: website/templates/index.html:271
-msgid "Leaderboard reset for"
-msgstr "Сброс таблицы лидеров для"
-
-#: website/templates/index.html:271
-msgid "Be first to find issues"
-msgstr "Будьте первым, кто найдет проблемы"
-
-#: website/templates/index.html:274
-msgid "View All"
-msgstr "Просмотреть все"
-
-#: website/templates/index.html:275
-msgid "Filter Monthly"
-msgstr "Фильтр по месяцам"
-
-#: website/templates/index.html:276
-msgid "View Monthly"
-msgstr "Просмотр по месяцам"
-
-#: website/templates/invite.html:11
-msgid "Invite a company and get +5 points when they join"
-msgstr "Пригласите компанию и получите +5 баллов, когда они присоединятся"
-
-#: website/templates/join.html:431 website/templates/join.html:460
-#: website/templates/join.html:489
-msgid "Featured on Homepage"
-msgstr "Рекомендуется на главной странице"
-
-#: website/templates/join.html:461 website/templates/join.html:490
-msgid "Featured in Newsletter"
-msgstr "Рекомендуется в рассылке"
-
-#: website/templates/join.html:492
-msgid "Announced to Users"
-msgstr "Объявлено пользователям"
-
-#: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
-msgstr "Вся сумма призовых напрямую переходит охотнику за багами"
-
-#: website/templates/mobile_about.html:6
-msgid ""
-"Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 "
-"seconds"
-msgstr ""
-"Код программы позволяет нам купить подарок для мамы или папы на amazon.com "
-"за 7 секунд"
-
-#: website/templates/mobile_about.html:6
-msgid "watch our favorite"
-msgstr "смотреть наше любимое"
-
-#: website/templates/mobile_about.html:7
-msgid ""
-"“House of Cards” episode on Netflix or read Yelp reviews about a new "
-"restaurant"
-msgstr ""
-"серию \"Карточный домик\" на Netflix или читать отзывы Yelp о новом ресторане"
-
-#: website/templates/mobile_about.html:9
-msgid ""
-"When we can’t access the information we’re looking for on the internet "
-"within seconds"
-msgstr ""
-"когда мы не можем получить доступ к информации, которую ищем в интернете за "
-"несколько секунд"
-
-#: website/templates/mobile_about.html:9
-msgid "we are not happy"
-msgstr "мы не счастливы"
-
-#: website/templates/mobile_about.html:12
-msgid "This is where you come into the picture"
-msgstr "здесь вы вступаете в картину"
-
-#: website/templates/mobile_about.html:14
-msgid ""
-"wants you to identify the software (and hardware) bugs that delay downloads"
-msgstr ""
-"хочет, чтобы вы выявили программные (и аппаратные) ошибки, замедляющие "
-"загрузку"
-
-#: website/templates/mobile_about.html:14
-msgid "freeze screens"
-msgstr "замораживание экранов"
-
-#: website/templates/mobile_about.html:15
-msgid ""
-"create payloads that deliver malware to websites and generate other issues"
-msgstr ""
-"создавать полезные нагрузки, доставляющие вредоносное ПО на веб-сайты и "
-"вызывающие другие проблемы"
-
-#: website/templates/mobile_about.html:17
-msgid "What’s in it for you"
-msgstr "что в этом для вас"
-
-#: website/templates/mobile_about.html:20
-msgid "Money if you join a"
-msgstr "Деньги, если вы присоединитесь к"
-
-#: website/templates/mobile_about.html:20
-msgid "Sponsored Bug Hunt"
-msgstr "Спонсируемая охота на баги"
-
-#: website/templates/mobile_about.html:21
-msgid "Jackpot money listed on the Leaderboard"
-msgstr "Деньги от джекпота, указанные в таблице лидеров"
-
-#: website/templates/mobile_about.html:22
-msgid "Money if someone tips you for finding a bug through the tip button"
-msgstr ""
-"Деньги, если кто-то дает вам чаевые за нахождение ошибки через кнопку чаевых"
-
-#: website/templates/mobile_about.html:23
-msgid "Experience to add to your résumé or portfolio"
-msgstr "Опыт, который можно добавить в ваше резюме или портфолио"
-
-#: website/templates/mobile_about.html:26
-msgid "How it Works"
-msgstr "Как это работает"
-
-#: website/templates/mobile_about.html:28
-msgid "Testers"
-msgstr "Тестировщики"
-
-#: website/templates/mobile_about.html:30
-msgid "Create a User Account to log into"
-msgstr "Создайте учетную запись пользователя для входа"
-
-#: website/templates/mobile_about.html:31
-msgid "Describe the software or hardware bug you found"
-msgstr "Опишите найденную вами программную или аппаратную ошибку"
-
-#: website/templates/mobile_about.html:32
-msgid "Attach a screenshot of the bug"
-msgstr "Прикрепите снимок экрана ошибки"
-
-#: website/templates/mobile_about.html:33
-msgid "Submit the information"
-msgstr "Отправьте информацию"
-
-#: website/templates/mobile_about.html:34
-msgid "Win money through company-sponsored Bug Bounties"
-msgstr "Выиграйте деньги через спонсируемые компанией охоты на баги"
-
-#: website/templates/mobile_about.html:34
-msgid "tips or the Grand Prize/Jackpot"
-msgstr "чаевые или Главный приз/джекпот"
-
-#: website/templates/mobile_about.html:34
-msgid ""
-"We may also have \"heists\" where each bug is worth a specific amount based "
-"on what the company sets"
-msgstr ""
-"У нас также могут быть \"ограбления\", где каждая ошибка стоит определенную "
-"сумму в зависимости от установленного компанией значения"
-
-#: website/templates/mobile_about.html:36
-msgid "If you participate in"
-msgstr "Если вы участвуете в"
-
-#: website/templates/mobile_about.html:36
-msgid "sponsored Bug Bounties"
-msgstr "спонсируемой охоте на баги"
-
-#: website/templates/mobile_about.html:36
-msgid "you could win prize money known as tips"
-msgstr "вы можете выиграть денежный приз, известный как чаевые"
-
-#: website/templates/mobile_about.html:39
+#: .\website\templates\includes\header.html:690
+#: .\website\templates\includes\sidenav.html:94
+#: .\website\templates\includes\sidenav.html:101
 msgid "Organizations"
 msgstr "Организации"
 
-#: website/templates/mobile_about.html:41
-msgid "We want everyone to love your website"
-msgstr "Мы хотим, чтобы каждому нравился ваш сайт"
+#: .\website\templates\includes\header.html:697
+#: .\website\templates\includes\sidenav.html:159
+#, fuzzy
+#| msgid "Open Issues"
+msgid "Issues"
+msgstr "Открытые задачи"
 
-#: website/templates/mobile_about.html:42
-msgid ""
-"You want to keep your customers happy by giving them a consistent bug-free "
-"user experience"
+#: .\website\templates\includes\header.html:704
+#: .\website\templates\includes\sidenav.html:51
+#: .\website\templates\includes\sidenav.html:117
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:119
+msgid "Domains"
+msgstr "Домены"
+
+#: .\website\templates\includes\header.html:711
+#: .\website\templates\includes\sidenav.html:266
+#: .\website\templates\includes\sidenav.html:273
+msgid "Users"
+msgstr "Пользователи"
+
+#: .\website\templates\includes\header.html:718
+#: .\website\templates\includes\sidenav.html:208
+#: .\website\templates\includes\sidenav.html:215
+msgid "Projects"
 msgstr ""
-"Вы хотите держать своих клиентов довольными, предлагая им последовательный "
-"безбаговый пользовательский опыт"
 
-#: website/templates/mobile_about.html:43
-msgid ""
-"offers monthly Bug Bounties through 4 different subscription plans to help you "
-"achieve this"
+#: .\website\templates\includes\header.html:725
+#, fuzzy
+#| msgid "Report"
+msgid "Repos"
+msgstr "Сообщить"
+
+#: .\website\templates\includes\header.html:818
+#, fuzzy
+#| msgid "Company Dashboard"
+msgid "Admin Dashboard"
+msgstr "Панель управления компании"
+
+#: .\website\templates\includes\header.html:825
+#: .\website\templates\includes\navbar.html:163
+#, fuzzy
+#| msgid "Start a Bug Hunt"
+msgid "Start a Bug Bounty"
+msgstr "Начать поиск багов"
+
+#: .\website\templates\includes\header.html:831
+#: .\website\templates\includes\navbar.html:169
+msgid "Social"
+msgstr "Социальные сети"
+
+#: .\website\templates\includes\header.html:837
+#: .\website\templates\includes\sidenav.html:338
+msgid "Reminder Settings"
 msgstr ""
-"предлагает месячные охоты на баги через 4 различных плана подписки, чтобы "
-"помочь вам в этом"
 
-#: website/templates/profile.html:185
-msgid "Upload"
-msgstr "Загрузить"
+#: .\website\templates\includes\header.html:849
+#: .\website\templates\invite.html:25
+#, fuzzy
+#| msgid "Organizations"
+msgid "Invite an Organization"
+msgstr "Организации"
 
-#: website/templates/profile.html:197
-msgid "Hide all issues"
-msgstr "Скрыть все задачи"
+#: .\website\templates\includes\header.html:855
+#: .\website\templates\includes\navbar.html:184
+#, fuzzy
+#| msgid "Organizations"
+msgid "View Organization"
+msgstr "Организации"
 
-#: website/templates/profile.html:198
-msgid "OK"
-msgstr "OK"
+#: .\website\templates\includes\header.html:861
+#: .\website\templates\includes\navbar.html:189
+#, fuzzy
+#| msgid "Organizations"
+msgid "Organization Dashboard"
+msgstr "Организации"
 
-#: website/templates/profile.html:205
+#: .\website\templates\includes\header.html:882
+#: .\website\templates\includes\navbar.html:207
+msgid "Signup"
+msgstr "Зарегистрироваться"
+
+#: .\website\templates\includes\navbar.html:54
+#: .\website\templates\includes\navbar.html:106
+msgid "Report a Bug"
+msgstr "Сообщить о баге"
+
+#: .\website\templates\includes\navbar.html:93
+msgid "Report Issues, Win Prizes"
+msgstr ""
+
+#: .\website\templates\includes\navbar.html:102
+#, fuzzy
+#| msgid "Search"
+msgid " Search"
+msgstr "Поиск"
+
+#: .\website\templates\includes\navbar.html:110
+#: .\website\templates\includes\sidenav.html:58
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:124
+#, fuzzy
+#| msgid "sponsored Bug Bounties"
+msgid "Bug Bounties"
+msgstr "Баг-баунти"
+
+#: .\website\templates\includes\navbar.html:158
+msgid "Add to chrome"
+msgstr "Добавить в Chrome"
+
+#: .\website\templates\includes\navbar.html:179
+msgid "Invite Friends"
+msgstr "Пригласить друзей"
+
+#: .\website\templates\includes\sidenav.html:22
+#, fuzzy
+#| msgid "Company Dashboard"
+msgid "Dashboard"
+msgstr "Панель управления компании"
+
+#: .\website\templates\includes\sidenav.html:30
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:104
+msgid "Analytics"
+msgstr "Аналитика"
+
+#: .\website\templates\includes\sidenav.html:37
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:109
+msgid "Team Overview"
+msgstr "Обзор команды"
+
+#: .\website\templates\includes\sidenav.html:44
+#: .\website\templates\includes\sidenav.html:152
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:114
+msgid "Bugs"
+msgstr "Баги"
+
+#: .\website\templates\includes\sidenav.html:65
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:129
+msgid "Roles"
+msgstr "Роли"
+
+#: .\website\templates\includes\sidenav.html:72
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:134
+msgid "Integrations"
+msgstr "Интеграции"
+
+#: .\website\templates\includes\sidenav.html:79
+msgid "Manage Jobs"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:86
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:144
+msgid "Slack Channels"
+msgstr "Каналы Slack"
+
+#: .\website\templates\includes\sidenav.html:110
+#: .\website\templates\organization\register_organization.html:5
+#: .\website\templates\organization\register_organization.html:14
+#: .\website\templates\organization\register_organization.html:26
+#, fuzzy
+#| msgid "Organizations"
+msgid "Register Organization"
+msgstr "Организации"
+
+#: .\website\templates\includes\sidenav.html:124
+msgid "Map"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:131
+msgid "Feed"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:138
+msgid "Hackathons"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:145
+#: .\website\templates\organization\dashboard\organization_dashboard_base.html:139
+msgid "Jobs"
+msgstr "Вакансии"
+
+#: .\website\templates\includes\sidenav.html:166
+msgid "Time Logs"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:173
+msgid "Check-In"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:180
+#, fuzzy
+#| msgid "Company Scoreboard"
+msgid "Scoreboard"
+msgstr "Таблица результатов компании"
+
+#: .\website\templates\includes\sidenav.html:187
+msgid "Bounties"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:194
+#: .\website\templates\reported_ips_list.html:5
+#: .\website\templates\reported_ips_list.html:24
+#, fuzzy
+#| msgid "Report"
+msgid "Reported IPs"
+msgstr "Сообщить"
+
+#: .\website\templates\includes\sidenav.html:201
+msgid "Trademarks"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:224
+msgid "Repositories"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:231
+#, fuzzy
+#| msgid "Open Issues"
+msgid "Bid on Issues"
+msgstr "Открытые задачи"
+
+#: .\website\templates\includes\sidenav.html:238
+msgid "Funding"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:245
+msgid "BACON (coin)"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:252
+msgid "Bacon Requests"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:259
+msgid "GSOC PR Reports"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:282
+msgid "Messaging"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:289
+#: .\website\templates\includes\sidenav.html:361
+msgid "Challenges"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:296
+msgid "Staking"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:310
+msgid "Contributors"
+msgstr "Участники"
+
+#: .\website\templates\includes\sidenav.html:317
+msgid "Takedowns"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:324
+#: .\website\templates\profile.html:498
+msgid "Badges"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:331
+#, fuzzy
+#| msgid "Features"
+msgid "Adventures"
+msgstr "Возможности"
+
+#: .\website\templates\includes\sidenav.html:345
+#: .\website\templates\includes\sidenav.html:352
+msgid "Teams"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:375
+#: .\website\templates\includes\sidenav.html:382
+msgid "About Us"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:391
+msgid "Features"
+msgstr "Возможности"
+
+#: .\website\templates\includes\sidenav.html:398
+msgid "Sponsorships"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:407
+msgid "OWASP Project"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:414
+#, fuzzy
+#| msgid "conditions"
+msgid "Donations"
+msgstr "условия"
+
+#: .\website\templates\includes\sidenav.html:421
+#: .\website\templates\includes\sidenav.html:428
+#, fuzzy
+#| msgid "Contributors"
+msgid "Contribute"
+msgstr "Участники"
+
+#: .\website\templates\includes\sidenav.html:438
+msgid "Documentation"
+msgstr "Документация"
+
+#: .\website\templates\includes\sidenav.html:446
+msgid "Developer API"
+msgstr "API для разработчиков"
+
+#: .\website\templates\includes\sidenav.html:453
+#, fuzzy
+#| msgid "Functional"
+msgid "Education"
+msgstr "Функциональный"
+
+#: .\website\templates\includes\sidenav.html:460
+#, fuzzy
+#| msgid "Security"
+msgid "Security Labs"
+msgstr "Безопасность"
+
+#: .\website\templates\includes\sidenav.html:467
+msgid "Open Source Sorting Hat"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:474
+msgid "GSOC"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:481
+msgid "Roadmap"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:488
+msgid "Submit PR for review"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:495
+#, fuzzy
+#| msgid "Open Issues"
+msgid "Create an Issue"
+msgstr "Открытые задачи"
+
+#: .\website\templates\includes\sidenav.html:522
+msgid "BLT Core"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:531
+msgid "BLT Flutter"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:540
+msgid "BLT Extension"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:549
+msgid "BLT Action"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:558
+msgid "BLT BACON"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:567
+msgid "BLT Lettuce"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:574
+#, fuzzy
+#| msgid "Community"
+msgid "Communication"
+msgstr "Сообщество"
+
+#: .\website\templates\includes\sidenav.html:581
+msgid "SimilarityScan"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:588
+msgid "Rooms"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:595
+msgid "Video Call"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:604
+msgid "Banned Apps"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:610
+msgid "Apps"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:619
+msgid "iPhone App"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:626
+msgid "Chrome Extension"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:632
+#: .\website\templates\profile.html:105
+#, fuzzy
+#| msgid "Social"
+msgid "Social Links"
+msgstr "Социальные сети"
+
+#: .\website\templates\includes\sidenav.html:641
+msgid "Twitter"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:650
+msgid "Facebook"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:657
+msgid "Blog"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:666
+msgid "Slack"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:672
+msgid "Site Info"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:679
+msgid "Sitemap"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:686
+msgid "Status"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:693
+msgid "Stats"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:700
+#, fuzzy
+#| msgid "Company Dashboard"
+msgid "Stats Dashboard"
+msgstr "Панель управления компании"
+
+#: .\website\templates\includes\sidenav.html:707
+msgid "Template List"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:714
+msgid "Website Stats"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:720
+msgid "Legal"
+msgstr "Правовая информация"
+
+#: .\website\templates\includes\sidenav.html:727
+#, fuzzy
+#| msgid "terms"
+msgid "Terms"
+msgstr "условия"
+
+#: .\website\templates\includes\sidenav.html:732
+msgid "Language"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:759
+msgid "Resources"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:768
+#: .\website\templates\profile.html:400
+msgid "Design"
+msgstr "Дизайн"
+
+#: .\website\templates\includes\sidenav.html:776
+msgid "Style Guide"
+msgstr ""
+
+#: .\website\templates\includes\sidenav.html:787
+msgid "Edit this page"
+msgstr ""
+
+#: .\website\templates\includes\user_sidenav.html:8
+msgid "Home"
+msgstr "Главная"
+
+#: .\website\templates\includes\user_sidenav.html:15
+#, fuzzy
+#| msgid "View Ended Hunts"
+msgid "Ongoing Hunts"
+msgstr "Текущие охоты"
+
+#: .\website\templates\includes\user_sidenav.html:22
+msgid "Previous Hunts"
+msgstr "Прошедшие охоты"
+
+#: .\website\templates\includes\user_sidenav.html:29
+msgid "Wallet"
+msgstr "Кошелёк"
+
+#: .\website\templates\includes\user_sidenav.html:36
+msgid "Rewards"
+msgstr "Награды"
+
+#: .\website\templates\includes\user_sidenav.html:43
+#, fuzzy
+#| msgid "User Profile"
+msgid "Profile"
+msgstr "Профиль"
+
+#: .\website\templates\index_user.html:16
+msgid "Upcoming Hunt"
+msgstr "Предстоящая охота"
+
+#: .\website\templates\index_user.html:33
+#, python-format
+msgid "%(domain)s, %(org)s - Starts on %(date)s"
+msgstr "%(domain)s, %(org)s - Начало %(date)s"
+
+#: .\website\templates\index_user.html:37
+#: .\website\templates\index_user.html:69
+#: .\website\templates\index_user.html:103
+#, fuzzy
+#| msgid "Read our"
+msgid "Read More"
+msgstr "Подробнее"
+
+#: .\website\templates\index_user.html:50
+#, fuzzy
+#| msgid "View Ended Hunts"
+msgid "Ongoing Hunt"
+msgstr "Текущая охота"
+
+#: .\website\templates\index_user.html:66
+#, python-format
+msgid "%(domain)s, %(org)s - Already Started"
+msgstr "%(domain)s, %(org)s - Уже началось"
+
+#: .\website\templates\index_user.html:82
+msgid "Previous Hunt"
+msgstr "Прошедшая охота"
+
+#: .\website\templates\index_user.html:99
+#, python-format
+msgid "%(domain)s, %(org)s - Ended on %(date)s"
+msgstr "%(domain)s, %(org)s - Завершено %(date)s"
+
+#: .\website\templates\invite.html:31
+msgid "Invite an organization to join our platform and earn"
+msgstr "Организация"
+
+#: .\website\templates\invite.html:31
+#, fuzzy
+#| msgid "Points"
+msgid "+5 points"
+msgstr "баллы"
+
+#: .\website\templates\invite.html:31
+msgid "when they do."
+msgstr ""
+
+#: .\website\templates\invite.html:35
+msgid "Invite an organization to join our platform."
+msgstr ""
+
+#: .\website\templates\invite.html:36
+msgid "to earn +5 points when they register via your referral link."
+msgstr ""
+
+#: .\website\templates\mobile_about.html:47
+msgid ""
+"To create a secure digital environment where users can access online "
+"services seamlessly and safely. From e-commerce to streaming services, we "
+"believe every online interaction should be bug-free and secure."
+msgstr ""
+
+#: .\website\templates\mobile_about.html:53
+msgid ""
+"BLT provides a comprehensive platform for identifying and reporting software "
+"and hardware vulnerabilities that affect user experience, system security, "
+"and overall reliability."
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:8
+#: .\website\templates\organization\register_organization.html:17
+msgid "blt make organization bug tracking easy"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:11
+msgid "blt, bug, tracking, organization, easy, register"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:28
+msgid ""
+"Join our platform and manage your organization's bug tracking efficiently."
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:48
+#, fuzzy
+#| msgid "Company Information"
+msgid "Organization Information"
+msgstr "Информация о компании"
+
+#: .\website\templates\organization\register_organization.html:55
+#, fuzzy
+#| msgid "Organizations"
+msgid "Organization Name"
+msgstr "Организации"
+
+#: .\website\templates\organization\register_organization.html:65
+#, fuzzy
+#| msgid "Organizations"
+msgid "Enter organization name"
+msgstr "Организации"
+
+#: .\website\templates\organization\register_organization.html:75
+#, fuzzy
+#| msgid "Organizations"
+msgid "Organization URL"
+msgstr "Организации"
+
+#: .\website\templates\organization\register_organization.html:85
+msgid "https://organization.com"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:95
+msgid "Support Email"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:95
+#: .\website\templates\organization\register_organization.html:114
+#: .\website\templates\organization\register_organization.html:133
+#, fuzzy
+#| msgid "Functional"
+msgid "Optional"
+msgstr "Функциональный"
+
+#: .\website\templates\organization\register_organization.html:105
+msgid "support@organization.com"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:114
+msgid "Twitter URL"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:124
+msgid "https://x.com/handle"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:133
+msgid "Facebook URL"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:143
+msgid "https://facebook.com/handle"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:156
+#, fuzzy
+#| msgid "Organizations"
+msgid "Organization Logo"
+msgstr "Организации"
+
+#: .\website\templates\organization\register_organization.html:171
+msgid "Upload logo"
+msgstr "Загрузить логотип"
+
+#: .\website\templates\organization\register_organization.html:179
+msgid "PNG, JPG or GIF up to 2MB"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:189
+#, fuzzy
+#| msgid "Organizations"
+msgid "Organization Managers"
+msgstr "Организации"
+
+#: .\website\templates\organization\register_organization.html:192
+msgid ""
+"Add emails of users who will be allowed to manage domains. Email addresses "
+"must belong to registered BLT users."
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:197
+#, fuzzy
+#| msgid "Email address"
+msgid "Email addresses"
+msgstr "Адрес электронной почты"
+
+#: .\website\templates\organization\register_organization.html:205
+msgid "Add Email"
+msgstr "Добавить адрес электронной почты"
+
+#: .\website\templates\organization\register_organization.html:219
+#, fuzzy
+#| msgid "Organizations"
+msgid "Save Organization"
+msgstr "Организации"
+
+#: .\website\templates\organization\register_organization.html:287
+msgid "Error"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:293
+#: .\website\templates\organization\register_organization.html:294
+#: .\website\templates\organization\register_organization.html:312
+#: .\website\templates\organization\register_organization.html:313
+msgid "Dismiss"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:306
+msgid "Success"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:359
+msgid "manager@organization.com"
+msgstr ""
+
+#: .\website\templates\organization\register_organization.html:370
+msgid "Are you sure you want to cancel? Your progress will be lost."
+msgstr ""
+
+#: .\website\templates\profile.html:50
+msgid "Role"
+msgstr ""
+
+#: .\website\templates\profile.html:57
+#, fuzzy
+#| msgid "User Profile"
+msgid "Edit Profile"
+msgstr "Профиль пользователя"
+
+#: .\website\templates\profile.html:65
+#, fuzzy
+#| msgid "Follow Us"
+msgid "Follwings"
+msgstr "Подписывайтесь на нас"
+
+#: .\website\templates\profile.html:69
+msgid "Followers"
+msgstr "Подписчики"
+
+#: .\website\templates\profile.html:74
+msgid "Profile Views"
+msgstr ""
+
+#: .\website\templates\profile.html:77
+msgid "Bookmarks"
+msgstr "Закладки"
+
+#: .\website\templates\profile.html:79
+msgid "Kudos"
+msgstr ""
+
+#: .\website\templates\profile.html:88
+#, fuzzy
+#| msgid "Sponsored Bug Hunt"
+msgid "Sponsor on GitHub"
+msgstr "Спонсируемая охота на баги"
+
+#: .\website\templates\profile.html:94
 msgid "Unfollow"
 msgstr ""
 
-#: website/templates/profile.html:207
+#: .\website\templates\profile.html:96
 #, fuzzy
 #| msgid "Follow Us"
 msgid "Follow"
 msgstr "Подписывайтесь на нас"
 
-#: website/templates/profile.html:218
-msgid "Send a tip"
-msgstr "Отправить подсказку"
+#: .\website\templates\profile.html:120
+msgid "X (Twitter)"
+msgstr ""
 
-#: website/templates/profile.html:226
+#: .\website\templates\profile.html:128
+msgid "LinkedIn"
+msgstr ""
+
+#: .\website\templates\profile.html:136
+msgid "Website"
+msgstr ""
+
+#: .\website\templates\profile.html:159
+msgid "Connect GitHub and earn 10 BACON tokens!"
+msgstr ""
+
+#: .\website\templates\profile.html:162
+msgid "Link your GitHub profile to unlock rewards"
+msgstr ""
+
+#: .\website\templates\profile.html:177
+#: .\website\templates\socialaccount\login.html:6
+msgid "Connect GitHub"
+msgstr ""
+
+#: .\website\templates\profile.html:184
+msgid "Crypto Addresses"
+msgstr ""
+
+#: .\website\templates\profile.html:190
+msgid "POINTS"
+msgstr ""
+
+#: .\website\templates\profile.html:199
+msgid "Score"
+msgstr ""
+
+#: .\website\templates\profile.html:200
+msgid "Reason"
+msgstr ""
+
+#: .\website\templates\profile.html:201
+#, fuzzy
+#| msgid "Unrated"
+msgid "Created"
+msgstr "Без оценки"
+
+#: .\website\templates\profile.html:210
+msgid "Issue created"
+msgstr ""
+
+#: .\website\templates\profile.html:212
+#, fuzzy
+#| msgid "Email address"
+msgid "Domain added"
+msgstr "Адрес электронной почты"
+
+#: .\website\templates\profile.html:216
+msgid "No reason provided"
+msgstr ""
+
+#: .\website\templates\profile.html:223
+msgid "No points available!"
+msgstr ""
+
+#: .\website\templates\profile.html:232
+msgid "Streak Details"
+msgstr ""
+
+#: .\website\templates\profile.html:237
+msgid "Current Streak"
+msgstr ""
+
+#: .\website\templates\profile.html:243
+msgid "Longest Streak"
+msgstr ""
+
+#: .\website\templates\profile.html:249
+msgid "Days Visited"
+msgstr ""
+
+#: .\website\templates\profile.html:255
+msgid "Last Visit"
+msgstr ""
+
+#: .\website\templates\profile.html:261
+msgid "Last Sizzle Check-in"
+msgstr ""
+
+#: .\website\templates\profile.html:267
+msgid "Streak Progress"
+msgstr ""
+
+#: .\website\templates\profile.html:280
+msgid "Current"
+msgstr ""
+
+#: .\website\templates\profile.html:281
+msgid "Next Milestone"
+msgstr ""
+
+#: .\website\templates\profile.html:286
+#, fuzzy
+#| msgid "Latest activity"
+msgid "Recent Activity"
+msgstr "Последняя активность"
+
+#: .\website\templates\profile.html:363
+#, fuzzy
+#| msgid "View All Activity"
+msgid "View all activity by"
+msgstr "Просмотреть всю активность"
+
+#: .\website\templates\profile.html:376
 msgid "General"
 msgstr "Общее"
 
-#: website/templates/profile.html:231
+#: .\website\templates\profile.html:380
 msgid "Number"
 msgstr "Номер"
 
-#: website/templates/profile.html:272
-msgid "Followers"
-msgstr "Подписчики"
+#: .\website\templates\profile.html:384
+msgid "Functional"
+msgstr "Функциональный"
 
-#: website/templates/profile.html:276
+#: .\website\templates\profile.html:388
+msgid "Performance"
+msgstr "Производительность"
+
+#: .\website\templates\profile.html:392
+msgid "Security"
+msgstr "Безопасность"
+
+#: .\website\templates\profile.html:396
+msgid "Typo"
+msgstr "Опечатка"
+
+#: .\website\templates\profile.html:405
 #, fuzzy
-#| msgid "Follow Us"
-msgid "Following"
-msgstr "Подписывайтесь на нас"
+#| msgid "Users"
+msgid "User Stats"
+msgstr "Пользователи"
 
-#: website/templates/profile.html:280
-msgid "Bookmarks"
-msgstr "Закладки"
+#: .\website\templates\profile.html:422
+#, fuzzy
+#| msgid "Users"
+msgid "User Tags"
+msgstr "Пользователи"
 
-#: website/templates/profile.html:291
-msgid "No Bug Reported"
-msgstr "Баги не сообщены"
-
-#: website/templates/profile.html:344
-msgid "Bugs Reported"
-msgstr "Сообщенные баги"
-
-#: website/templates/profile.html:347
-msgid "Open Issues"
-msgstr "Открытые задачи"
-
-#: website/templates/profile.html:350
-msgid "Closed Issues"
-msgstr "Закрытые задачи"
-
-#: website/templates/profile.html:359
-msgid "activity"
-msgstr "Активность"
-
-#: website/templates/profile.html:371
-msgid "No Activity Yet"
-msgstr "Активность отсутствует"
-
-#: website/templates/profile.html:380
-msgid "top bug findings"
-msgstr "Лучшие находки по ошибкам"
-
-#: website/templates/profile.html:399
-msgid "Nothing Found"
+#: .\website\templates\profile.html:432
+#, fuzzy
+#| msgid "Nothing Found"
+msgid "No tags found!"
 msgstr "Ничего не найдено"
 
-#: website/templates/registration/password_reset_email.html:1
+#: .\website\templates\profile.html:437
+msgid "Bacon Stats"
+msgstr ""
+
+#: .\website\templates\profile.html:440
+msgid "Bacon Earned:"
+msgstr ""
+
+#: .\website\templates\profile.html:446
+msgid "Pending Submissions"
+msgstr ""
+
+#: .\website\templates\profile.html:450
+msgid "Completed Submissions"
+msgstr ""
+
+#: .\website\templates\profile.html:457
+msgid "View Bacon Submissions"
+msgstr ""
+
+#: .\website\templates\profile.html:461
+#, fuzzy
+#| msgid "Report"
+msgid "Monthly Report"
+msgstr "Сообщить"
+
+#: .\website\templates\profile.html:465
+#, fuzzy
+#| msgid "top bug findings"
+msgid "Top Finding"
+msgstr "Лучшие находки по ошибкам"
+
+#: .\website\templates\profile.html:491
+#, fuzzy
+#| msgid "Nothing Found"
+msgid "Nothing Found!"
+msgstr "Ничего не найдено"
+
+#: .\website\templates\profile.html:504
+msgid "Assign a Badge"
+msgstr ""
+
+#: .\website\templates\profile.html:525
+msgid "No badges awarded yet!"
+msgstr ""
+
+#: .\website\templates\profile.html:535
+msgid "Overall Pull Requests"
+msgstr ""
+
+#: .\website\templates\profile.html:542
+msgid "Merged"
+msgstr ""
+
+#: .\website\templates\profile.html:547
+msgid "Open"
+msgstr ""
+
+#: .\website\templates\profile.html:552
+#, fuzzy
+#| msgid "Closed Issues"
+msgid "Closed"
+msgstr "Закрытые задачи"
+
+#: .\website\templates\profile.html:556
+msgid "Rank"
+msgstr ""
+
+#: .\website\templates\profile.html:1070
+#, fuzzy
+#| msgid "Followers"
+msgid "Followed By:"
+msgstr "Подписчики"
+
+#: .\website\templates\projects\repo_detail.html:16
+msgid "Copied!"
+msgstr ""
+
+#: .\website\templates\projects\repo_detail.html:17
+msgid "AI summary unavailable for this repo."
+msgstr ""
+
+#: .\website\templates\projects\repo_detail.html:18
+msgid "AI summary regenerated successfully"
+msgstr ""
+
+#: .\website\templates\projects\repo_detail.html:19
+#, fuzzy
+#| msgid "Contributors"
+msgid "total contributors"
+msgstr "Участники"
+
+#: .\website\templates\projects\repo_detail.html:20
+#, fuzzy
+#| msgid "Contributors"
+msgid "Verified Contributor"
+msgstr "Участники"
+
+#: .\website\templates\projects\repo_detail.html:21
+msgid "commits"
+msgstr ""
+
+#: .\website\templates\projects\repo_detail.html:22
+msgid "No contributor statistics available for this period"
+msgstr ""
+
+#: .\website\templates\projects\repo_detail.html:23
+msgid "Contributor statistics refreshed successfully"
+msgstr ""
+
+#: .\website\templates\registration\password_reset_email.html:3
 msgid ""
 "You're receiving this\n"
 "email because you requested a password reset for your user account at {{\n"
@@ -900,77 +1978,538 @@ msgstr ""
 "{{\n"
 "site_name }}."
 
-#: website/templates/registration/password_reset_email.html:6
+#: .\website\templates\registration\password_reset_email.html:11
 msgid "Your username, in case you’ve forgotten:"
 msgstr "Ваше имя пользователя, на случай забытья:"
 
-#: website/templates/registration/password_reset_email.html:7
+#: .\website\templates\registration\password_reset_email.html:12
 msgid "Thanks for using our site!"
 msgstr "Благодарим за использование нашего сайта!"
 
-#: website/templates/report.html:102
+#: .\website\templates\report.html:32
+msgid "DUPLICATE ISSUES"
+msgstr ""
+
+#: .\website\templates\report.html:40
+#, fuzzy
+#| msgid "Open Issues"
+msgid "Latest Issues"
+msgstr "Открытые задачи"
+
+#: .\website\templates\report.html:80
 msgid "REPORT A BUG"
 msgstr "Сообщить о проблеме"
 
-#: website/templates/report.html:110
-msgid "DOMAIN URL"
-msgstr ""
+#: .\website\templates\report.html:159
+#, fuzzy
+#| msgid "Domains"
+msgid "Domain URL"
+msgstr "Домены"
 
-#: website/templates/report.html:128
+#: .\website\templates\report.html:164
 #, fuzzy
 #| msgid "DOMAIN URLCheck for Duplicates"
-msgid "Check for Duplicates"
+msgid "Check Duplicates"
 msgstr "Проверка дубликатов для URL-адреса домена"
 
-#: website/templates/report.html:139
-msgid "BUG TITLE"
-msgstr "Название ошибки"
-
-#: website/templates/report.html:160
-msgid "BUG TYPE"
-msgstr "Тип ошибки"
-
-#: website/templates/report.html:186
-msgid "BUG HUNT"
-msgstr "Охота на ошибки"
-
-#: website/templates/report.html:195
-msgid "REPORT INDEPENDENTLY"
+#: .\website\templates\report.html:214
+msgid "Bug Title"
 msgstr ""
 
-#: website/templates/report.html:219
-msgid "SCREENSHOTS"
-msgstr "Снимки экрана"
+#: .\website\templates\report.html:227
+msgid "Bug Type"
+msgstr ""
 
-#: website/templates/report.html:243
+#: .\website\templates\report.html:249
+msgid "Bug Description"
+msgstr ""
+
+#: .\website\templates\report.html:298
+msgid "Report Independently"
+msgstr ""
+
+#: .\website\templates\report.html:306
+msgid "CVE ID"
+msgstr ""
+
+#: .\website\templates\report.html:324
+#, fuzzy
+#| msgid "Upload screenshots"
+msgid "Screenshots"
+msgstr "Загрузить снимки экрана"
+
+#: .\website\templates\report.html:335
 msgid "Upload screenshots"
 msgstr "Загрузить снимки экрана"
 
-#: website/templates/report.html:254
-msgid "or drag and drop"
-msgstr "или перетащите"
+#: .\website\templates\report.html:345
+msgid "Drag & drop or click to upload"
+msgstr ""
 
-#: website/templates/report.html:282
-msgid "ADD TEAM MEMBERS"
-msgstr "Добавить членов команды"
+#: .\website\templates\report.html:359
+msgid "Team Members"
+msgstr ""
 
-#: website/templates/report.html:291
-msgid "Team members should be bughunts users"
+#: .\website\templates\report.html:364
+msgid "Add"
+msgstr ""
+
+#: .\website\templates\report.html:367
+#, fuzzy
+#| msgid "Team members should be bughunts users"
+msgid "Team members should be Bug Bounty users"
 msgstr "Участники команды должны быть пользователями Bughunts"
 
-#: website/templates/report.html:313
-msgid "Report Privately"
-msgstr "Сообщить в частном порядке"
+#: .\website\templates\report.html:369
+#, fuzzy
+#| msgid "Email address"
+msgid "Email address:"
+msgstr "Адрес электронной почты"
 
-#: website/templates/report.html:335
+#: .\website\templates\report.html:383
+msgid "Report Anonymously"
+msgstr ""
+
+#: .\website\templates\report.html:399
 msgid "Report"
 msgstr "Сообщить"
 
+#: .\website\templates\report_ip.html:372
+msgid ""
+"Are you sure you want to cancel this report? All entered data will be lost."
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:8
+msgid ""
+"View and manage reported IPs with detailed information on activity types, "
+"user reports, and descriptions. Stay updated with the latest activity "
+"reports."
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:11
+msgid ""
+"Reported IPs, IP Activity Reports, Manage IPs, View Reports, Activity Types, "
+"User Reports"
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:14
+msgid "Reported IPs - Manage Activity Reports"
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:17
+msgid ""
+"Access detailed information on reported IPs, including activity types, user "
+"reports, and descriptions. Stay informed with the latest activity reports."
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:28
+#: .\website\templates\reported_ips_list.html:98
+#, fuzzy
+#| msgid "Report a Bug"
+msgid "Report an IP"
+msgstr "Сообщить о баге"
+
+#: .\website\templates\reported_ips_list.html:56
+msgid "Anonymous"
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:77
+msgid "Description:"
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:80
+msgid "No additional details provided."
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:91
+#, fuzzy
+#| msgid "No Bug Reported"
+msgid "No IPs Reported"
+msgstr "Баги не сообщены"
+
+#: .\website\templates\reported_ips_list.html:94
+msgid "It seems there are no reported IPs in the system yet."
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:109
+#, python-format
+msgid ""
+"\n"
+"                            Showing <span class=\"font-medium hover:text-"
+"gray-900 dark:hover:text-white\">%(start)s</span> to <span class=\"font-"
+"medium hover:text-gray-900 dark:hover:text-white\">%(end)s</span> of <span "
+"class=\"font-medium hover:text-gray-900 dark:hover:text-white\">%(total)s</"
+"span> results\n"
+"                            "
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:120
+msgid "First"
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:125
+msgid "Previous"
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:130
+#, python-format
+msgid ""
+"\n"
+"                                Page %(number)s of %(total)s\n"
+"                                "
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:140
+msgid "Next"
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:145
+msgid "Last"
+msgstr ""
+
+#: .\website\templates\reported_ips_list.html:160
+#, fuzzy
+#| msgid "View Ended Hunts"
+msgid "View on GitHub"
+msgstr "Просмотр завершенных поисков"
+
+#: .\website\templates\reported_ips_list.html:167
+msgid "View on Figma"
+msgstr ""
+
+#: .\website\templates\socialaccount\connections.html:34
+msgid ""
+"You can sign in to your account using any of the following third-party "
+"accounts:"
+msgstr ""
+
+#: .\website\templates\socialaccount\connections.html:61
+msgid "Remove"
+msgstr ""
+
+#: .\website\templates\socialaccount\connections.html:69
+msgid "You currently have no third-party accounts connected to this account."
+msgstr ""
+
+#: .\website\templates\socialaccount\connections.html:74
+msgid "Add a Third-Party Account"
+msgstr ""
+
+#: .\website\templates\socialaccount\login.html:7
+msgid "Continue with your GitHub account"
+msgstr ""
+
+#: .\website\templates\socialaccount\login.html:23
+msgid "You are about to connect your account with GitHub."
+msgstr ""
+
+#: .\website\templates\socialaccount\login.html:27
+msgid "Continue with GitHub"
+msgstr ""
+
+#: .\website\templates\user_deletion.html:80
+msgid "Delete Account"
+msgstr ""
+
+#~ msgid "Register Company"
+#~ msgstr "Зарегистрировать компанию"
+
+#~ msgid "Company Name"
+#~ msgstr "Название компании"
+
+#~ msgid "Company Url"
+#~ msgstr "URL компании"
+
+#~ msgid "Company Support Email (Optional)"
+#~ msgstr "Электронная почта поддержки компании (необязательно)"
+
+#~ msgid "Company Twitter URL (Optional)"
+#~ msgstr "URL Twitter компании (необязательно)"
+
+#~ msgid "Company Facebook URL (Optional)"
+#~ msgstr "URL Facebook компании (необязательно)"
+
+#~ msgid "Company Logo"
+#~ msgstr "Логотип компании"
+
+#~ msgid "Company Managers"
+#~ msgstr "Менеджеры компании"
+
+#~ msgid "Add Emails which will be allowed to add domains"
+#~ msgstr ""
+#~ "Добавьте адреса электронной почты, которым будет разрешено добавлять "
+#~ "домены"
+
+#, fuzzy
+#~| msgid "Email should be registered user on BLT"
+#~ msgid "Email should be registerd user on BLT"
+#~ msgstr ""
+#~ "Электронная почта должна быть зарегистрированным пользователем на BLT"
+
+#~ msgid "Save"
+#~ msgstr "Сохранить"
+
+#~ msgid ""
+#~ "is a bug logging tool to report issues and get points, companies are held "
+#~ "accountable"
+#~ msgstr ""
+#~ "- это инструмент для регистрации ошибок, предназначенный для сообщения о "
+#~ "проблемах и получения баллов; компании несут ответственность"
+
+#~ msgid "Password Reset"
+#~ msgstr "Сброс пароля"
+
+#~ msgid ""
+#~ "Forgotten your password? Enter your e-mail address below, and we'll send "
+#~ "you an e-mail allowing you to reset it."
+#~ msgstr ""
+#~ "Забыли пароль? Введите ваш адрес электронной почты ниже, и мы отправим "
+#~ "вам письмо, позволяющее сбросить его."
+
+#~ msgid "START BUGHUNT"
+#~ msgstr "Начать поиск багов"
+
+#~ msgid "Company"
+#~ msgstr "Компания"
+
+#~ msgid "Privacy"
+#~ msgstr "Конфиденциальность"
+
+#~ msgid "Guides"
+#~ msgstr "Руководства"
+
+#~ msgid "Follow Us"
+#~ msgstr "Подписывайтесь на нас"
+
+#~ msgid "Powered by"
+#~ msgstr "Работает на"
+
+#~ msgid "Bughunts"
+#~ msgstr "Поиск багов"
+
+#~ msgid "Find Bugs, Win Points and Prizes"
+#~ msgstr "Находите баги, зарабатывайте очки и призы"
+
+#~ msgid "Fix issues on websites, apps or hardware (+3 points)"
+#~ msgstr ""
+#~ "Исправление проблем на веб-сайтах, в приложениях или аппаратных средствах "
+#~ "(+3 балла)"
+
+#~ msgid "Verify other bug reports(+2 points)"
+#~ msgstr "Проверка других отчетов о багах (+2 балла)"
+
+#~ msgid "Invite friends (when they signup , get +1 point)"
+#~ msgstr "Пригласите друзей (когда они регистрируются, вы получаете +1 балл)"
+
+#~ msgid "Find a bug on a new site or app (+4 points)"
+#~ msgstr "Найти баг на новом сайте или в приложении (+4 балла)"
+
+#~ msgid "Number Error"
+#~ msgstr "Ошибка числа"
+
+#~ msgid "For pages where you see a number 404, 500."
+#~ msgstr "Для страниц, где вы видите число 404, 500."
+
+#~ msgid "Examples"
+#~ msgstr "Примеры"
+
+#~ msgid "Something doesn't work as intended"
+#~ msgstr "Что-то работает не так, как задумано"
+
+#~ msgid "Any process that takes over 5 seconds."
+#~ msgstr "Любой процесс, занимающий более 5 секунд."
+
+#~ msgid "Data leaks, exploits or anything smelly."
+#~ msgstr "Утечки данных, эксплойты или что-то подозрительное."
+
+#~ msgid "Miss-spellings, miss-grammar and more."
+#~ msgstr "Опечатки, ошибка в грамматике и многое другое."
+
+#~ msgid "Layout, responsiveness and improvements"
+#~ msgstr "Макет, адаптивность и улучшения"
+
+#~ msgid "Server Down"
+#~ msgstr "Сервер недоступен"
+
+#~ msgid "500 Server Error and Downtime"
+#~ msgstr "Ошибка сервера 500 и простой"
+
+#, fuzzy
+#~| msgid "LATEST HUNTS"
+#~ msgid "ENDED HUNTS"
+#~ msgstr "ПОСЛЕДНИЕ ПОИСКИ"
+
+#~ msgid "LATEST HUNTS"
+#~ msgstr "ПОСЛЕДНИЕ ПОИСКИ"
+
+#~ msgid "View Ended Hunts"
+#~ msgstr "Просмотр завершенных поисков"
+
+#, fuzzy
+#~| msgid "LATEST HUNTS"
+#~ msgid "LATEST"
+#~ msgstr "ПОСЛЕДНИЕ ПОИСКИ"
+
+#~ msgid "No ongoing hunt's found"
+#~ msgstr "Нет текущих поисков"
+
+#~ msgid "LEADER BOARDS"
+#~ msgstr "ТАБЛИЦЫ ЛИДЕРОВ"
+
+#~ msgid "TOP COMPANY"
+#~ msgstr "ТОП КОМПАНИЯ"
+
+#~ msgid "TOP TESTER"
+#~ msgstr "ТОП ТЕСТЕР"
+
+#~ msgid "The 1st Place Hunter for"
+#~ msgstr "Первое место для"
+
+#~ msgid "will receive"
+#~ msgstr "получит"
+
+#~ msgid "No sponsored prizes this month"
+#~ msgstr "Нет спонсорских призов в этом месяце"
+
+#~ msgid "Sponsor a Prize"
+#~ msgstr "Стать спонсором приза"
+
+#~ msgid "Leaderboard reset for"
+#~ msgstr "Сброс таблицы лидеров для"
+
+#~ msgid "Be first to find issues"
+#~ msgstr "Будьте первым, кто найдет проблемы"
+
+#~ msgid "Filter Monthly"
+#~ msgstr "Фильтр по месяцам"
+
+#~ msgid "View Monthly"
+#~ msgstr "Просмотр по месяцам"
+
+#~ msgid "Invite a company and get +5 points when they join"
+#~ msgstr "Пригласите компанию и получите +5 баллов, когда они присоединятся"
+
+#~ msgid "Featured in Newsletter"
+#~ msgstr "Рекомендуется в рассылке"
+
+#~ msgid "Announced to Users"
+#~ msgstr "Объявлено пользователям"
+
+#~ msgid "All prize money goes directly to the bug hunter"
+#~ msgstr "Вся сумма призовых напрямую переходит охотнику за багами"
+
+#~ msgid ""
+#~ "Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 "
+#~ "seconds"
+#~ msgstr ""
+#~ "Код программы позволяет нам купить подарок для мамы или папы на "
+#~ "amazon.com за 7 секунд"
+
+#~ msgid "watch our favorite"
+#~ msgstr "смотреть наше любимое"
+
+#~ msgid ""
+#~ "“House of Cards” episode on Netflix or read Yelp reviews about a new "
+#~ "restaurant"
+#~ msgstr ""
+#~ "серию \"Карточный домик\" на Netflix или читать отзывы Yelp о новом "
+#~ "ресторане"
+
+#~ msgid ""
+#~ "When we can’t access the information we’re looking for on the internet "
+#~ "within seconds"
+#~ msgstr ""
+#~ "когда мы не можем получить доступ к информации, которую ищем в интернете "
+#~ "за несколько секунд"
+
+#~ msgid "we are not happy"
+#~ msgstr "мы не счастливы"
+
+#~ msgid "This is where you come into the picture"
+#~ msgstr "здесь вы вступаете в картину"
+
+#~ msgid ""
+#~ "wants you to identify the software (and hardware) bugs that delay "
+#~ "downloads"
+#~ msgstr ""
+#~ "хочет, чтобы вы выявили программные (и аппаратные) ошибки, замедляющие "
+#~ "загрузку"
+
+#~ msgid "freeze screens"
+#~ msgstr "замораживание экранов"
+
+#~ msgid ""
+#~ "create payloads that deliver malware to websites and generate other issues"
+#~ msgstr ""
+#~ "создавать полезные нагрузки, доставляющие вредоносное ПО на веб-сайты и "
+#~ "вызывающие другие проблемы"
+
+#~ msgid "Money if you join a"
+#~ msgstr "Деньги, если вы присоединитесь к"
+
+#~ msgid "Experience to add to your résumé or portfolio"
+#~ msgstr "Опыт, который можно добавить в ваше резюме или портфолио"
+
+#~ msgid "How it Works"
+#~ msgstr "Как это работает"
+
+#~ msgid "Testers"
+#~ msgstr "Тестировщики"
+
+#~ msgid "tips or the Grand Prize/Jackpot"
+#~ msgstr "чаевые или Главный приз/джекпот"
+
+#~ msgid "If you participate in"
+#~ msgstr "Если вы участвуете в"
+
+#~ msgid "you could win prize money known as tips"
+#~ msgstr "вы можете выиграть денежный приз, известный как чаевые"
+
+#~ msgid ""
+#~ "You want to keep your customers happy by giving them a consistent bug-"
+#~ "free user experience"
+#~ msgstr ""
+#~ "Вы хотите держать своих клиентов довольными, предлагая им "
+#~ "последовательный безбаговый пользовательский опыт"
+
+#~ msgid "Upload"
+#~ msgstr "Загрузить"
+
+#~ msgid "Hide all issues"
+#~ msgstr "Скрыть все задачи"
+
+#~ msgid "OK"
+#~ msgstr "OK"
+
+#~ msgid "Send a tip"
+#~ msgstr "Отправить подсказку"
+
+#~ msgid "activity"
+#~ msgstr "Активность"
+
+#~ msgid "BUG TITLE"
+#~ msgstr "Название ошибки"
+
+#~ msgid "BUG TYPE"
+#~ msgstr "Тип ошибки"
+
+#~ msgid "BUG HUNT"
+#~ msgstr "Охота на ошибки"
+
+#~ msgid "SCREENSHOTS"
+#~ msgstr "Снимки экрана"
+
+#~ msgid "or drag and drop"
+#~ msgstr "или перетащите"
+
+#~ msgid "ADD TEAM MEMBERS"
+#~ msgstr "Добавить членов команды"
+
+#~ msgid "Report Privately"
+#~ msgstr "Сообщить в частном порядке"
+
 #~ msgid "Open Source and a non-commercials"
 #~ msgstr "Open Source и без коммерческих целей"
-
-#~ msgid "Unrated"
-#~ msgstr "Без оценки"
 
 #~ msgid "START A "
 #~ msgstr "НАЧАТЬ "

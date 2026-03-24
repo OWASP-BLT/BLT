@@ -1,45 +1,46 @@
+{% load i18n %}
 <div class="fixed top-0 left-0 h-full bg-black dark:bg-gray-900">
     <ul class="nav nav-pills nav-stacked custom-nav">
         <li class="active">
             <a href="{% url 'home' %}"
                class="flex items-center p-4 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
                 <i class="lnr lnr-power-switch"></i>
-                <span class="ml-2">Home</span>
+                <span class="ml-2">{% trans "Home" %}</span>
             </a>
         </li>
         <li>
             <a href="#"
                class="flex items-center p-4 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
                 <i class="lnr lnr-train"></i>
-                <span class="ml-2">Ongoing Hunts</span>
+                <span class="ml-2">{% trans "Ongoing Hunts" %}</span>
             </a>
         </li>
         <li>
             <a href="#"
                class="flex items-center p-4 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
                 <i class="lnr lnr-spell-check"></i>
-                <span class="ml-2">Previous Hunts</span>
+                <span class="ml-2">{% trans "Previous Hunts" %}</span>
             </a>
         </li>
         <li>
             <a href="#"
                class="flex items-center p-4 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
                 <i class="lnr lnr-diamond"></i>
-                <span class="ml-2">Wallet</span>
+                <span class="ml-2">{% trans "Wallet" %}</span>
             </a>
         </li>
         <li>
             <a href="#"
                class="flex items-center p-4 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
                 <i class="lnr lnr-gift"></i>
-                <span class="ml-2">Rewards</span>
+                <span class="ml-2">{% trans "Rewards" %}</span>
             </a>
         </li>
         <li>
             <a href="{% url 'user_profile' slug=user.username %}"
                class="flex items-center p-4 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
                 <i class="lnr lnr-user"></i>
-                <span class="ml-2">Profile</span>
+                <span class="ml-2">{% trans "Profile" %}</span>
             </a>
         </li>
     </ul>

@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 {% load custom_tags %}
 <!DOCTYPE html>
@@ -99,47 +100,47 @@
                         <a href="{% url 'organization_analytics' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_analytics' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-chart-line mr-2"></i>
-                            Analytics
+                            {% trans "Analytics" %}
                         </a>
                         <a href="{% url 'organization_team_overview' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_team_overview' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-users mr-2"></i>
-                            Team Overview
+                            {% trans "Team Overview" %}
                         </a>
                         <a href="{% url 'organization_manage_bugs' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_bugs' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-bug mr-2"></i>
-                            Bugs
+                            {% trans "Bugs" %}
                         </a>
                         <a href="{% url 'organization_manage_domains' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_domains' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-globe mr-2"></i>
-                            Domains
+                            {% trans "Domains" %}
                         </a>
                         <a href="{% url 'organization_manage_bughunts' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_bughunts' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-trophy mr-2"></i>
-                            Bug Bounties
+                            {% trans "Bug Bounties" %}
                         </a>
                         <a href="{% url 'organization_manage_roles' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_roles' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-user-tag mr-2"></i>
-                            Roles
+                            {% trans "Roles" %}
                         </a>
                         <a href="{% url 'organization_manage_integrations' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_integrations' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-puzzle-piece mr-2"></i>
-                            Integrations
+                            {% trans "Integrations" %}
                         </a>
                         <a href="{% url 'organization_manage_jobs' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_jobs' or request.resolver_match.url_name == 'create_job' or request.resolver_match.url_name == 'edit_job' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-briefcase mr-2"></i>
-                            Jobs
+                            {% trans "Jobs" %}
                         </a>
                         <a href="{% url 'slack_channels_list' %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'slack_channels_list' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fab fa-slack mr-2"></i>
-                            Slack Channels
+                            {% trans "Slack Channels" %}
                         </a>
                     </nav>
                 </div>

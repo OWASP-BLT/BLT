@@ -13,7 +13,7 @@
         <!-- Upcoming Hunts -->
         {% if upcoming_hunts %}
             <div class="mb-8">
-                <h3 class="text-2xl font-bold text-left mb-4">Upcoming Hunt</h3>
+                <h3 class="text-2xl font-bold text-left mb-4">{% trans "Upcoming Hunt" %}</h3>
                 <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in upcoming_hunts %}
                         <li class="flex">
@@ -30,11 +30,11 @@
                                 <div class="p-6 bg-gradient-to-br from-[#EF8D9C] to-[#FFC39E] flex-1 flex flex-col">
                                     <h2 class="text-xl font-bold text-white mb-2">{{ hunt.name }}</h2>
                                     <p class="text-sm text-white mb-4">
-                                        {{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Starts on {{ hunt.starts_on }}
+                                        {% blocktrans with domain=hunt.domain.name org=hunt.domain.organization.name date=hunt.starts_on %}{{ domain }}, {{ org }} - Starts on {{ date }}{% endblocktrans %}
                                     </p>
                                     <a href="{% url 'view_hunt' hunt.pk %}" class="mt-auto">
                                         <button class="w-full py-2 px-4 text-white border border-white rounded-md hover:bg-white hover:text-[#EF8D9C] transition duration-200">
-                                            Read More
+                                            {% trans "Read More" %}
                                         </button>
                                     </a>
                                 </div>
@@ -47,7 +47,7 @@
         <!-- Ongoing Hunts -->
         {% if ongoing_hunt %}
             <div class="mb-8">
-                <h3 class="text-2xl font-bold text-left mb-4">Ongoing Hunt</h3>
+                <h3 class="text-2xl font-bold text-left mb-4">{% trans "Ongoing Hunt" %}</h3>
                 <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in ongoing_hunt %}
                         <li class="flex">
@@ -63,10 +63,12 @@
                                 {% endif %}
                                 <div class="p-6 bg-gradient-to-br from-[#EF8D9C] to-[#FFC39E] flex-1 flex flex-col">
                                     <h2 class="text-xl font-bold text-white mb-2">{{ hunt.name }}</h2>
-                                    <p class="text-sm text-white mb-4">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Already Started</p>
+                                    <p class="text-sm text-white mb-4">
+                                        {% blocktrans with domain=hunt.domain.name org=hunt.domain.organization.name %}{{ domain }}, {{ org }} - Already Started{% endblocktrans %}
+                                    </p>
                                     <a href="{% url 'view_hunt' hunt.pk %}" class="mt-auto">
                                         <button class="w-full py-2 px-4 text-white border border-white rounded-md hover:bg-white hover:text-[#EF8D9C] transition duration-200">
-                                            Read More
+                                            {% trans "Read More" %}
                                         </button>
                                     </a>
                                 </div>
@@ -79,7 +81,7 @@
         <!-- Previous Hunts -->
         {% if previous_hunt %}
             <div class="mb-8">
-                <h3 class="text-2xl font-bold text-left mb-4">Previous Hunt</h3>
+                <h3 class="text-2xl font-bold text-left mb-4">{% trans "Previous Hunt" %}</h3>
                 <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in previous_hunt %}
                         <li class="flex">
@@ -96,11 +98,11 @@
                                 <div class="p-6 bg-gradient-to-br from-[#EF8D9C] to-[#FFC39E] flex-1 flex flex-col">
                                     <h2 class="text-xl font-bold text-white mb-2">{{ hunt.name }}</h2>
                                     <p class="text-sm text-white mb-4">
-                                        {{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Ended on {{ hunt.end_on }}
+                                        {% blocktrans with domain=hunt.domain.name org=hunt.domain.organization.name date=hunt.end_on %}{{ domain }}, {{ org }} - Ended on {{ date }}{% endblocktrans %}
                                     </p>
                                     <a href="{% url 'view_hunt' hunt.pk %}" class="mt-auto">
                                         <button class="w-full py-2 px-4 text-white border border-white rounded-md hover:bg-white hover:text-[#EF8D9C] transition duration-200">
-                                            Read More
+                                            {% trans "Read More" %}
                                         </button>
                                     </a>
                                 </div>
