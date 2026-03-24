@@ -1,0 +1,95 @@
+name: File Count Progress on PR Merge
+
+# Triggered when a pull request is merged into the default branch.
+# Posts a comment on the merged PR showing how many files remain
+# in the repository, tracking progress toward the goal of deleting
+# all unnecessary files. Baseline is 18,278 files (recorded at the
+# commit that introduced this workflow).
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  file_count_comment:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Count files and post comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Baseline file count recorded at the commit that introduced this workflow.
+            // Snapshot taken on 2026-03-24 at commit 4c53608ca1149e0105427957df3e38f9df05527d.
+            const BASELINE = 18278;
+
+            const owner       = context.repo.owner;
+            const repo        = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            const mergeSha    = context.payload.pull_request.merge_commit_sha;
+
+            // Use the GitHub API to fetch the full recursive tree of the merge commit.
+            // This counts every blob (file) tracked by git without checking out any code.
+            let fileCount;
+            try {
+              const treeResp = await github.rest.git.getTree({
+                owner,
+                repo,
+                tree_sha: mergeSha,
+                recursive: true,
+              });
+
+              if (treeResp.data.truncated) {
+                core.warning('Git tree response was truncated; file count may be slightly under-reported.');
+              }
+
+              fileCount = treeResp.data.tree.filter(item => item.type === 'blob').length;
+            } catch (err) {
+              core.error(`Failed to fetch repository tree: ${err.message}`);
+              core.warning('Unable to count files. Skipping comment.');
+              return;
+            }
+
+            const deleted   = BASELINE - fileCount;
+            const remaining = fileCount;
+            const pct       = ((deleted / BASELINE) * 100).toFixed(2);
+
+            // Build a progress bar (20 segments)
+            const BAR_LENGTH = 20;
+            const filled     = Math.max(0, Math.round((deleted / BASELINE) * BAR_LENGTH));
+            const bar        = '█'.repeat(filled) + '░'.repeat(BAR_LENGTH - filled);
+
+            const body = [
+              `## 📁 Repository File Count Progress`,
+              ``,
+              `| Metric | Value |`,
+              `|--------|-------|`,
+              `| 📌 Baseline (goal start) | ${BASELINE.toLocaleString()} files |`,
+              `| 📂 Current file count | ${remaining.toLocaleString()} files |`,
+              `| 🗑️ Files deleted so far | ${deleted >= 0 ? deleted.toLocaleString() : '—'} files |`,
+              `| 🎯 Progress | ${deleted >= 0 ? pct + '%' : 'N/A'} |`,
+              ``,
+              `\`\`\``,
+              `Progress: [${bar}] ${pct}%`,
+              `\`\`\``,
+              ``,
+              `> 🚀 **Goal:** Delete all ${BASELINE.toLocaleString()} files tracked at baseline.`,
+              `> Keep going — ${remaining.toLocaleString()} file${remaining === 1 ? '' : 's'} to go!`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pull_number,
+              body,
+            });
+
+            core.info(`Posted file count comment on PR #${pull_number}: ${remaining} files remaining (${pct}% done).`);
