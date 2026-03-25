@@ -1,0 +1,148 @@
+name: require-friend-mention
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write     # needed to add/remove labels
+
+jobs:
+  check-friend-mention:
+    # Skip drafts and bot-authored PRs
+    if: >
+      !github.event.pull_request.draft &&
+      !endsWith(github.actor, '[bot]')
+    runs-on: ubuntu-latest
+    env:
+      LABEL_NAME: require friend mention
+      LABEL_COLOR: D93F0B
+      LABEL_DESC: PR must tag at least one friend (`@username`) in the description
+    steps:
+      - name: Analyze PR body for friend mention (`@someone`)
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed('No pull_request payload found.');
+              return;
+            }
+            const author = (pr.user?.login || '').toLowerCase();
+            const body   = pr.body || '';
+
+            // GitHub username pattern: 1–39 chars, alnum + single hyphens (no trailing hyphen)
+            const mentionRe = /(^|[^a-zA-Z0-9_-])@([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})\b/g;
+
+            const mentions = new Set();
+            let m;
+            while ((m = mentionRe.exec(body)) !== null) {
+              mentions.add(m[2].toLowerCase());
+            }
+
+            // Filter out self and bots
+            const filtered = [...mentions].filter(u =>
+              u &&
+              u !== author &&
+              !u.endsWith('[bot]') &&
+              u !== 'github-actions' &&
+              u !== 'dependabot' &&
+              u !== 'dependabot-preview'
+            );
+
+            core.setOutput('ok', String(filtered.length > 0));
+            core.setOutput('author', author);
+            core.setOutput('found', filtered.join(','));
+            core.info(`Friend mentions found: ${filtered.join(',') || '(none)'}`);
+
+      - name: Ensure label exists (only when missing)
+        if: ${{ steps.analyze.outputs.ok == 'false' }}
+        uses: actions/github-script@v7
+        env:
+          LABEL_NAME: ${{ env.LABEL_NAME }}
+          LABEL_COLOR: ${{ env.LABEL_COLOR }}
+          LABEL_DESC: ${{ env.LABEL_DESC }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const name  = process.env.LABEL_NAME;
+            const color = process.env.LABEL_COLOR;
+            const desc  = process.env.LABEL_DESC;
+
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name });
+              core.info(`Label "${name}" exists`);
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner, repo, name, color, description: desc
+                });
+                core.info(`Created label "${name}"`);
+              } else {
+                throw e;
+              }
+            }
+
+      - name: Add "require friend mention" label to PR if missing
+        if: ${{ steps.analyze.outputs.ok == 'false' }}
+        uses: actions/github-script@v7
+        env:
+          LABEL_NAME: ${{ env.LABEL_NAME }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+            const name  = process.env.LABEL_NAME;
+
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number, labels: [name]
+            });
+            core.info(`Applied label "${name}" to PR #${issue_number}`);
+
+      - name: Remove "require friend mention" label if now satisfied
+        if: ${{ steps.analyze.outputs.ok == 'true' }}
+        uses: actions/github-script@v7
+        env:
+          LABEL_NAME: ${{ env.LABEL_NAME }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+            const name  = process.env.LABEL_NAME;
+
+            try {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number, name });
+              core.info(`Removed label "${name}" from PR #${issue_number}`);
+            } catch (e) {
+              if (e.status === 404) {
+                core.info(`Label "${name}" not present; nothing to remove`);
+              } else {
+                throw e;
+              }
+            }
+
+      - name: Fail check when friend mention is missing
+        if: ${{ steps.analyze.outputs.ok == 'false' }}
+        run: |
+          echo "No valid `@mention` found in PR description. Please tag a friend (e.g., `@someone`)." >&2
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Friend mention gate";
+            if [ "${{ steps.analyze.outputs.ok }}" = "true" ]; then
+              echo "✅ Passed — found: ${{ steps.analyze.outputs.found }}";
+            else
+              echo "❌ Failed — please add a friend mention in the PR description (e.g., \`@someone\`).";
+              echo "";
+              echo "_A label (\`${{ env.LABEL_NAME }}\`) was added to help track this requirement._";
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
