@@ -1,12 +1,12 @@
 name: require-friend-mention
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
   issues: write     # needed to add/remove labels
 
 jobs:
@@ -14,7 +14,8 @@ jobs:
     # Skip drafts and bot-authored PRs
     if: >
       !github.event.pull_request.draft &&
-      !endsWith(github.actor, '[bot]')
+      github.event.pull_request.user.type != 'Bot' &&
+      !endsWith(github.event.pull_request.user.login, '[bot]')
     runs-on: ubuntu-latest
     env:
       LABEL_NAME: require friend mention
