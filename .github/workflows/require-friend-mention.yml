@@ -1,4 +1,4 @@
-name: require-friend-mention
+name: Require-friend-mention
 
 on:
   pull_request_target:
@@ -10,7 +10,7 @@ permissions:
   issues: write     # needed to add/remove labels
 
 jobs:
-  check-friend-mention:
+  Check-friend-mention:
     # Skip drafts and bot-authored PRs
     if: >
       !github.event.pull_request.draft &&
@@ -18,8 +18,8 @@ jobs:
       !endsWith(github.event.pull_request.user.login, '[bot]')
     runs-on: ubuntu-latest
     env:
-      LABEL_NAME: require friend mention
-      LABEL_COLOR: D93F0B
+      LABEL_NAME: require-friend-mention
+      LABEL_COLOR: e74c3c
       LABEL_DESC: PR must tag at least one friend (`@username`) in the description
     steps:
       - name: Analyze PR body for friend mention (`@someone`)
