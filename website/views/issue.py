@@ -1110,7 +1110,8 @@ class IssueBaseCreate(object):
 
         if created:
             try:
-                email_to = get_email_from_domain(domain)
+                emails_found = get_email_from_domain(domain)
+                email_to = emails_found[0] if emails_found else "support@" + domain.name
             except Exception:
                 email_to = "support@" + domain.name
 

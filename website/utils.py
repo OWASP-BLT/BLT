@@ -92,7 +92,7 @@ def validate_file_type(request, file_field_name, allowed_extensions, allowed_mim
     return True, None
 
 
-def get_client_ip(request):
+def get_client_ip(request: HttpRequest) -> str:
     """Extract the client's IP address from the request."""
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
     if x_forwarded_for:
@@ -134,7 +134,7 @@ def get_email_from_domain(domain_name):
             response = requests.get(url, timeout=5, allow_redirects=False)
         except Exception:
             continue
-        new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
+        new_emails = set(re.findall(r"[a-zA-Z0-9\.\-+_]+@[a-zA-Z0-9\.\-+_]+\.[a-zA-Z]+", response.text))
         if new_emails:
             emails.update(new_emails)
             break
@@ -157,10 +157,7 @@ def get_email_from_domain(domain_name):
     for email in emails:
         if email.find(domain_name) > 0:
             emails_out.add(email)
-    try:
-        return list(emails_out)[0]
-    except Exception:
-        return False
+    return sorted(list(emails_out))
 
 
 def image_validator(img):
@@ -1037,7 +1034,6 @@ class twitter:
                     headers = {"Authorization": f"Bearer {bot_token}", "Content-Type": "application/json"}
                     response = requests.get("https://slack.com/api/conversations.list", headers=headers)
                     response.raise_for_status()
-
                     data = response.json()
                     if data.get("ok"):
                         for channel in data.get("channels", []):
@@ -1051,6 +1047,7 @@ class twitter:
             if not channel_id:
                 logging.warning("Could not find #project-blt channel")
                 return False
+
 
             # Prepare the message blocks
             blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": f"*New Tweet*\n{message}"}}]
