@@ -1,0 +1,110 @@
+name: PR File Count Report
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr_file_count:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post file count comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            const pull_number = pr.number;
+            const baseSha = pr.base.sha;
+
+            // Count files in the base branch using the Git Trees API (recursive)
+            let baseFileCount = 0;
+            try {
+              const { data: tree } = await github.rest.git.getTree({
+                owner,
+                repo,
+                tree_sha: baseSha,
+                recursive: 'true',
+              });
+              // Only count blobs (files), not trees (directories)
+              baseFileCount = tree.tree.filter(item => item.type === 'blob').length;
+            } catch (err) {
+              core.warning(`Failed to count base branch files: ${err.message}`);
+            }
+
+            // Get files changed in the PR (with pagination)
+            const prFiles = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            // Count added and removed files to compute post-merge total
+            const addedFiles = prFiles.filter(f => f.status === 'added').length;
+            const removedFiles = prFiles.filter(f => f.status === 'removed').length;
+            const renamedFiles = prFiles.filter(f => f.status === 'renamed').length;
+            const modifiedFiles = prFiles.filter(f => f.status === 'modified' || f.status === 'changed' || f.status === 'copied').length;
+            const postMergeFileCount = baseFileCount + addedFiles - removedFiles;
+
+            const changeSymbol = postMergeFileCount > baseFileCount ? '📈' : postMergeFileCount < baseFileCount ? '📉' : '➡️';
+            const diffCount = postMergeFileCount - baseFileCount;
+            const diffStr = diffCount > 0 ? `+${diffCount}` : `${diffCount}`;
+
+            const commentMarker = '<!-- pr-file-count-comment -->';
+            const commentBody = [
+              commentMarker,
+              '## 📁 Repository File Count',
+              '',
+              `| | Count |`,
+              `|---|---|`,
+              `| **Files in repo (before merge)** | ${baseFileCount.toLocaleString()} |`,
+              `| **Files added by this PR** | +${addedFiles} |`,
+              `| **Files removed by this PR** | -${removedFiles} |`,
+              `| **Files in repo (after merge)** | ${changeSymbol} ${postMergeFileCount.toLocaleString()} (${diffStr}) |`,
+              '',
+              `> This PR modifies **${prFiles.length}** file(s) in total: **${addedFiles}** added, **${removedFiles}** removed, **${renamedFiles}** renamed, **${modifiedFiles}** modified.`,
+            ].join('\n');
+
+            // Check for an existing comment from this action
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+
+            const existingComment = comments.find(
+              c => c.body && c.body.includes(commentMarker) && c.user.type === 'Bot'
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body: commentBody,
+              });
+              core.info(`Updated file count comment on PR #${pull_number}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pull_number,
+                body: commentBody,
+              });
+              core.info(`Posted file count comment on PR #${pull_number}`);
+            }
+
+            core.info(`Base branch has ${baseFileCount} files. After merge: ${postMergeFileCount} files (${diffStr}).`);
