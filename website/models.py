@@ -1318,23 +1318,7 @@ class Bid(models.Model):
         bidder = self.user.username if self.user else self.github_username or "Anonymous"
         return f"Bid by {bidder} - {self.amount_bch} BCH ({self.status})"
 
-    # def save(self, *args, **kwargs):
-    #     if (
-    #         self.status == "Open"
-    #         and (timezone.now() - self.created).total_seconds() >= 24 * 60 * 60
-    #     ):
-    #         self.status = "Selected"
-    #         self.modified = timezone.now()
-    #         email_body = f"This bid was selected:\nIssue URL: {self.issue_url}\nUser: {self.user}\nCurrent Bid: {self.current_bid}\nCreated on: {self.created}\nBid Amount: {self.amount}"
-    #         send_mail(
-    #             "Bid Closed",
-    #             email_body,
-    #             settings.EMAIL_HOST_USER,
-    #             [settings.EMAIL_HOST_USER],
-    #             fail_silently=False,
-    #         )
 
-    #     super().save(*args, **kwargs)
 
 
 class ChatBotLog(models.Model):
