@@ -325,6 +325,11 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 
 ---
 
+## Contribution Reminder
+Please ensure to follow the contribution guidelines and mention relevant maintainers in your pull requests for faster review.
+
+---
+
 ## 📄 License
 
 This project is licensed under the **AGPL-3.0 License** - see the [LICENSE.md](LICENSE.md) file for details.

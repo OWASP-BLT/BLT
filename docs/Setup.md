@@ -484,3 +484,5 @@ EmailAddress.objects.update_or_create(
 print("Email created and verified successfully.")
 exit()
 ```
+## 📝 Note
+Ensure all steps are followed correctly to avoid setup issues during local development.
