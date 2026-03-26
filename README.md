@@ -87,7 +87,7 @@ Built by the community for the community, BLT makes it easy for security researc
 - PostgreSQL
 - Docker & Docker Compose (recommended)
 
-### Installation
+### Installation 
 
 #### Using Docker (Recommended)
 ```bash
