@@ -507,7 +507,6 @@ def review_queue(request):
         if not issue_id_str or not action:
             messages.error(request, "Invalid request. Missing issue ID or action.")
             return redirect("review_queue")
-
         try:
             issue_id = int(issue_id_str)
             issue = Issue.objects.get(id=issue_id)
