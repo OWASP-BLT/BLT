@@ -1173,8 +1173,18 @@ class UserProfile(models.Model):
 
         for milestone, badge_title in streak_badges.items():
             if self.current_streak >= milestone:
-                badge, _ = Badge.objects.get(
+                # Use get_or_create() to safely fetch or create the badge.
+                # Badge.objects.get() returns a single object, not a (instance, created)
+                # tuple — tuple-unpacking it raises ValueError at runtime, silently
+                # swallowed by the outer try/except and breaking badge awards for all users.
+                badge, _ = Badge.objects.get_or_create(
                     title=badge_title,
+                    defaults={
+                        "description": (
+                            f"Awarded for maintaining a {badge_title.lower()} check-in streak."
+                        ),
+                        "type": "automatic",
+                    },
                 )
 
                 # Avoid duplicate badge awards
