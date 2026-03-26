@@ -312,7 +312,17 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 - 📧 **Contact**: Reach out through GitHub issues
 
 ---
+---
 
+## 🚀 Getting Started for Beginners
+
+If you are new to this project, follow these steps:
+
+1. Make sure Python is installed.
+2. Install Docker and ensure it is running.
+3. Clone the repository and follow the setup instructions carefully.
+
+💡 Tip: Read the documentation step by step and don't rush.
 ## 📈 Star History
 
 <a href="https://star-history.com/#OWASP-BLT/BLT&Date">
