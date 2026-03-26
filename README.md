@@ -335,3 +335,12 @@ This project is licensed under the **AGPL-3.0 License** - see the [LICENSE.md](L
   <strong>⭐ Star this repository if you find it helpful!</strong><br>
   Made with ❤️ by the OWASP BLT Community
 </p>
+## 🚀 Getting Started for Beginners
+
+If you are new to this project, follow these steps:
+
+1. Make sure Python is installed.
+2. Install Docker and ensure it is running.
+3. Clone the repository and follow the setup instructions carefully.
+
+💡 Tip: Read the documentation step by step and don't rush.
