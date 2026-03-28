@@ -18,7 +18,6 @@ class VisitTrackingMiddleware:
                 logger.debug("Failed to update visit counter: %s", type(e).__name__)
                 # Silently ignore any errors to prevent middleware from breaking requests
                 # This includes TransactionManagementError during test teardown
-                pass
 
         response = self.get_response(request)
         return response

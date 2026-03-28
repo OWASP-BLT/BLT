@@ -260,4 +260,3 @@ def handle_team_sign_in_challenges(team):
                     giveBacon(team_member.user, amt=challenge.bacon_reward)
     except Challenge.DoesNotExist:
         logger.warning(f"Challenge '{challenge_title}' does not exist.")
-        pass

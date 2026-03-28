@@ -1992,7 +1992,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         [domain.email],
                         fail_silently=True,
                     )
-                    pass
                 obj.save()
 
             if not (self.request.user.is_authenticated or tokenauth):

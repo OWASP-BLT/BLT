@@ -360,7 +360,6 @@ else:
 
     # Keep using our custom backend even in debug mode
     # But make sure we keep the EMAIL_BACKEND setting from above
-    pass
 
 DATABASES = {
     "default": {

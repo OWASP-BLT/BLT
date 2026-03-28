@@ -18,7 +18,6 @@ class CustomAccountAdapter(DefaultAccountAdapter):
     account-related customizations.
     """
 
-    pass
 
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
