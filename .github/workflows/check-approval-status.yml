@@ -10,6 +10,7 @@ on:
       - reopened
       - ready_for_review
   workflow_run:
+    workflows: ["CI/CD Optimized"]
     types:
       - requested
       - completed
