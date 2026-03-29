@@ -2487,7 +2487,7 @@ class GitHubReview(models.Model):
     class Meta:
         constraints = (
             models.CheckConstraint(
-                check=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
+                condition=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
                 name="at_least_one_reviewer",
             ),
         )
@@ -2535,7 +2535,7 @@ class GitHubComment(models.Model):
     class Meta:
         constraints = (
             models.CheckConstraint(
-                check=models.Q(commenter__isnull=False) | models.Q(commenter_contributor__isnull=False),
+                condition=models.Q(commenter__isnull=False) | models.Q(commenter_contributor__isnull=False),
                 name="at_least_one_commenter",
             ),
         )
