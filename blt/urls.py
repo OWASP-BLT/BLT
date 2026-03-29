@@ -33,6 +33,7 @@ from website.api.views import (
     DomainViewSet,
     FindSimilarBugsApiView,
     FlagIssueApiView,
+    HuntViewSet,
     InviteFriendApiViewset,
     IssueViewSet,
     JobViewSet,
@@ -404,6 +405,8 @@ router.register(r"domain", DomainViewSet, basename="domain")
 router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
+router.register(r"projects", ProjectViewSet, basename="projects")
+router.register(r"hunts", HuntViewSet, basename="hunts")
 router.register(r"jobs", JobViewSet, basename="jobs")
 router.register(r"security-incidents", SecurityIncidentViewSet, basename="securityincident")
 

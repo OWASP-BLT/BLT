@@ -865,12 +865,19 @@ class InviteFriendApiViewset(APIView):
 
 
 class OrganizationViewSet(viewsets.ModelViewSet):
-    queryset = Organization.objects.all()
+    queryset = Organization.objects.all().order_by('-id')
     serializer_class = OrganizationSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
-    http_method_names = ("get", "post", "put")
+    http_method_names = ("get", "post", "put", "patch", "delete")
+
+    def perform_create(self, serializer):
+        """Ensure the organization is created with the current user as admin if not specified."""
+        if not serializer.validated_data.get("admin"):
+            serializer.save(admin=self.request.user)
+        else:
+            serializer.save()
 
     @action(detail=True, methods=["get"])
     def repositories(self, request, pk=None):
@@ -893,9 +900,24 @@ class ContributorViewSet(viewsets.ModelViewSet):
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all()
+    """
+    API endpoint for Projects.
+    Expanded to support POST,PUT, PATCH and DELETE for BLT-Next.
+    """
+    queryset = Project.objects.all().order_by('-id')
     serializer_class = ProjectSerializer
-    http_method_names = ("get", "head")
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ("id", "name", "description")
+    http_method_names = ("get", "post", "put", "patch", "delete", "head")
+
+    def get_queryset(self):
+        queryset = self.queryset
+        org_id = self.request.query_params.get("organization")
+
+        if org_id:
+            queryset = queryset.filter(organization_id=org_id)
+        return queryset
 
     def _serialize_projects(self, projects):
         """Return consistent contributor-enriched project data."""
@@ -1023,6 +1045,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
             {"count": len(project_data), "projects": project_data},
             status=200,
         )
+
+
+class HuntViewSet(viewsets.ModelViewSet):
+    """
+    New ViewSet for managing Bug Hunts (Bounties).
+    Essential for the gamification and BACON reward tracking.
+    """
+
+    queryset = Hunt.objects.all().order_by("-created")
+    serializer_class = BugHuntSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ("name", "description")
 
 
 class AuthApiViewset(viewsets.ModelViewSet):

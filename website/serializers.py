@@ -114,20 +114,26 @@ class BugHuntPrizeSerializer(serializers.ModelSerializer):
 
 
 class BugHuntSerializer(serializers.ModelSerializer):
+    # Adding a read only field to show the organization name in the UI
+    organization_name = serializers.CharField(source="domain.organization.name", read_only=True)
+    domain_name = serializers.CharField(source="domain.name", read_only=True)
+
     class Meta:
         model = Hunt
         fields = "__all__"
 
 
+
 class OrganizationSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Organization
         fields = "__all__"
+        read_only_fields = ("slug", "is_active")  # is_active should only be toggled by admins
 
 
 class ProjectSerializer(serializers.ModelSerializer):
     freshness = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
-
     total_stars = serializers.IntegerField(read_only=True)
     total_forks = serializers.IntegerField(read_only=True)
 
@@ -137,10 +143,18 @@ class ProjectSerializer(serializers.ModelSerializer):
         child=serializers.IntegerField(), source="get_participation_stats", read_only=True
     )
 
+    #show the organization name for the UI, but keep organization_id for writes
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
     class Meta:
         model = Project
         fields = "__all__"
         read_only_fields = ("slug", "contributors")
+    
+    def validate_external_links(self, value):
+        """Ensure external_links is a valid JSON object/dict."""
+        if value and not isinstance(value, dict):
+            raise serializers.ValidationError("External links must be a dictionary.")
+        return value
 
 
 class ContributorSerializer(serializers.ModelSerializer):
