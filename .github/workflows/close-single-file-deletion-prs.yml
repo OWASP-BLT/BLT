@@ -105,7 +105,7 @@ jobs:
                 `🚫 This repository currently only accepts pull requests from **new contributors**`,
                 `(**3 or fewer prior PRs counted as OPEN or MERGED across the ${owner} organization**).`,
                 ``,
-                `Our records show you have **${priorCount} prior PR(s)**, which exceeds the limit, so this PR is being closed.`,
+                `${countMessage}, so this PR is being closed.`,
                 ``,
                 `If you believe this was closed in error, please open an issue to discuss with the maintainers.`,
                 ``,
