@@ -332,3 +332,22 @@ class SecurityIncidentSerializer(serializers.ModelSerializer):
             data["status"] = data["status"].lower()
 
         return super().to_internal_value(data)
+
+
+class TeamMemberLeaderboardSerializer(serializers.ModelSerializer):
+    """
+    Serializer for team member leaderboard
+    """
+
+    username = serializers.CharField(source="user.username", read_only=True)
+    user_avatar = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = (
+            "id",
+            "username",
+            "user_avatar",
+            "leaderboard_score",
+            "current_streak",
+        )

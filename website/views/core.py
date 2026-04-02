@@ -32,13 +32,14 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Count, F, Q, Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
@@ -46,6 +47,7 @@ from website.models import (
     IP,
     Activity,
     Badge,
+    Contributor,
     DailyStats,
     Domain,
     Hunt,
@@ -82,6 +84,34 @@ SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
+
+
+# Helper classes for top earners display
+class SimpleUser:
+    """Simple user object for contributors without registered accounts"""
+
+    def __init__(self, username, email=""):
+        self.username = username
+        self.email = email
+
+    @property
+    def socialaccount_set(self):
+        """Mock socialaccount_set for template compatibility"""
+
+        class EmptyManager:
+            def all(self):
+                return []
+
+        return EmptyManager()
+
+
+class EarnerProfile:
+    """Profile object that matches template expectations"""
+
+    def __init__(self, user, total_earnings, avatar):
+        self.user = user
+        self.total_earnings = total_earnings
+        self.avatar = avatar
 
 
 # ----------------------------------------------------------------------------------
@@ -354,7 +384,7 @@ def status_page(request):
 
         # OpenAI API check
         if CHECK_OPENAI:
-            openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
+            openai_api_key = os.getenv("OPENAI_API_KEY")
             if openai_api_key:
                 try:
                     logger.debug("Checking OpenAI API...")
@@ -579,12 +609,26 @@ def status_page(request):
 
 
 def find_key(request, token):
-    if token == os.environ.get("ACME_TOKEN"):
-        return HttpResponse(os.environ.get("ACME_KEY"))
+    acme_token = os.environ.get("ACME_TOKEN")
+    if acme_token and constant_time_compare(token, acme_token):
+        acme_key = os.environ.get("ACME_KEY")
+        if not acme_key:
+            logger.error("ACME_KEY not configured in environment variables")
+            raise Http404("ACME_KEY not configured")
+        return HttpResponse(acme_key)
     for k, v in list(os.environ.items()):
-        if v == token and k.startswith("ACME_TOKEN_"):
+        if k.startswith("ACME_TOKEN_") and constant_time_compare(v, token):
             n = k.replace("ACME_TOKEN_", "")
-            return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
+            acme_key = os.environ.get("ACME_KEY_%s" % n)
+            if not acme_key:
+                logger.error("ACME_KEY_%s not configured in environment variables" % n)
+                raise Http404("ACME_KEY_%s not configured" % n)
+            return HttpResponse(acme_key)
+    logger.warning(
+        "Failed ACME token verification attempt from IP: %s",
+        request.META.get("REMOTE_ADDR"),
+        extra={"ip": request.META.get("REMOTE_ADDR"), "token_prefix": token[:10] if token else None},
+    )
     raise Http404("Token or key does not exist")
 
 
@@ -1406,7 +1450,7 @@ def fetch_devto_articles():
 
     try:
         # Use application-specific User-Agent instead of browser spoofing
-        headers = {"User-Agent": "OWASP-BLT/1.0 (+https://owaspblt.org)"}
+        headers = {"User-Agent": "OWASP-BLT/1.0 (+https://legacy.owaspblt.org)"}
         response = requests.get(
             DEVTO_API_BASE,
             headers=headers,
@@ -1559,8 +1603,34 @@ def home(request):
     # Get top bug reporters for current month
     current_time = timezone.now()
     top_bug_reporters = (
-        User.objects.filter(points__created__month=current_time.month, points__created__year=current_time.year)
-        .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
+        User.objects.filter(
+            points__created__month=current_time.month,
+            points__created__year=current_time.year,
+            points__issue__isnull=False,  # Only consider users with issue-related points
+        )
+        .annotate(
+            bug_count=Count(
+                "points",
+                filter=Q(
+                    points__score__gt=0,
+                    points__issue__isnull=False,
+                    points__created__month=current_time.month,
+                    points__created__year=current_time.year,
+                ),
+            ),
+            total_score=Coalesce(
+                Sum(
+                    "points__score",
+                    filter=Q(
+                        points__issue__isnull=False,
+                        points__created__month=current_time.month,
+                        points__created__year=current_time.year,
+                    ),
+                ),
+                0,
+            ),
+        )
+        .filter(bug_count__gt=0)  # Exclude users without any bug reports
         .order_by("-total_score")[:5]
     )
 
@@ -1580,29 +1650,105 @@ def home(request):
         .order_by("-total_prs")[:5]
     )
 
-    # Get top earners - calculate from GitHub issues payments if they have linked GitHub issues,
-    # otherwise use the existing winnings field
-    # Annotate each UserProfile with total GitHub issue payments
-    top_earners = (
-        UserProfile.objects.annotate(
-            github_earnings=Coalesce(
-                Sum("github_issues__p2p_amount_usd", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-                Value(0),
-                output_field=DecimalField(),
-            ),
-            has_github_issues=Count("github_issues", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-            total_earnings=Case(
-                # If user has GitHub issues with payments, use those
-                When(has_github_issues__gt=0, then=F("github_earnings")),
-                # Otherwise fall back to the existing winnings field
-                default=Coalesce(F("winnings"), Value(0), output_field=DecimalField()),
-                output_field=DecimalField(),
-            ),
+    # Get top earners - calculate based on Issues with $5 label and their linked PRs
+    #
+    # CALCULATION METHODOLOGY:
+    # 1. Find all Issues (not PRs) that have the $5 label (has_dollar_tag=True)
+    # 2. Find all merged Pull Requests that are linked to those $5 issues
+    # 3. Group by the PR contributor (the person who created the PR)
+    # 4. Count the number of linked PRs per contributor
+    # 5. Calculate earnings: number of linked PRs × $5
+    #
+    # This differs from the old calculation which used p2p_amount_usd payments.
+    # The new approach rewards contributors based on merged PRs that solve $5 issues,
+    # regardless of whether actual payment transactions were recorded.
+
+    # Step 1 & 2: Find all merged PRs linked to issues with $5 label, and aggregate by contributor
+    # Use database-level aggregation for better performance
+    BOUNTY_AMOUNT = 5  # $5 per issue
+
+    contributor_stats = (
+        GitHubIssue.objects.filter(
+            type="pull_request",
+            is_merged=True,
+            linked_issues__has_dollar_tag=True,  # PR is linked to an issue with $5 label
+            contributor__isnull=False,  # Only count PRs with contributors
         )
-        .filter(total_earnings__gt=0)
-        .select_related("user")
-        .order_by("-total_earnings")[:5]
+        .distinct()  # Avoid counting the same PR multiple times if linked to multiple $5 issues
+        .values("contributor")  # Group by contributor
+        .annotate(
+            pr_count=Count("id"),  # Count PRs per contributor
+        )
+        .order_by("-pr_count")[:5]  # Get top 5 contributors by PR count
     )
+
+    # Step 3: Get contributor IDs and prefetch UserProfiles to avoid N+1 queries
+    contributor_ids = [stat["contributor"] for stat in contributor_stats]
+
+    # Prefetch contributors in a single query (Contributor model has no FK relationships to select)
+    contributors_dict = {c.id: c for c in Contributor.objects.filter(id__in=contributor_ids)}
+
+    # Prefetch UserProfiles that have GitHubIssues associated with these contributors
+    # We need to find which UserProfile is associated with each Contributor
+    # The relationship is: Contributor -> GitHubIssue -> UserProfile
+    user_profiles_dict = {}
+    if contributor_ids:
+        # Get all GitHubIssues that link contributors to user_profiles
+        # Use values to get the mapping efficiently in a single query
+        contributor_to_profile_mappings = (
+            GitHubIssue.objects.filter(contributor__id__in=contributor_ids, user_profile__isnull=False)
+            .values("contributor_id", "user_profile_id")
+            .distinct()
+        )
+
+        # Get unique user_profile_ids
+        profile_ids = list(set(m["user_profile_id"] for m in contributor_to_profile_mappings))
+
+        # Fetch all needed UserProfiles in one query
+        profiles = {p.id: p for p in UserProfile.objects.filter(id__in=profile_ids).select_related("user")}
+
+        # Build the contributor -> user_profile mapping
+        for mapping in contributor_to_profile_mappings:
+            contributor_id = mapping["contributor_id"]
+            profile_id = mapping["user_profile_id"]
+
+            # Only map if we haven't already (take first match)
+            if contributor_id not in user_profiles_dict and profile_id in profiles:
+                user_profiles_dict[contributor_id] = profiles[profile_id]
+
+    # Step 4: Build the top earners list with proper structure using module-level helper classes
+
+    top_earners = []
+    for stat in contributor_stats:
+        contributor_id = stat["contributor"]
+        pr_count = stat["pr_count"]
+        total_earned = pr_count * BOUNTY_AMOUNT
+
+        contributor = contributors_dict.get(contributor_id)
+        if not contributor:
+            continue
+
+        # Check if contributor has an associated UserProfile
+        user_profile = user_profiles_dict.get(contributor_id)
+
+        if user_profile:
+            # Use the actual UserProfile and User
+            earner_obj = EarnerProfile(
+                user=user_profile.user,
+                total_earnings=total_earned,
+                avatar=user_profile.avatar,
+            )
+        else:
+            # If no UserProfile found, create an object with contributor info
+            # This allows us to display contributors who aren't registered users
+            simple_user = SimpleUser(username=contributor.name)
+            earner_obj = EarnerProfile(
+                user=simple_user,
+                total_earnings=total_earned,
+                avatar=contributor.avatar_url,
+            )
+
+        top_earners.append(earner_obj)
 
     # Get top referrals
     top_referrals = (
@@ -2387,7 +2533,6 @@ def template_list(request):
     """View function to display templates with optimized pagination."""
     import os
     from concurrent.futures import ThreadPoolExecutor
-    from datetime import datetime
 
     from django.core.cache import cache
     from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -2628,7 +2773,6 @@ def website_stats(request):
     """View to show view counts for each URL route"""
     import json
     from collections import defaultdict
-    from datetime import timedelta
 
     from django.db.models import Sum
     from django.urls import get_resolver
@@ -3071,9 +3215,7 @@ def invite_organization(request):
         today = timezone.now().date()
         invite_count = (
             InviteOrganization.objects.filter(sender=request.user, created__date=today)
-            .exclude(
-                email__regex=SAMPLE_INVITE_EMAIL_PATTERN  # Exclude sample invites from count
-            )
+            .exclude(email__regex=SAMPLE_INVITE_EMAIL_PATTERN)  # Exclude sample invites from count
             .count()
         )
 

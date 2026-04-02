@@ -6,6 +6,7 @@ on:
 
 permissions:
   issues: write
+  contents: read
 
 jobs:
   close-new-issues:
@@ -18,6 +19,57 @@ jobs:
             const issueNumber = context.issue.number;
             const repo = context.repo.repo;
             const owner = context.repo.owner;
+            const author = context.payload.issue.user.login;
+
+            // Check if the issue author is a bot
+            const authorType = context.payload.issue.user.type;
+            const knownBots = [
+              'copilot', 'copilot-swe-agent',
+              'sentry-autofix', 'sentry-io',
+              'coderabbitai',
+              'dependabot', 'dependabot-preview',
+              'renovate', 'renovate-bot',
+              'snyk-bot',
+              'github-actions',
+              'allcontributors',
+            ];
+            const isBot =
+              authorType === 'Bot' ||
+              author.endsWith('[bot]') ||
+              knownBots.some(bot => author.toLowerCase() === bot);
+
+            if (isBot) {
+              console.log(`Issue #${issueNumber} created by bot ${author} (type: ${authorType}) — skipping auto-close.`);
+              return;
+            }
+
+            // Check if the issue author is a maintainer/collaborator
+            let isMaintainer = false;
+            try {
+              const { data: permissionData } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner,
+                repo,
+                username: author
+              });
+              const permission = permissionData.permission;
+              isMaintainer = permission === "admin" || permission === "maintain" || permission === "write";
+            } catch (e) {
+              if (e && e.status === 404) {
+                isMaintainer = false;
+              } else {
+                console.error(
+                  `Error checking collaborator permission level for ${author} on ${owner}/${repo}:`,
+                  `status=${e && e.status}, message=${e && e.message}`
+                );
+                // Fail open: skip auto-closing so maintainers aren't accidentally blocked
+                return;
+              }
+            }
+
+            if (isMaintainer) {
+              console.log(`Issue #${issueNumber} created by maintainer ${author} — skipping auto-close.`);
+              return;
+            }
 
             const message = `
                   🚫 **Please do not create new issues**  

@@ -1,0 +1,142 @@
+name: Close PRs from Non-First-Time Contributors
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+#
+# Accepted PR policy:
+#   1. Contributor must have 3 or fewer prior PRs across the OWASP-BLT organization
+#      (current PR excluded from count).
+#   2. PR must consist entirely of file deletions (no additions or modifications).
+#   3. PR must delete at most 3 files.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  check_contributor_pr:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.pull_request.user.type != 'Bot'
+      && github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != github.repository_owner
+      && github.actor != 'sentry-autofix'
+      && github.actor != 'sentry-io'
+      && github.actor != 'sentry-io[bot]'
+      && github.actor != 'DonnieBLT'
+      && github.actor != 'copilot-swe-agent[bot]'
+      && github.actor != 'copilot-swe-agent'
+      && github.actor != 'coderabbitai[bot]'
+      && github.actor != 'coderabbitai'
+      && github.actor != 'renovate[bot]'
+      && github.actor != 'renovate'
+      && github.actor != 'snyk-bot'
+      && github.actor != 'github-actions[bot]'
+      && github.actor != 'allcontributors[bot]'
+    steps:
+      - name: Enforce new-contributor PR policy
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request in context. Skipping.');
+              return;
+            }
+
+            const owner       = context.repo.owner;   // "OWASP-BLT"
+            const repo        = context.repo.repo;
+            const pull_number = pr.number;
+            const author      = pr.user.login;
+
+            // ── Gate 1: Org-wide prior PR count ──────────────────────────────
+            // Count PRs by this author in the org BEFORE the current PR was created.
+            const createdAtIso = new Date(pr.created_at).toISOString();
+            const q = `org:${owner} is:pr author:${author} created:<${createdAtIso}`;
+            const searchRes = await github.request('GET /search/issues', { q, per_page: 1 });
+            const priorCount = searchRes.data.total_count;
+
+            core.info(`Author ${author} has ${priorCount} prior PR(s) in ${owner} (excluding current PR).`);
+
+            if (priorCount > 3) {
+              const body = [
+                `👋 Hi @${author}, thanks for the PR!`,
+                ``,
+                `🚫 This repository currently only accepts pull requests from **new contributors**`,
+                `(**3 or fewer prior PRs across the ${owner} organization**).`,
+                ``,
+                `Our records show you have **${priorCount} prior PR(s)**, which exceeds the limit, so this PR is being closed.`,
+                ``,
+                `If you believe this was closed in error, please open an issue to discuss with the maintainers.`,
+                ``,
+                `Thank you for understanding.`,
+              ].join('\n');
+
+              await github.rest.issues.createComment({ owner, repo, issue_number: pull_number, body });
+              await github.rest.pulls.update({ owner, repo, pull_number, state: 'closed' });
+              core.info(`PR #${pull_number} closed (priorCount ${priorCount} > 3).`);
+              return;
+            }
+
+            // ── Gate 2: File-deletion policy ─────────────────────────────────
+            // PR must consist entirely of file deletions, and at most 3 files.
+            const MAX_DELETIONS = 3;
+            const filesRes = await github.rest.pulls.listFiles({
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+            const files = filesRes.data;
+
+            core.info(`PR #${pull_number} changes ${files.length} file(s).`);
+            files.forEach(f => core.info(`  ${f.status}: ${f.filename}`));
+
+            const allDeleted   = files.length >= 1 && files.every(f => f.status === 'removed');
+            const withinLimit  = files.length <= MAX_DELETIONS;
+
+            if (!allDeleted || !withinLimit) {
+              let reason;
+              if (!allDeleted) {
+                const nonDeleted = files.filter(f => f.status !== 'removed').map(f => `\`${f.filename}\``).join(', ');
+                reason = `This PR contains changes other than file deletions (${nonDeleted}), which is not permitted.`;
+              } else {
+                reason = `This PR deletes **${files.length} files**, which exceeds the maximum of **${MAX_DELETIONS}** file deletions allowed.`;
+              }
+
+              const body = [
+                `👋 Hi @${author}, thanks for the PR!`,
+                ``,
+                `🚫 This PR has been closed because it does not meet the contribution policy.`,
+                ``,
+                reason,
+                ``,
+                `**Policy for new contributors:** PRs must consist entirely of file deletions, with at most ${MAX_DELETIONS} files deleted.`,
+                ``,
+                `If you believe this was closed in error, please open an issue to discuss with the maintainers.`,
+                ``,
+                `Thank you for understanding.`,
+              ].join('\n');
+
+              await github.rest.issues.createComment({ owner, repo, issue_number: pull_number, body });
+              await github.rest.pulls.update({ owner, repo, pull_number, state: 'closed' });
+              core.info(`PR #${pull_number} closed (file policy: allDeleted=${allDeleted}, count=${files.length}).`);
+              return;
+            }
+
+            // ── All gates passed ─────────────────────────────────────────────
+            core.info(`PR #${pull_number} allowed (priorCount=${priorCount} <= 3, ${files.length} file(s) all deleted).`);

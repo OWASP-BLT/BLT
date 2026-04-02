@@ -4,7 +4,6 @@ import pytz
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import redirect, render
 from django.utils import timezone
 

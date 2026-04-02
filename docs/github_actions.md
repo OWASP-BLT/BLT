@@ -265,7 +265,7 @@ When a PR contains migrations with numbers that overlap existing migrations (e.g
 **Key Features**:
 - Validates PR has at least one approved review
 - Excludes reviews from: PR author, bots, specific maintainers
-- Adds label: `needs-peer-review` (yellow) or `has-peer-review` (green)
+- Adds label: `needs-peer-review` (red) or `has-peer-review` (green)
 - Posts comment requesting review if none found
 - Fails the check until a valid review is submitted
 
@@ -311,6 +311,21 @@ When a PR contains migrations with numbers that overlap existing migrations (e.g
 - Helps track which PRs address which issues
 
 **AI Relevance**: Maintains traceability—every PR should solve a specific problem defined in an issue.
+
+#### 2.11 Close PRs from Non-First-Time Contributors (`close-single-file-deletion-prs.yml`)
+*Note: The workflow filename is historical—despite the "single-file" name, this policy applies to deletion-only PRs deleting between 1 and 20 files.*
+**Purpose**: Enforce a first-time contributor–only PR policy
+- Pull request opened, synchronized, or reopened
+
+**Key Features**:
+- Accepts PRs only from `FIRST_TIMER` or `FIRST_TIME_CONTRIBUTOR` authors
+- Accepted PRs must delete between 1 and 20 files with no other changes
+- Automatically closes PRs from returning contributors with a descriptive comment
+- For returning contributors, fetches and lists their previous merged PRs in the comment
+- Automatically closes first-time contributor PRs that don't consist solely of file deletions (1–20 files)
+- Skips bots, the repository owner, and other trusted automation actors
+
+**AI Relevance**: Prevents experienced contributors from bypassing the newcomer-only acceptance policy.
 
 ---
 

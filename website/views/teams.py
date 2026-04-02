@@ -3,16 +3,17 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 # Create your views here.
-from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView
+from django.views.generic import ListView, TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -368,3 +369,20 @@ class TeamLeaderboard(TemplateView):
         }
 
         return render(request, "team_leaderboard.html", context)
+
+
+class TeamMemberLeaderboardView(LoginRequiredMixin, ListView):
+    template_name = "teams/member_leaderboard.html"
+    context_object_name = "members"
+    paginate_by = 20
+
+    def get_queryset(self):
+        team = self.request.user.userprofile.team
+        if not team:
+            return UserProfile.objects.none()
+
+        return (
+            UserProfile.objects.filter(team=team)
+            .select_related("user")
+            .order_by("-leaderboard_score", "-current_streak")
+        )

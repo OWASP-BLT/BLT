@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://owaspblt.org">🌐 Website</a> •
+  <a href="https://legacy.owaspblt.org">🌐 Website</a> •
   <a href="https://github.com/OWASP-BLT/BLT/blob/main/CONTRIBUTING.md">📖 Contributing Guide</a> •
   <a href="https://owasp.org/slack/invite">💬 Join Slack</a> •
   <a href="https://github.com/OWASP-BLT/BLT/issues">🐛 Report Bug</a>
@@ -50,7 +50,7 @@
   <a href="https://github.com/OWASP-BLT/BLT/fork">
     <img src="https://img.shields.io/github/forks/OWASP-BLT/BLT?style=social" alt="Forks">
   </a>
-  <img src="https://owaspblt.org/repos/blt/badge/" alt="Views">
+  <img src="https://legacy.owaspblt.org/repos/blt/badge/" alt="Views">
 </p>
 
 ---
@@ -96,7 +96,8 @@ git clone https://github.com/OWASP-BLT/BLT.git
 cd BLT
 
 # Configure environment
-cp .env.example .env
+windows(powershell/command prompt): copy .env.example .env
+Mac/Linux/Git Bash: cp .env.example .env
 
 # Build and start
 docker-compose build
@@ -304,7 +305,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 
 ## 💬 Community & Support
 
-- 🌐 **Website**: [owaspblt.org](https://owaspblt.org)
+- 🌐 **Website**: [legacy.owaspblt.org](https://legacy.owaspblt.org)
 - 💬 **Slack**: [Join OWASP Slack](https://owasp.org/slack/invite)
 - 🐦 **Twitter**: [@OWASP_BLT](https://x.com/OWASP_BLT)
 - 💰 **Sponsor**: [Support the project](https://github.com/sponsors/OWASP-BLT)

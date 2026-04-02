@@ -886,7 +886,7 @@ class OrganizationDashboardTeamOverviewView(View):
                     },
                 )()
                 team_members.append(member_data)
-            except Exception:
+            except (AttributeError, UserProfile.DoesNotExist):
                 # If userprofile doesn't exist, create basic member data
                 member_data = type(
                     "obj",
@@ -1118,7 +1118,7 @@ class AddDomainView(View):
                 messages.error(request, "Invalid domain url")
                 return redirect("add_domain", id=id)
             domain_data["url"] = parsed_url.netloc
-        except Exception:
+        except (ValueError, AttributeError):
             messages.error(request, "Invalid domain url format")
             return redirect("add_domain", id=id)
 

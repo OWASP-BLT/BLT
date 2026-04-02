@@ -6,6 +6,7 @@ on:
   pull_request_target:
     types:
       - opened
+      - closed
 
 permissions:
   contents: read
@@ -524,3 +525,154 @@ jobs:
               });
               core.info(`Posted leaderboard comment on PR #${pull_number}`);
             }
+
+  congratulate_on_rank_improvement:
+    # Only run when the PR was actually merged
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post congratulatory comment if rank improved
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            const pull_number = pr.number;
+            const prAuthor = pr.user.login;
+
+            core.info(`PR #${pull_number} by @${prAuthor} was merged. Checking leaderboard rank…`);
+
+            // Bot detection — skip bots entirely
+            const BOT_PATTERNS = ['copilot', '[bot]', 'dependabot', 'github-actions', 'renovate', 'actions-user'];
+            const isBot = (login) => {
+              if (!login) return false;
+              const lower = login.toLowerCase();
+              return BOT_PATTERNS.some(p => lower.includes(p));
+            };
+
+            if (isBot(prAuthor)) {
+              core.info(`Skipping bot account: @${prAuthor}`);
+              return;
+            }
+
+            // Rolling 6-month window (same as the BLT global leaderboard)
+            const now = new Date();
+            const sixMonthsAgo = new Date(Date.UTC(
+              now.getUTCFullYear(),
+              now.getUTCMonth() - 6,
+              now.getUTCDate(),
+              now.getUTCHours(),
+              now.getUTCMinutes(),
+              now.getUTCSeconds()
+            ));
+
+            core.info(`Leaderboard window: ${sixMonthsAgo.toISOString()} → now`);
+
+            // Fetch merged PRs within the 6-month window via GraphQL
+            const prQuery = `
+              query($owner: String!, $repo: String!, $after: String) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequests(
+                    states: MERGED
+                    first: 100
+                    orderBy: { field: UPDATED_AT, direction: DESC }
+                    after: $after
+                  ) {
+                    nodes {
+                      number
+                      mergedAt
+                      author { login }
+                    }
+                    pageInfo { hasNextPage endCursor }
+                  }
+                }
+              }
+            `;
+
+            // Count merged PRs per author within the window
+            const mergedPRsPerAuthor = {};
+            let hasNextPage = true;
+            let cursor = null;
+            let pages = 0;
+            const MAX_PAGES = 20;
+
+            while (hasNextPage && pages < MAX_PAGES) {
+              const result = await github.graphql(prQuery, { owner, repo, after: cursor });
+              const prs = result.repository.pullRequests;
+
+              for (const node of prs.nodes) {
+                if (!node.author || !node.author.login) continue;
+                const login = node.author.login;
+                if (isBot(login)) continue;
+
+                const mergedAt = node.mergedAt ? new Date(node.mergedAt) : null;
+                if (!mergedAt || mergedAt < sixMonthsAgo) continue;
+
+                mergedPRsPerAuthor[login] = (mergedPRsPerAuthor[login] || 0) + 1;
+              }
+
+              // Stop early if all remaining PRs are older than our window
+              const oldest = prs.nodes[prs.nodes.length - 1];
+              if (oldest && oldest.mergedAt && new Date(oldest.mergedAt) < sixMonthsAgo) {
+                core.info('Reached PRs older than the 6-month window. Stopping pagination.');
+                break;
+              }
+
+              hasNextPage = prs.pageInfo.hasNextPage;
+              cursor = prs.pageInfo.endCursor;
+              pages++;
+            }
+
+            core.info(`Collected merged PR counts for ${Object.keys(mergedPRsPerAuthor).length} authors.`);
+
+            // Compute rank: how many authors have strictly more merged PRs than prAuthor?
+            const authorCount = mergedPRsPerAuthor[prAuthor] || 0;
+
+            if (authorCount === 0) {
+              core.info(`@${prAuthor} has no qualifying merged PRs in the leaderboard window. Skipping.`);
+              return;
+            }
+
+            // New rank = number of others with more PRs + 1
+            const newRank = Object.values(mergedPRsPerAuthor).filter(c => c > authorCount).length + 1;
+
+            // Old rank = rank before this merge (author had authorCount - 1 PRs)
+            const prevCount = authorCount - 1;
+            let oldRank = null;
+            if (prevCount > 0) {
+              oldRank = Object.values(mergedPRsPerAuthor).filter(c => c > prevCount).length + 1;
+            }
+
+            core.info(`@${prAuthor}: prev count=${prevCount}, new count=${authorCount}, old rank=${oldRank}, new rank=${newRank}`);
+
+            // Only congratulate when rank improved (lower number = better)
+            const rankImproved = oldRank === null || newRank < oldRank;
+            if (!rankImproved) {
+              core.info(`Rank did not improve for @${prAuthor} (${oldRank} → ${newRank}). No comment needed.`);
+              return;
+            }
+
+            // Build the congratulatory comment
+            let commentBody;
+            if (oldRank === null) {
+              commentBody =
+                `🎉 Congratulations @${prAuthor}! ` +
+                `You've entered the BLT PR leaderboard at **rank #${newRank}** with this merged PR! ` +
+                `Keep up the great work! 🚀`;
+            } else {
+              commentBody =
+                `🎉 Congratulations @${prAuthor}! ` +
+                `This merged PR has moved you up to **rank #${newRank}** on the BLT PR leaderboard ` +
+                `(up from #${oldRank})! Keep up the great work! 🚀`;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pull_number,
+              body: commentBody,
+            });
+
+            core.info(`Posted congratulatory comment on PR #${pull_number} for @${prAuthor} (rank #${newRank}).`);

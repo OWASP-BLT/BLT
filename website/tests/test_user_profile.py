@@ -7,6 +7,8 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from website.models import DailyStatusReport
+
 
 class UserProfileUpdateTest(TestCase):
     def setUp(self):
@@ -296,3 +298,24 @@ class UserProfileVisitCounterTest(TestCase):
             success = False
 
         self.assertTrue(success, "update_visit_counter raised TransactionManagementError")
+
+    def test_leaderboard_score_calculation(self):
+        """Test leaderboard score formula: recent_checkins + (2 * streak)"""
+        # Create 5 recent check-ins
+        for i in range(5):
+            DailyStatusReport.objects.create(
+                user=self.user,
+                date=timezone.now().date() - timedelta(days=i),
+                previous_work="prev",
+                next_plan="next",
+                blockers="none",
+                created=timezone.now() - timedelta(days=i),
+            )
+
+        self.profile.current_streak = 3
+        self.profile.save()
+        self.profile.update_leaderboard_score()
+        self.profile.refresh_from_db()
+
+        # Score = 5 recent + (2 * 3 streak) = 11
+        self.assertEqual(self.profile.leaderboard_score, 11)
