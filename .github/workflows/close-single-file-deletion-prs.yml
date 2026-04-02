@@ -63,21 +63,38 @@ jobs:
             const pull_number = pr.number;
             const author      = pr.user.login;
 
-            // ── Gate 1: Org-wide prior PR count ──────────────────────────────
-            // Count PRs by this author in the org BEFORE the current PR was created.
+            # ── Gate 1: Org-wide prior PR count (OPEN + MERGED only) ──────────────
+            # Count PRs by this author in the org BEFORE the current PR was created.
             const createdAtIso = new Date(pr.created_at).toISOString();
-            const q = `org:${owner} is:pr author:${author} created:<${createdAtIso}`;
-            const searchRes = await github.request('GET /search/issues', { q, per_page: 1 });
-            const priorCount = searchRes.data.total_count;
 
-            core.info(`Author ${author} has ${priorCount} prior PR(s) in ${owner} (excluding current PR).`);
+            const base    = `org:${owner}`; // keep org-scope as per policy
+            const qOpen   = `${base} is:pr is:open   author:${author} created:<${createdAtIso}`;
+            const qMerged = `${base} is:pr is:merged author:${author} created:<${createdAtIso}`;
+
+            async function count(q) {
+              try {
+                const r = await github.request('GET /search/issues', { q, per_page: 1 });
+                return r.data.total_count || 0;
+              } catch (e) {
+                core.info(`[Gate] search failed for "${q}" (${e.status || e.message}); fail-closed`);
+                // Fail-closed so we don't accidentally allow when rate-limited
+                return 999;
+              }
+            }
+
+            const [openCnt, mergedCnt] = await Promise.all([count(qOpen), count(qMerged)]);
+            const priorCount = openCnt + mergedCnt;
+
+            core.info(
+              `Author ${author} prior PRs in ${owner} (excluding current): open=${openCnt}, merged=${mergedCnt}, total=${priorCount}`
+            );
 
             if (priorCount > 3) {
               const body = [
                 `👋 Hi @${author}, thanks for the PR!`,
                 ``,
                 `🚫 This repository currently only accepts pull requests from **new contributors**`,
-                `(**3 or fewer prior PRs across the ${owner} organization**).`,
+                `(**3 or fewer prior PRs counted as OPEN or MERGED across the ${owner} organization**).`,
                 ``,
                 `Our records show you have **${priorCount} prior PR(s)**, which exceeds the limit, so this PR is being closed.`,
                 ``,
@@ -87,7 +104,7 @@ jobs:
               ].join('\n');
 
               await github.rest.issues.createComment({ owner, repo, issue_number: pull_number, body });
-              await github.rest.pulls.update({ owner, repo, pull_number, state: 'closed' });
+              await github.rest.pulls.update({ owner, repo, pull_number: pr.number, state: 'closed' });
               core.info(`PR #${pull_number} closed (priorCount ${priorCount} > 3).`);
               return;
             }
