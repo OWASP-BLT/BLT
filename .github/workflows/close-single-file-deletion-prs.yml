@@ -94,7 +94,11 @@ jobs:
                 `Author ${author} prior PRs in ${owner} (excluding current): open=${openCnt}, merged=${mergedCnt}, total=${priorCount}`
               );
             }
-            if (hasPriorCountLookupError || priorCount > 3) {
+            const exceedsLimit = !hasPriorCountLookupError && priorCount > 3;
+            if (hasPriorCountLookupError || exceedsLimit) {
+              const countMessage = hasPriorCountLookupError
+                ? `We were unable to verify your prior PR count due to an API error`
+                : `Our records show you have **${priorCount} prior PR(s)**, which exceeds the limit`;
               const body = [
                 `👋 Hi @${author}, thanks for the PR!`,
                 ``,
@@ -109,8 +113,9 @@ jobs:
               ].join('\n');
 
               await github.rest.issues.createComment({ owner, repo, issue_number: pull_number, body });
-              await github.rest.pulls.update({ owner, repo, pull_number: pr.number, state: 'closed' });
-              core.info(`PR #${pull_number} closed (priorCount ${priorCount} > 3).`);
+              await github.rest.pulls.update({ owner, repo, pull_number, state: 'closed' });
+              const reason = hasPriorCountLookupError ? 'API lookup failed (fail-closed)' : `priorCount ${priorCount} > 3`;
+              core.info(`PR #${pull_number} closed (${reason}).`);
               return;
             }
 
