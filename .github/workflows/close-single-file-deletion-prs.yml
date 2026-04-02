@@ -63,8 +63,8 @@ jobs:
             const pull_number = pr.number;
             const author      = pr.user.login;
 
-            # ── Gate 1: Org-wide prior PR count (OPEN + MERGED only) ──────────────
-            # Count PRs by this author in the org BEFORE the current PR was created.
+            // ── Gate 1: Org-wide prior PR count (OPEN + MERGED only) ──────────────
+            // Count PRs by this author in the org BEFORE the current PR was created.
             const createdAtIso = new Date(pr.created_at).toISOString();
 
             const base    = `org:${owner}`; // keep org-scope as per policy
@@ -77,19 +77,24 @@ jobs:
                 return r.data.total_count || 0;
               } catch (e) {
                 core.info(`[Gate] search failed for "${q}" (${e.status || e.message}); fail-closed`);
-                // Fail-closed so we don't accidentally allow when rate-limited
-                return 999;
+                // Return a sentinel so later messaging does not treat an API failure
+                // as a verified prior PR count.
+                return null;
               }
             }
-
             const [openCnt, mergedCnt] = await Promise.all([count(qOpen), count(qMerged)]);
-            const priorCount = openCnt + mergedCnt;
-
-            core.info(
-              `Author ${author} prior PRs in ${owner} (excluding current): open=${openCnt}, merged=${mergedCnt}, total=${priorCount}`
-            );
-
-            if (priorCount > 3) {
+            const hasPriorCountLookupError = openCnt === null || mergedCnt === null;
+            const priorCount = hasPriorCountLookupError ? null : openCnt + mergedCnt;
+            if (hasPriorCountLookupError) {
+              core.info(
+                `Author ${author} prior PR count in ${owner} could not be verified due to a GitHub API error; applying fail-closed policy`
+              );
+            } else {
+              core.info(
+                `Author ${author} prior PRs in ${owner} (excluding current): open=${openCnt}, merged=${mergedCnt}, total=${priorCount}`
+              );
+            }
+            if (hasPriorCountLookupError || priorCount > 3) {
               const body = [
                 `👋 Hi @${author}, thanks for the PR!`,
                 ``,
