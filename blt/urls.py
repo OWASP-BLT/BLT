@@ -144,7 +144,6 @@ from website.views.education import (
     edit_course,
     edit_lecture,
     edit_section,
-    edit_standalone_lecture,
     education_home,
     enroll,
     get_course_content,
@@ -712,7 +711,6 @@ urlpatterns = [
     re_path(r"^education/$", education_home, name="education"),
     path("education/instructor_dashboard/", instructor_dashboard, name="instructor_dashboard"),
     path("education/create-standalone-lecture/", create_standalone_lecture, name="create_standalone_lecture"),
-    path("education/edit-standalone-lecture/<int:lecture_id>", edit_standalone_lecture, name="edit_standalone_lecture"),
     path("education/instructor_dashboard/edit-course/<int:course_id>/", edit_course, name="edit_course"),
     path(
         "education/instructor_dashboard/create-or-update-course/",

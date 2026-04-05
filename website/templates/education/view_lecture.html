@@ -17,10 +17,7 @@
                         {{ lecture.title|escape|capfirst }}
                     </h1>
                     {% if request.user.userprofile == lecture.instructor %}
-                        <a href="{% url 'edit_standalone_lecture' lecture.id %}"
-                           class="self-start flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300">
-                            <i class="fas fa-edit"></i> Edit Lecture
-                        </a>
+                        
                         <a href="/education/instructor_dashboard/"
                            class="self-start flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300">
                             <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard

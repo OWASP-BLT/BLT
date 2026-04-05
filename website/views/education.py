@@ -111,12 +111,6 @@ def create_standalone_lecture(request):
     return render(request, template)
 
 
-@login_required(login_url="/accounts/login")
-def edit_standalone_lecture(request, lecture_id):
-    template = "education/edit_standalone_lecture.html"
-    lecture = get_object_or_404(Lecture, id=lecture_id)
-    context = {"lecture": lecture}
-    return render(request, template, context)
 
 
 @login_required(login_url="/accounts/login")
