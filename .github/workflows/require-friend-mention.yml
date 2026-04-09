@@ -105,7 +105,53 @@ jobs:
             });
             core.info(`Applied label "${name}" to PR #${issue_number}`);
 
-      - name: Remove "require friend mention" label if now satisfied
+      - name: Post or update comment when friend mention is missing
+        if: ${{ steps.analyze.outputs.ok == 'false' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+            const author = '${{ steps.analyze.outputs.author }}';
+
+            const commentMarker = '<!-- require-friend-mention -->';
+            const commentBody = commentMarker + '\n' +
+              '## ❌ Friend Mention Required\n\n' +
+              `Hi @${author}! This PR is missing a required **friend mention** in the description.\n\n` +
+              '### What to do\n' +
+              'Please edit your PR description to tag at least one friend using `@username` ' +
+              '(someone other than yourself).\n\n' +
+              '### Why is this required?\n' +
+              '- It encourages collaboration and peer awareness\n' +
+              '- It helps spread knowledge about changes across the team\n' +
+              '- It ensures someone else is aware of your contribution\n\n' +
+              '### Example\n' +
+              '```\n' +
+              'This PR fixes the login bug reported in #123.\n\n' +
+              'Tagging @friend-username for awareness.\n' +
+              '```\n\n' +
+              '_Once you add a valid `@mention` to the PR description, this check will pass automatically._';
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+
+            const existing = comments.find(c => c.body && c.body.includes(commentMarker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body: commentBody,
+              });
+              core.info(`Updated existing friend-mention comment on PR #${issue_number}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number, body: commentBody,
+              });
+              core.info(`Posted friend-mention comment on PR #${issue_number}`);
+            }
+
+      - name: Remove "require friend mention" label and comment if now satisfied
         if: ${{ steps.analyze.outputs.ok == 'true' }}
         uses: actions/github-script@v7
         env:
@@ -116,6 +162,7 @@ jobs:
             const repo  = context.repo.repo;
             const issue_number = context.payload.pull_request.number;
             const name  = process.env.LABEL_NAME;
+            const commentMarker = '<!-- require-friend-mention -->';
 
             try {
               await github.rest.issues.removeLabel({ owner, repo, issue_number, name });
@@ -126,6 +173,19 @@ jobs:
               } else {
                 throw e;
               }
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+
+            const existing = comments.find(c => c.body && c.body.includes(commentMarker));
+
+            if (existing) {
+              await github.rest.issues.deleteComment({
+                owner, repo, comment_id: existing.id,
+              });
+              core.info(`Removed friend-mention comment from PR #${issue_number}`);
             }
 
       - name: Fail check when friend mention is missing
