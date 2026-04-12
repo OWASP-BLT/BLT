@@ -32,7 +32,9 @@ jobs:
               core.setFailed('No pull_request payload found.');
               return;
             }
+            const ownerType = (context.payload.repository?.owner?.type || '').toLowerCase();
             const owner = context.repo.owner;
+            const scopeQualifier = ownerType === 'organization' ? 'org' : 'user';
             const author = (pr.user?.login || '').toLowerCase();
             const body   = pr.body || '';
 
@@ -55,22 +57,21 @@ jobs:
               u !== 'dependabot-preview'
             );
 
-            // Mentions cannot be users who have previously had a merged PR in this org
-            const contributionChecks = await Promise.all(
-              candidates.map(async u => {
-                try {
-                  const query = `org:${owner} author:${u} is:pr is:merged`;
-                  const { data } = await github.rest.search.issuesAndPullRequests({
-                    q: query,
-                    per_page: 1,
-                  });
-                  return { username: u, hasPriorContribution: data.total_count > 0 };
-                } catch (error) {
-                  core.warning(`Unable to check prior contributions for @${u}; excluding mention for safety.`);
-                  return { username: u, hasPriorContribution: true };
-                }
-              })
-            );
+            // Mentions cannot be users who have previously had a merged PR under this repository owner
+            const contributionChecks = [];
+            for (const u of candidates) {
+              try {
+                const query = `${scopeQualifier}:${owner} author:${u} is:pr is:merged`;
+                const { data } = await github.rest.search.issuesAndPullRequests({
+                  q: query,
+                  per_page: 1,
+                });
+                contributionChecks.push({ username: u, hasPriorContribution: data.total_count > 0, checkErrored: false });
+              } catch (error) {
+                core.warning(`Unable to check prior contributions for @${u}; excluding mention for safety.`);
+                contributionChecks.push({ username: u, hasPriorContribution: true, checkErrored: true });
+              }
+            }
 
             const filtered = contributionChecks
               .filter(result => !result.hasPriorContribution)
@@ -78,13 +79,18 @@ jobs:
             const excludedContributors = contributionChecks
               .filter(result => result.hasPriorContribution)
               .map(result => result.username);
+            const excludedUnverified = contributionChecks
+              .filter(result => result.checkErrored)
+              .map(result => result.username);
 
             core.setOutput('ok', String(filtered.length > 0));
             core.setOutput('author', author);
             core.setOutput('found', filtered.join(','));
             core.setOutput('excluded_contributors', excludedContributors.join(','));
+            core.setOutput('excluded_unverified', excludedUnverified.join(','));
             core.info(`Friend mentions found: ${filtered.join(',') || '(none)'}`);
-            core.info(`Mentions excluded due to prior org contributions: ${excludedContributors.join(',') || '(none)'}`);
+            core.info(`Mentions excluded due to prior merged PRs under owner scope: ${excludedContributors.join(',') || '(none)'}`);
+            core.info(`Mentions excluded due to verification errors: ${excludedUnverified.join(',') || '(none)'}`);
 
       - name: Ensure label exists (only when missing)
         if: ${{ steps.analyze.outputs.ok == 'false' }}
