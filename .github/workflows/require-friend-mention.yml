@@ -34,6 +34,9 @@ jobs:
             }
             const ownerType = (context.payload.repository?.owner?.type || '').toLowerCase();
             const owner = context.repo.owner;
+            if (ownerType !== 'organization' && ownerType !== 'user') {
+              core.warning(`Unexpected repository owner type "${ownerType || 'unknown'}"; defaulting contribution search scope to user.`);
+            }
             const scopeQualifier = ownerType === 'organization' ? 'org' : 'user';
             const author = (pr.user?.login || '').toLowerCase();
             const body   = pr.body || '';
