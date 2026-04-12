@@ -55,7 +55,7 @@ jobs:
               u !== 'dependabot-preview'
             );
 
-            // Mentions cannot be users who have previously opened any PR in this org
+            // Mentions cannot be users who have previously had a merged PR in this org
             const contributionChecks = await Promise.all(
               candidates.map(async u => {
                 try {
@@ -66,7 +66,7 @@ jobs:
                   });
                   return { username: u, hasPriorContribution: data.total_count > 0 };
                 } catch (error) {
-                  core.warning(`Unable to check prior contributions for @${u}; excluding mention for safety. ${error.message}`);
+                  core.warning(`Unable to check prior contributions for @${u}; excluding mention for safety.`);
                   return { username: u, hasPriorContribution: true };
                 }
               })
