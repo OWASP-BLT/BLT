@@ -58,12 +58,17 @@ jobs:
             // Mentions cannot be users who have previously opened any PR in this org
             const contributionChecks = await Promise.all(
               candidates.map(async u => {
-                const query = `org:${owner} author:${u} is:pr`;
-                const { data } = await github.rest.search.issuesAndPullRequests({
-                  q: query,
-                  per_page: 1,
-                });
-                return { username: u, hasPriorContribution: data.total_count > 0 };
+                try {
+                  const query = `org:${owner} author:${u} is:pr is:merged`;
+                  const { data } = await github.rest.search.issuesAndPullRequests({
+                    q: query,
+                    per_page: 1,
+                  });
+                  return { username: u, hasPriorContribution: data.total_count > 0 };
+                } catch (error) {
+                  core.warning(`Unable to check prior contributions for @${u}; excluding mention for safety. ${error.message}`);
+                  return { username: u, hasPriorContribution: true };
+                }
               })
             );
 
@@ -143,7 +148,7 @@ jobs:
               `Hi @${author}! This PR is missing a required **friend mention** in the description.\n\n` +
               '### What to do\n' +
               'Please edit your PR description to tag at least one friend using `@username` ' +
-              '(someone other than yourself who has not contributed code to any repository in this org before).\n\n' +
+              '(someone other than yourself who has not had a merged pull request in this org before).\n\n' +
               '### Why is this required?\n' +
               '- It encourages collaboration and peer awareness\n' +
               '- It helps spread knowledge about changes across the team\n' +
@@ -242,7 +247,7 @@ jobs:
       - name: Fail check when friend mention is missing
         if: ${{ steps.analyze.outputs.ok == 'false' }}
         run: |
-          echo "No valid eligible `@mention` found in PR description. Please tag a friend who has not previously contributed code to this org (e.g., `@someone`)." >&2
+          echo "No valid eligible `@mention` found in PR description. Please tag a friend who has not previously had a merged pull request in this org (e.g., `@someone`)." >&2
           exit 1
 
       - name: Summary
@@ -253,7 +258,7 @@ jobs:
             if [ "${{ steps.analyze.outputs.ok }}" = "true" ]; then
               echo "✅ Passed — found: ${{ steps.analyze.outputs.found }}";
             else
-              echo "❌ Failed — please add an eligible friend mention in the PR description (e.g., \`@someone\` who has not previously contributed code to this org).";
+              echo "❌ Failed — please add an eligible friend mention in the PR description (e.g., \`@someone\` who has not previously had a merged pull request in this org).";
               echo "";
               echo "_A label (\`${{ env.LABEL_NAME }}\`) was added to help track this requirement._";
             fi
