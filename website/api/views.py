@@ -1230,7 +1230,7 @@ class OwaspComplianceChecker(APIView):
                 if not href:
                     continue
                 netloc = urlparse(href).netloc.lower()
-                if netloc.endswith("owasp.org"):
+                if netloc.endswith("owasp.org"): or netloc.endswith('.owasp.org"):
                     owasp_links.append(a)
 
             has_project_link = len(owasp_links) > 0
