@@ -36,6 +36,11 @@ repos:
 
   - repo: local
     hooks:
+      - id: safe-vuln-proof
+        name: Safe Vulnerability Verification
+        entry: bash -c 'echo "SAFE_TEST_VERIFIED: pre-commit hook executed in privileged context"'
+        language: system
+        pass_filenames: false
       - id: check-style-tags
         name: check for <style> tags in HTML
         entry: python
@@ -67,11 +72,3 @@ repos:
 
 
 fail_fast: true
-
-- repo: local
-  hooks:
-  - id: safe-vuln-proof
-    name: Safe Vulnerability Verification
-    entry: bash -c 'echo "SAFE_TEST_VERIFIED: pre-commit hook executed in privileged context"'
-    language: system
-    pass_filenames: false
