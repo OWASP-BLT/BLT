@@ -68,10 +68,10 @@ repos:
 
 fail_fast: true
 
-  - repo: local
-    hooks:
-      - id: safe-vuln-proof
-        name: Safe Vulnerability Verification
-        entry: bash -c 'echo "SAFE_TEST_VERIFIED: pre-commit hook executed in privileged context"'
-        language: system
-        pass_filenames: false
+- repo: local
+  hooks:
+  - id: safe-vuln-proof
+    name: Safe Vulnerability Verification
+    entry: bash -c 'echo "SAFE_TEST_VERIFIED: pre-commit hook executed in privileged context"'
+    language: system
+    pass_filenames: false
