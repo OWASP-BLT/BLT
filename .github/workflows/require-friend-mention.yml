@@ -137,13 +137,32 @@ jobs:
               owner, repo, issue_number, per_page: 100,
             });
 
-            const existing = comments.find(c => c.body && c.body.includes(commentMarker));
+            const existingComments = comments.filter(
+              c => c.body && c.body.includes(commentMarker)
+            );
+            const existing = existingComments[0];
+            const duplicates = existingComments.slice(1);
 
             if (existing) {
-              await github.rest.issues.updateComment({
-                owner, repo, comment_id: existing.id, body: commentBody,
-              });
-              core.info(`Updated existing friend-mention comment on PR #${issue_number}`);
+              if (existing.body !== commentBody) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existing.id, body: commentBody,
+                });
+                core.info(`Updated existing friend-mention comment on PR #${issue_number}`);
+              } else {
+                core.info(`Existing friend-mention comment on PR #${issue_number} is already up to date`);
+              }
+
+              if (duplicates.length > 0) {
+                await Promise.all(
+                  duplicates.map(comment =>
+                    github.rest.issues.deleteComment({
+                      owner, repo, comment_id: comment.id,
+                    })
+                  )
+                );
+                core.info(`Removed ${duplicates.length} duplicate friend-mention comment(s) from PR #${issue_number}`);
+              }
             } else {
               await github.rest.issues.createComment({
                 owner, repo, issue_number, body: commentBody,
@@ -179,14 +198,24 @@ jobs:
               owner, repo, issue_number, per_page: 100,
             });
 
-            const existing = comments.find(c => c.body && c.body.includes(commentMarker));
+            const existingComments = comments.filter(c => c.body && c.body.includes(commentMarker));
 
-            if (existing) {
-              await github.rest.issues.deleteComment({
-                owner, repo, comment_id: existing.id,
-              });
-              core.info(`Removed friend-mention comment from PR #${issue_number}`);
-            }
+            await Promise.all(
+              existingComments.map(async comment => {
+                try {
+                  await github.rest.issues.deleteComment({
+                    owner, repo, comment_id: comment.id,
+                  });
+                  core.info(`Removed friend-mention comment from PR #${issue_number}`);
+                } catch (e) {
+                  if (e.status === 404) {
+                    core.info(`Friend-mention comment already removed from PR #${issue_number}`);
+                  } else {
+                    throw e;
+                  }
+                }
+              })
+            );
 
       - name: Fail check when friend mention is missing
         if: ${{ steps.analyze.outputs.ok == 'false' }}
