@@ -124,6 +124,11 @@ new TomSelect("#tags", {
 
                 const form = document.getElementById('course-form');
                 const formData = new FormData(form);
+                  if (!formData.get("title")) {
+                        alert("Title is required");
+                        button.disabled = false;
+                        return;
+                  }
 
                 await createOrUpdateCourse(formData);
             });
@@ -133,7 +138,7 @@ new TomSelect("#tags", {
                     const response = await fetch('/education/instructor_dashboard/create-or-update-course/', {
                         method: 'POST',
                         headers: {
-                            'X-CSRFToken': '{{ csrf_token }}'
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                         },
                         body: formData,
                     });
