@@ -35,7 +35,8 @@ jobs:
             const ownerType = (context.payload.repository?.owner?.type || '').toLowerCase();
             const owner = context.repo.owner;
             if (ownerType !== 'organization' && ownerType !== 'user') {
-              core.warning(`Unexpected repository owner type "${ownerType || 'unknown'}"; defaulting contribution search scope to user.`);
+              core.setFailed(`Unexpected repository owner type "${ownerType || 'unknown'}"; cannot validate friend mention eligibility safely.`);
+              return;
             }
             const scopeQualifier = ownerType === 'organization' ? 'org' : 'user';
             const author = (pr.user?.login || '').toLowerCase();
@@ -63,6 +64,12 @@ jobs:
             // Mentions cannot be users who have previously had a merged PR under this repository owner
             const contributionChecks = [];
             for (const u of candidates) {
+              if (!/^[a-z0-9](?:-?[a-z0-9]){0,38}$/.test(u)) {
+                core.warning(`Skipping invalid mention candidate format: @${u}`);
+                contributionChecks.push({ username: u, hasPriorContribution: true, checkErrored: true });
+                continue;
+              }
+
               try {
                 const query = `${scopeQualifier}:${owner} author:${u} is:pr is:merged`;
                 const { data } = await github.rest.search.issuesAndPullRequests({
@@ -85,6 +92,11 @@ jobs:
             const excludedUnverified = contributionChecks
               .filter(result => result.checkErrored)
               .map(result => result.username);
+
+            if (candidates.length > 0 && excludedUnverified.length === candidates.length) {
+              core.setFailed('Unable to verify mention eligibility due to GitHub API errors. Please retry.');
+              return;
+            }
 
             core.setOutput('ok', String(filtered.length > 0));
             core.setOutput('author', author);
