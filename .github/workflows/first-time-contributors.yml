@@ -1,0 +1,196 @@
+name: Build first-time contributor JSON (org-wide)
+
+on:
+  workflow_dispatch:
+    inputs:
+      org:
+        description: GitHub org to scan
+        default: OWASP-BLT
+        required: true
+      since:
+        description: Cutoff date (ISO, merged after this); default is April 2, 2026
+        default: "2026-04-02"
+        required: true
+  schedule:
+    - cron: "15 7 * * *"  # daily at 07:15 UTC
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  build-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build first-time contributors JSON
+        id: build
+        uses: actions/github-script@v7
+        env:
+          ORG: ${{ inputs.org || 'OWASP-BLT' }}
+          SINCE: ${{ inputs.since || '2026-04-02' }}
+          OUT_PATH: data/first_time_contributors.json
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const org   = process.env.ORG   || 'OWASP-BLT';
+            const since = process.env.SINCE || '2026-04-02';
+            const outPath = process.env.OUT_PATH || 'data/first_time_contributors.json';
+
+            const bots = new Set([
+              'github-actions[bot]',
+              'dependabot[bot]',
+              'owasp-blt[bot]',
+              'coderabbitai[bot]'
+            ]);
+
+            function isBot(login) {
+              if (!login) return true;
+              const lower = login.toLowerCase();
+              return lower.endsWith('[bot]') || bots.has(lower);
+            }
+
+            // 1) Find merged PRs since cutoff across the org
+            const q = `org:${org} is:pr is:merged merged:>=${since}`;
+            core.info(`[search] ${q}`);
+
+            const mergedItems = await github.paginate(
+              github.rest.search.issuesAndPullRequests,
+              { q, per_page: 100 },
+              (res) => res.data.items
+            );
+
+            // 2) Per-author, pick earliest merged PR after cutoff
+            const perAuthor = new Map();
+            for (const it of mergedItems) {
+              const login = it.user && it.user.login ? it.user.login : null;
+              if (!login || isBot(login)) continue;            // skip bots/apps
+              if (!it.pull_request) continue;                  // only PRs
+              // We still need merged_at; fetch PR fully for accuracy
+              const repoFull = it.repository_url.split('/').slice(-2).join('/');
+              const [owner, repo] = repoFull.split('/');
+              const prNum = it.number;
+              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNum });
+              const mAt = pr.data.merged_at;
+              if (!mAt) continue;
+              if (new Date(mAt) < new Date(since)) continue;   // just-in-case guard
+
+              const prev = perAuthor.get(login);
+              if (!prev || new Date(mAt) < new Date(prev.firstMergedAt)) {
+                perAuthor.set(login, {
+                  login,
+                  firstMergedAt: mAt,
+                  pr: {
+                    owner, repo, number: prNum,
+                    title: it.title,
+                    url: it.html_url,
+                    merged_at: mAt
+                  }
+                });
+              }
+            }
+
+            // 3) Keep only those with NO prior merged PRs before SINCE (org-wide)
+            async function priorMergedCountBefore(login) {
+              const qPrior = `org:${org} is:pr is:merged author:${login} merged:<${since}`;
+              const r = await github.request('GET /search/issues', { q: qPrior, per_page: 1 });
+              return r.data.total_count || 0;
+            }
+
+            const firstTimers = [];
+            for (const [login, data] of perAuthor.entries()) {
+              const cnt = await priorMergedCountBefore(login);
+              if (cnt === 0) firstTimers.push(data);
+            }
+
+            // 4) Hydrate user profile + sponsors existence (HEAD to sponsors page)
+            async function getUser(login) {
+              const r = await github.rest.users.getByUsername({ username: login });
+              return r.data || {};
+            }
+
+            async function sponsorsExists(login) {
+              const url = `https://github.com/sponsors/${login}`;
+              try {
+                // Try HEAD; treat 200/301/302/307/308 as exists
+                const res = await fetch(url, { method: 'HEAD', redirect: 'manual' });
+                return {
+                  exists: (res.status && res.status < 400),
+                  url
+                };
+              } catch {
+                return { exists: false, url };
+              }
+            }
+
+            const contributors = [];
+            for (const ent of firstTimers) {
+              const u = await getUser(ent.login);
+              const sp = await sponsorsExists(ent.login);
+
+              contributors.push({
+                login: ent.login,
+                name: u.name || null,
+                profile_url: u.html_url || `https://github.com/${ent.login}`,
+                first_merged_pr: {
+                  repo: `${ent.pr.owner}/${ent.pr.repo}`,
+                  number: ent.pr.number,
+                  title: ent.pr.title,
+                  url: ent.pr.url,
+                  merged_at: ent.pr.merged_at
+                },
+                sponsors: {
+                  exists: sp.exists,
+                  url: sp.url
+                },
+                paid: null,
+                notes: ""
+              });
+            }
+
+            // Sort by merged_at ascending (earliest first)
+            contributors.sort((a,b) => new Date(a.first_merged_pr.merged_at) - new Date(b.first_merged_pr.merged_at));
+
+            // 5) Load any existing JSON and merge on login (keep your paid/notes if present)
+            let existing = { generated_at: null, since, contributors: [] };
+            if (fs.existsSync(outPath)) {
+              try {
+                existing = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+              } catch {}
+            }
+            const byLogin = new Map((existing.contributors || []).map(c => [c.login.toLowerCase(), c]));
+            for (const c of contributors) {
+              const key = c.login.toLowerCase();
+              if (byLogin.has(key)) {
+                const old = byLogin.get(key);
+                // preserve manual fields
+                c.paid  = old.paid  ?? c.paid;
+                c.notes = old.notes ?? c.notes;
+              }
+              byLogin.set(key, c);
+            }
+
+            const merged = Array.from(byLogin.values());
+            // Write directory and file
+            fs.mkdirSync(path.dirname(outPath), { recursive: true });
+            const payload = {
+              generated_at: new Date().toISOString(),
+              since,
+              contributors: merged
+            };
+            fs.writeFileSync(outPath, JSON.stringify(payload, null, 2));
+            core.info(`Wrote ${outPath} with ${merged.length} contributors`);
+
+            // Expose a small summary
+            core.setOutput('count', String(merged.length));
+
+      - name: Commit JSON
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: "first_time_contributors.json"
+          message: "chore: update first-time contributors JSON [skip ci]"
+          default_author: github_actions
