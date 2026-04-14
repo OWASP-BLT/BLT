@@ -4,6 +4,10 @@ on:
   pull_request_target:
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -43,7 +47,10 @@ jobs:
             const body   = pr.body || '';
 
             // GitHub username pattern: 1–39 chars, alnum + single hyphens (no trailing hyphen)
-            const mentionRe = /(^|[^a-zA-Z0-9_-])@([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})\b/g;
+            const USERNAME_PATTERN = '[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38}';
+            const mentionRe = new RegExp(`(^|[^a-zA-Z0-9_-])@(${USERNAME_PATTERN})\\b`, 'g');
+            const usernameRe = new RegExp(`^${USERNAME_PATTERN}$`, 'i');
+            const MAX_CANDIDATES_TO_CHECK = 10;
 
             const mentions = new Set();
             let m;
@@ -60,11 +67,18 @@ jobs:
               u !== 'dependabot' &&
               u !== 'dependabot-preview'
             );
+            const candidatesToCheck = candidates.slice(0, MAX_CANDIDATES_TO_CHECK);
+            const ignoredCandidates = candidates.slice(MAX_CANDIDATES_TO_CHECK);
+            if (ignoredCandidates.length > 0) {
+              core.warning(
+                `Too many mention candidates (${candidates.length}). Checking first ${MAX_CANDIDATES_TO_CHECK} only; ignoring: ${ignoredCandidates.join(',')}`
+              );
+            }
 
             // Mentions cannot be users who have previously had a merged PR under this repository owner
             const contributionChecks = [];
-            for (const u of candidates) {
-              if (!/^[a-z0-9](?:-?[a-z0-9]){0,38}$/.test(u)) {
+            for (const u of candidatesToCheck) {
+              if (!usernameRe.test(u)) {
                 core.warning(`Skipping invalid mention candidate format: @${u}`);
                 contributionChecks.push({ username: u, hasPriorContribution: true, checkErrored: true });
                 continue;
@@ -93,7 +107,7 @@ jobs:
               .filter(result => result.checkErrored)
               .map(result => result.username);
 
-            if (candidates.length > 0 && excludedUnverified.length === candidates.length) {
+            if (candidatesToCheck.length > 0 && excludedUnverified.length === candidatesToCheck.length) {
               core.setFailed('Unable to verify mention eligibility due to GitHub API errors. Please retry.');
               return;
             }
@@ -103,9 +117,11 @@ jobs:
             core.setOutput('found', filtered.join(','));
             core.setOutput('excluded_contributors', excludedContributors.join(','));
             core.setOutput('excluded_unverified', excludedUnverified.join(','));
+            core.setOutput('ignored_candidates', ignoredCandidates.join(','));
             core.info(`Friend mentions found: ${filtered.join(',') || '(none)'}`);
             core.info(`Mentions excluded due to prior merged PRs under owner scope: ${excludedContributors.join(',') || '(none)'}`);
             core.info(`Mentions excluded due to verification errors: ${excludedUnverified.join(',') || '(none)'}`);
+            core.info(`Mentions ignored due to candidate limit: ${ignoredCandidates.join(',') || '(none)'}`);
 
       - name: Ensure label exists (only when missing)
         if: ${{ steps.analyze.outputs.ok == 'false' }}
