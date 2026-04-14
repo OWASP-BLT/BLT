@@ -5,7 +5,7 @@ on:
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -75,7 +75,7 @@ jobs:
                 ? ` ...and ${ignoredCandidates.length - ignoredPreview.length} more`
                 : '';
               core.warning(
-                `Too many mention candidates (${candidates.length}). Checking first ${MAX_CANDIDATES_TO_CHECK} only; ignoring: ${ignoredPreview.join(',')}${ignoredSuffix}`
+                `Too many mention candidates (${candidates.length}). Checking first ${MAX_CANDIDATES_TO_CHECK} only; ignoring: ${ignoredPreview.join(', ')}${ignoredSuffix}`
               );
             }
 
