@@ -47,9 +47,9 @@ jobs:
             const body   = pr.body || '';
 
             // GitHub username pattern: 1–39 chars, alnum + single hyphens (no trailing hyphen)
-            const USERNAME_PATTERN = '[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38}';
-            const mentionRe = new RegExp(`(^|[^a-zA-Z0-9_-])@(${USERNAME_PATTERN})\\b`, 'g');
-            const usernameRe = new RegExp(`^${USERNAME_PATTERN}$`, 'i');
+            const usernamePattern = '[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38}';
+            const mentionRe = new RegExp(`(^|[^a-zA-Z0-9_-])@(${usernamePattern})\\b`, 'g');
+            const usernameRe = new RegExp(`^${usernamePattern}$`);
             const MAX_CANDIDATES_TO_CHECK = 10;
 
             const mentions = new Set();
@@ -70,8 +70,12 @@ jobs:
             const candidatesToCheck = candidates.slice(0, MAX_CANDIDATES_TO_CHECK);
             const ignoredCandidates = candidates.slice(MAX_CANDIDATES_TO_CHECK);
             if (ignoredCandidates.length > 0) {
+              const ignoredPreview = ignoredCandidates.slice(0, 5);
+              const ignoredSuffix = ignoredCandidates.length > ignoredPreview.length
+                ? ` ...and ${ignoredCandidates.length - ignoredPreview.length} more`
+                : '';
               core.warning(
-                `Too many mention candidates (${candidates.length}). Checking first ${MAX_CANDIDATES_TO_CHECK} only; ignoring: ${ignoredCandidates.join(',')}`
+                `Too many mention candidates (${candidates.length}). Checking first ${MAX_CANDIDATES_TO_CHECK} only; ignoring: ${ignoredPreview.join(',')}${ignoredSuffix}`
               );
             }
 
