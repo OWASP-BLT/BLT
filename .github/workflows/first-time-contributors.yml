@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  issues: read
   pull-requests: read
 
 jobs:
@@ -30,7 +31,7 @@ jobs:
         env:
           ORG: ${{ inputs.org || 'OWASP-BLT' }}
           SINCE: ${{ inputs.since || '2026-04-02' }}
-          OUT_PATH: data/first_time_contributors.json
+          OUT_PATH: first_time_contributors.json
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -39,7 +40,7 @@ jobs:
 
             const org   = process.env.ORG   || 'OWASP-BLT';
             const since = process.env.SINCE || '2026-04-02';
-            const outPath = process.env.OUT_PATH || 'data/first_time_contributors.json';
+            const outPath = process.env.OUT_PATH || 'first_time_contributors.json';
 
             const bots = new Set([
               'github-actions[bot]',
@@ -74,8 +75,7 @@ jobs:
               const repoFull = it.repository_url.split('/').slice(-2).join('/');
               const [owner, repo] = repoFull.split('/');
               const prNum = it.number;
-              const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNum });
-              const mAt = pr.data.merged_at;
+              const mAt = it.pull_request?.merged_at;
               if (!mAt) continue;
               if (new Date(mAt) < new Date(since)) continue;   // just-in-case guard
 
@@ -175,20 +175,44 @@ jobs:
             }
 
             const merged = Array.from(byLogin.values());
-            // Write directory and file
-            fs.mkdirSync(path.dirname(outPath), { recursive: true });
-            const payload = {
-              generated_at: new Date().toISOString(),
+            merged.sort((a, b) => {
+               const mergedAtDiff =
+                 new Date(a.first_merged_pr.merged_at) - new Date(b.first_merged_pr.merged_at);
+               if (mergedAtDiff !== 0) {
+                 return mergedAtDiff;
+               }
+               return a.login.localeCompare(b.login);
+             });
+            const nextComparablePayload = {
               since,
               contributors: merged
             };
-            fs.writeFileSync(outPath, JSON.stringify(payload, null, 2));
-            core.info(`Wrote ${outPath} with ${merged.length} contributors`);
+            const existingComparablePayload = {
+               since: existing.since ?? since,
+               contributors: existing.contributors || []
+             };
+             const hasChanged =
+               JSON.stringify(existingComparablePayload) !== JSON.stringify(nextComparablePayload);
+             if (hasChanged) {
+               // Write directory and file only when contributor data changes
+               fs.mkdirSync(path.dirname(outPath), { recursive: true });
+               const payload = {
+                 generated_at: new Date().toISOString(),
+                 since,
+                 contributors: merged
+               };
+               fs.writeFileSync(outPath, JSON.stringify(payload, null, 2));
+               core.info(`Wrote ${outPath} with ${merged.length} contributors`);
+             } else {
+               core.info(`No contributor changes detected; skipped writing ${outPath}`);
+             }
 
             // Expose a small summary
             core.setOutput('count', String(merged.length));
+            core.setOutput('changed', hasChanged ? 'true' : 'false');
 
       - name: Commit JSON
+        if: steps.build.outputs.changed == 'true'
         uses: EndBug/add-and-commit@v9
         with:
           add: "first_time_contributors.json"
