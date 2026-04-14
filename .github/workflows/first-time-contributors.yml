@@ -1,4 +1,4 @@
-name: Build first-time contributor JSON (org-wide)
+name: Build first-time contributor in README(org-wide)
 
 on:
   workflow_dispatch:
@@ -14,24 +14,25 @@ on:
   schedule:
     - cron: "15 7 * * *"  # daily at 07:15 UTC
 
+concurrency:
+   group: ${{ github.workflow }}-${{ github.event_name }}
+   cancel-in-progress: false
+
 permissions:
   contents: write
-  issues: read
-  pull-requests: read
 
 jobs:
-  build-json:
+  build-readme:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build first-time contributors JSON
+      - name: Update first-time contributors in README
         id: build
         uses: actions/github-script@v7
         env:
           ORG: ${{ inputs.org || 'OWASP-BLT' }}
           SINCE: ${{ inputs.since || '2026-04-02' }}
-          OUT_PATH: first_time_contributors.json
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -51,6 +52,12 @@ jobs:
               const lower = login.toLowerCase();
               return lower.endsWith('[bot]') || bots.has(lower);
             }
+            
+            const clean = (s) =>
+              String(s || '')
+                .replace(/\|/g, '\\|')
+                .replace(/\n/g, ' ')
+                .trim();
 
             // 1) Fetch merged PRs (Search API)
             const q = `org:${org} is:pr is:merged merged:>=${since}`;
@@ -68,7 +75,7 @@ jobs:
               if (!login || isBot(login)) continue;
               if (!it.pull_request) continue;
 
-              const mAt = it.updated_at;
+              const mAt = it.closed_at;
               if (!mAt) continue;
 
               const repoFull = it.repository_url.split('/').slice(-2).join('/');
@@ -149,7 +156,7 @@ jobs:
             table += `|------------|----------|----------|\n`;
 
             for (const c of contributors) {
-              const name = c.name || c.login;
+              const name = clean(c.name || c.login);
               const sponsor = c.sponsors.exists
                 ? `[Yes](${c.sponsors.url})`
                 : `No`;
@@ -163,20 +170,22 @@ jobs:
               ? fs.readFileSync(readmePath, 'utf8')
               : '';
 
-            const marker = "## First-time Contributors";
             const START = "<!-- FIRST_TIME_CONTRIBUTORS_START -->";
             const END = "<!-- FIRST_TIME_CONTRIBUTORS_END -->";
+            const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
             const section = `${START}\n${table}\n${END}`;
 
             let updated;
             if (readme.includes(START) && readme.includes(END)) {
-              const regex = new RegExp(`${START}[\\s\\S]*${END}`, 'm');
+              const escapedStart = escapeRegex(START);
+              const escapedEnd = escapeRegex(END);
+              const regex = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`, 'm');
               updated = readme.replace(regex, section);
             } else {
               updated = readme + `\n\n${section}`;
             }
-            
+
             // 8) Write only if changed
             if (readme !== updated) {
               fs.writeFileSync(readmePath, updated);
