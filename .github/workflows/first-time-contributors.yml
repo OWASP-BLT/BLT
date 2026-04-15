@@ -123,7 +123,7 @@ jobs:
             const firstTimers = [];
             for (const [login, data] of perAuthor.entries()) {
               const cnt = await priorMergedCountBefore(login);
-              if (cnt === 0) firstTimers.push(data);
+              if (cnt === 1) firstTimers.push(data);
             }
 
             // 4) Get user + sponsors (FIXED redirect handling)
