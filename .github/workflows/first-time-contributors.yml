@@ -60,7 +60,7 @@ jobs:
                 .trim();
 
             // 1) Fetch merged PRs (Search API)
-            const q = `org:${org} is:pr is:merged merged:>=${since}`;
+            const q = `repo:OWASP-BLT/BLT is:pr is:merged merged:>=${since}`;
             const mergedItems = await github.paginate(
               github.rest.search.issuesAndPullRequests,
               { q, per_page: 100 },
@@ -105,7 +105,7 @@ jobs:
             async function priorMergedCountBefore(login) {
               const qPrior = `org:${org} is:pr is:merged author:${login} merged:<${since}`;
               const r = await github.request('GET /search/issues', { q: qPrior, per_page: 1 });
-              return r.data.total_count || 0;
+              return (r.data.items || []).length;
             }
 
             const firstTimers = [];
