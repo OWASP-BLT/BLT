@@ -71,13 +71,21 @@ jobs:
                 owner: org,
                 repo,
                 state: 'closed',
-                per_page: 100
-              }
+                per_page: 100,
+                sort: 'updated',
+                direction: 'desc'
+              },
+              (res) => res.data
             );
 
-            const mergedItems = pulls.filter(pr =>
-              pr.merged_at && new Date(pr.merged_at) >= sinceDate
-            );
+            // Stop early when older than cutoff
+            const mergedItems = [];
+            for (const pr of pulls) {
+              if (!pr.merged_at) continue;
+
+              if (new Date(pr.merged_at) < sinceDate) break;
+              mergedItems.push(pr);
+            }
 
             // 2) For each author, keep their earliest merged PR after the cutoff
             const perAuthor = new Map();
