@@ -167,11 +167,6 @@ jobs:
             // ── All gates passed ─────────────────────────────────────────────
             core.info(`PR #${pull_number} allowed (priorCount=${priorCount} <= 0, ${files.length} file(s) all deleted).`);
 
-      - name: Check sponsors + comment
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
             async function sponsorsExists(login) {
               const url = `https://github.com/sponsors/${login}`;
 
@@ -198,7 +193,7 @@ jobs:
                 return { exists: false, reason: "unknown_" + res.status, url };
 
               } catch (err) {
-                console.log(`Error checking sponsors page: ${err.message}`);
+                core.warning(`Error checking sponsors page: ${err.message}`);
                 return { exists: false, reason: "error", url };
               }
             }
@@ -209,16 +204,18 @@ jobs:
             let message;
 
             if (!result.exists) {
-              message = `⚠️ @${username}, we couldn't verify a usable GitHub Sponsors profile for your account.
-
-            To receive the $1 campaign reward, please set up or complete your Sponsors profile:
-            https://github.com/sponsors
-
-            Make sure:
-            • your profile is fully configured  
-            • it is publicly accessible  
-
-            If you've already set it up, please check your settings and try again.`;
+              message = [
+                `⚠️ @${username}, we couldn't verify a usable GitHub Sponsors profile for your account.`,
+                "",
+                "To receive the $1 campaign reward, please set up or complete your Sponsors profile:",
+                "https://github.com/sponsors",
+                "",
+                "Make sure:",
+                "• your profile is fully configured  ",
+                "• it is publicly accessible  ",
+                "",
+                "If you've already set it up, please check your settings and try again."
+              ].join('\n');
             }
 
             if (message) {
