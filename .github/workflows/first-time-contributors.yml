@@ -70,6 +70,12 @@ jobs:
             console.log("Total merged PRs fetched:", mergedItems.length);
 
             for (const pr of mergedItems.slice(0, 5)) {
+            if (!item) continue;
+
+            if (!item.user || !item.user.login) continue;
+
+            if (!item.number) continue;
+
               console.log("PR:", pr.number, pr.user?.login);
             }
 
