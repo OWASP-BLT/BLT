@@ -304,7 +304,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 ---
 
 <!-- FIRST_TIME_CONTRIBUTORS_START -->
-## First-time Contributors (since 2025-04-02)
+## First-time Contributors (since 2024-01-01)
 
 | Contributor | First PR | Sponsors |
 |------------|----------|----------|
