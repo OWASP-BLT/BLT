@@ -4,6 +4,10 @@ on:
   pull_request_target:
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -20,7 +24,7 @@ jobs:
     env:
       LABEL_NAME: require-friend-mention
       LABEL_COLOR: e74c3c
-      LABEL_DESC: PR must tag at least one friend (`@username`) in the description
+      LABEL_DESC: PR must tag at least one eligible friend (`@username`) in the description
     steps:
       - name: Analyze PR body for friend mention (`@someone`)
         id: analyze
@@ -32,11 +36,21 @@ jobs:
               core.setFailed('No pull_request payload found.');
               return;
             }
+            const ownerType = (context.payload.repository?.owner?.type || '').toLowerCase();
+            const owner = context.repo.owner;
+            if (ownerType !== 'organization' && ownerType !== 'user') {
+              core.setFailed(`Unexpected repository owner type "${ownerType || 'unknown'}"; cannot validate friend mention eligibility safely.`);
+              return;
+            }
+            const scopeQualifier = ownerType === 'organization' ? 'org' : 'user';
             const author = (pr.user?.login || '').toLowerCase();
             const body   = pr.body || '';
 
             // GitHub username pattern: 1–39 chars, alnum + single hyphens (no trailing hyphen)
-            const mentionRe = /(^|[^a-zA-Z0-9_-])@([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})\b/g;
+            const usernamePattern = '[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38}';
+            const mentionRe = new RegExp(`(^|[^a-zA-Z0-9_-])@(${usernamePattern})\\b`, 'g');
+            const usernameRe = new RegExp(`^${usernamePattern}$`);
+            const MAX_CANDIDATES_TO_CHECK = 10;
 
             const mentions = new Set();
             let m;
@@ -44,8 +58,8 @@ jobs:
               mentions.add(m[2].toLowerCase());
             }
 
-            // Filter out self and bots
-            const filtered = [...mentions].filter(u =>
+            // Filter out self and bots first
+            const candidates = [...mentions].filter(u =>
               u &&
               u !== author &&
               !u.endsWith('[bot]') &&
@@ -53,11 +67,65 @@ jobs:
               u !== 'dependabot' &&
               u !== 'dependabot-preview'
             );
+            const candidatesToCheck = candidates.slice(0, MAX_CANDIDATES_TO_CHECK);
+            const ignoredCandidates = candidates.slice(MAX_CANDIDATES_TO_CHECK);
+            if (ignoredCandidates.length > 0) {
+              const ignoredPreview = ignoredCandidates.slice(0, 5);
+              const ignoredSuffix = ignoredCandidates.length > ignoredPreview.length
+                ? ` ...and ${ignoredCandidates.length - ignoredPreview.length} more`
+                : '';
+              core.warning(
+                `Too many mention candidates (${candidates.length}). Checking first ${MAX_CANDIDATES_TO_CHECK} only; ignoring: ${ignoredPreview.join(', ')}${ignoredSuffix}`
+              );
+            }
+
+            // Mentions cannot be users who have previously had a merged PR under this repository owner
+            const contributionChecks = [];
+            for (const u of candidatesToCheck) {
+              if (!usernameRe.test(u)) {
+                core.warning(`Skipping invalid mention candidate format: @${u}`);
+                contributionChecks.push({ username: u, hasPriorContribution: true, checkErrored: true });
+                continue;
+              }
+
+              try {
+                const query = `${scopeQualifier}:${owner} author:${u} is:pr is:merged`;
+                const { data } = await github.rest.search.issuesAndPullRequests({
+                  q: query,
+                  per_page: 1,
+                });
+                contributionChecks.push({ username: u, hasPriorContribution: data.total_count > 0, checkErrored: false });
+              } catch (error) {
+                core.warning(`Unable to check prior contributions for @${u}; excluding mention for safety.`);
+                contributionChecks.push({ username: u, hasPriorContribution: true, checkErrored: true });
+              }
+            }
+
+            const filtered = contributionChecks
+              .filter(result => !result.hasPriorContribution)
+              .map(result => result.username);
+            const excludedContributors = contributionChecks
+              .filter(result => result.hasPriorContribution && !result.checkErrored)
+              .map(result => result.username);
+            const excludedUnverified = contributionChecks
+              .filter(result => result.checkErrored)
+              .map(result => result.username);
+
+            if (candidatesToCheck.length > 0 && excludedUnverified.length === candidatesToCheck.length) {
+              core.setFailed('Unable to verify mention eligibility due to GitHub API errors. Please retry.');
+              return;
+            }
 
             core.setOutput('ok', String(filtered.length > 0));
             core.setOutput('author', author);
             core.setOutput('found', filtered.join(','));
+            core.setOutput('excluded_contributors', excludedContributors.join(','));
+            core.setOutput('excluded_unverified', excludedUnverified.join(','));
+            core.setOutput('ignored_candidates', ignoredCandidates.join(','));
             core.info(`Friend mentions found: ${filtered.join(',') || '(none)'}`);
+            core.info(`Mentions excluded due to prior merged PRs under owner scope: ${excludedContributors.join(',') || '(none)'}`);
+            core.info(`Mentions excluded due to verification errors: ${excludedUnverified.join(',') || '(none)'}`);
+            core.info(`Mentions ignored due to candidate limit: ${ignoredCandidates.join(',') || '(none)'}`);
 
       - name: Ensure label exists (only when missing)
         if: ${{ steps.analyze.outputs.ok == 'false' }}
@@ -121,7 +189,7 @@ jobs:
               `Hi @${author}! This PR is missing a required **friend mention** in the description.\n\n` +
               '### What to do\n' +
               'Please edit your PR description to tag at least one friend using `@username` ' +
-              '(someone other than yourself).\n\n' +
+              '(someone other than yourself who has not had a merged pull request under this repository owner before).\n\n' +
               '### Why is this required?\n' +
               '- It encourages collaboration and peer awareness\n' +
               '- It helps spread knowledge about changes across the team\n' +
@@ -220,7 +288,7 @@ jobs:
       - name: Fail check when friend mention is missing
         if: ${{ steps.analyze.outputs.ok == 'false' }}
         run: |
-          echo "No valid `@mention` found in PR description. Please tag a friend (e.g., `@someone`)." >&2
+          echo "No valid eligible `@mention` found in PR description. Please tag a friend who has not previously had a merged pull request under this repository owner (e.g., `@someone`)." >&2
           exit 1
 
       - name: Summary
@@ -231,7 +299,7 @@ jobs:
             if [ "${{ steps.analyze.outputs.ok }}" = "true" ]; then
               echo "✅ Passed — found: ${{ steps.analyze.outputs.found }}";
             else
-              echo "❌ Failed — please add a friend mention in the PR description (e.g., \`@someone\`).";
+              echo "❌ Failed — please add an eligible friend mention in the PR description (e.g., \`@someone\` who has not previously had a merged pull request under this repository owner).";
               echo "";
               echo "_A label (\`${{ env.LABEL_NAME }}\`) was added to help track this requirement._";
             fi
