@@ -67,6 +67,12 @@ jobs:
               (res) => res.data.items
             );
 
+            console.log("Total merged PRs fetched:", mergedItems.length);
+
+            for (const pr of mergedItems.slice(0, 5)) {
+              console.log("PR:", pr.number, pr.user?.login);
+            }
+
             // 2) Extract contributors (NO pulls.get)
             const perAuthor = new Map();
 
