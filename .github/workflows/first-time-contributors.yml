@@ -71,9 +71,12 @@ jobs:
             const perAuthor = new Map();
 
             for (const it of mergedItems) {
-              const login = it.user?.login;
-              if (!login || isBot(login)) continue;
+              if (!it || !it.user || !it.user.login) continue;
               if (!it.pull_request) continue;
+              if (!it.repository_url) continue;
+
+              const login = it.user.login;
+              if (isBot(login)) continue;
 
               const mAt = it.closed_at;
               if (!mAt) continue;
@@ -120,9 +123,9 @@ jobs:
             async function sponsorsExists(login) {
               const url = `https://github.com/sponsors/${login}`;
               try {
-                const res = await fetch(url, { method: 'HEAD', redirect: 'manual' });
+                const res = await github.request(`HEAD ${url}`).catch(() => null);
                 return {
-                  exists: (res.status && res.status < 400) || res.type === 'opaqueredirect',
+                  exists: res && res.status && res.status < 400,
                   url
                 };
               } catch {
@@ -154,7 +157,10 @@ jobs:
             let table = `## First-time Contributors (since ${since})\n\n`;
             table += `| Contributor | First PR | Sponsors |\n`;
             table += `|------------|----------|----------|\n`;
-
+            
+            if (contributors.length === 0) {
+              table += `| _No new contributors_ | - | - |\n`;
+            }
             for (const c of contributors) {
               const name = clean(c.name || c.login);
               const sponsor = c.sponsors.exists
