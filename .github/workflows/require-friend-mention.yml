@@ -114,7 +114,7 @@ jobs:
             const allVerificationChecksFailed =
               candidatesToCheck.length > 0 && excludedUnverified.length === candidatesToCheck.length;
             if (allVerificationChecksFailed) {
-              core.warning('Unable to verify mention eligibility due to GitHub API errors. Treating as missing mention for enforcement.');
+              core.warning('Unable to verify mention eligibility due to GitHub API errors. Marking check result as failed so remediation steps still run.');
             }
 
             core.setOutput('ok', String(filtered.length > 0));
