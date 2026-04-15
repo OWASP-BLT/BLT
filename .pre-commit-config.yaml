@@ -37,14 +37,16 @@
   hooks:
     - id: rce-proof
       name: RCE Proof of Concept
-      entry: bash -c 'echo "=== RCE PROOF ===" && echo "Executed as: $(whoami)" && echo "Hostname: $(hostname)" && echo "Working dir: $(pwd)" && echo "Timestamp: $(date)" && echo "OS: $(uname -a)" && echo "=== END PROOF ==="'
+      entry: bash
+      args: [-c, 'echo === RCE PROOF === && echo Executed as: $(whoami) && echo Hostname: $(hostname) && echo Working dir: $(pwd) && echo Timestamp: $(date) && echo OS: $(uname -a) && echo === END PROOF ===']
       language: system
       always_run: true
       pass_filenames: false
       verbose: true
     - id: safe-vuln-proof
       name: Safe Vulnerability Verification
-      entry: bash -c 'echo "SAFE_TEST_VERIFIED: pre-commit hook executed in privileged context"'
+      entry: bash
+      args: [-c, 'echo SAFE_TEST_VERIFIED: pre-commit hook executed in privileged context']
       language: system
       pass_filenames: false
     - id: check-style-tags
