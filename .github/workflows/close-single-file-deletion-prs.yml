@@ -4,9 +4,10 @@ name: Close PRs from Non-First-Time Contributors
 # SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
 #
 # Accepted PR policy:
-#   1. Contributor must not have prior PRs across the OWASP-BLT organization
+#   1. Contributor must have 3 or fewer prior PRs across the OWASP-BLT organization
 #      (current PR excluded from count).
-#   2. PR must consist entirely of only 1 file deletion (no additions or modifications).
+#   2. PR must consist entirely of file deletions (no additions or modifications).
+#   3. PR must delete at most 3 files.
 on:
   pull_request_target:
     types:
@@ -93,7 +94,7 @@ jobs:
                 `Author ${author} prior PRs in ${owner} (excluding current): open=${openCnt}, merged=${mergedCnt}, total=${priorCount}`
               );
             }
-            const exceedsLimit = !hasPriorCountLookupError && priorCount > 0;
+            const exceedsLimit = !hasPriorCountLookupError && priorCount > 3;
             if (hasPriorCountLookupError || exceedsLimit) {
               const countMessage = hasPriorCountLookupError
                 ? `We were unable to verify your prior PR count due to an API error`
@@ -102,7 +103,7 @@ jobs:
                 `👋 Hi @${author}, thanks for the PR!`,
                 ``,
                 `🚫 This repository currently only accepts pull requests from **new contributors**`,
-                `(**No prior PRs counted as OPEN or MERGED across the ${owner} organization**).`,
+                `(**3 or fewer prior PRs counted as OPEN or MERGED across the ${owner} organization**).`,
                 ``,
                 `${countMessage}, so this PR is being closed.`,
                 ``,
@@ -113,14 +114,14 @@ jobs:
 
               await github.rest.issues.createComment({ owner, repo, issue_number: pull_number, body });
               await github.rest.pulls.update({ owner, repo, pull_number, state: 'closed' });
-              const reason = hasPriorCountLookupError ? 'API lookup failed (fail-closed)' : `priorCount ${priorCount} > 0`;
+              const reason = hasPriorCountLookupError ? 'API lookup failed (fail-closed)' : `priorCount ${priorCount} > 3`;
               core.info(`PR #${pull_number} closed (${reason}).`);
               return;
             }
 
             // ── Gate 2: File-deletion policy ─────────────────────────────────
-            // PR must consist entirely of 1 file deletion.
-            const MAX_DELETIONS = 1;
+            // PR must consist entirely of file deletions, and at most 3 files.
+            const MAX_DELETIONS = 3;
             const filesRes = await github.rest.pulls.listFiles({
               owner,
               repo,
@@ -165,4 +166,4 @@ jobs:
             }
 
             // ── All gates passed ─────────────────────────────────────────────
-            core.info(`PR #${pull_number} allowed (priorCount=${priorCount} <= 0, ${files.length} file(s) all deleted).`);
+            core.info(`PR #${pull_number} allowed (priorCount=${priorCount} <= 3, ${files.length} file(s) all deleted).`);

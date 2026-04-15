@@ -60,25 +60,20 @@ jobs:
                 .trim();
 
             // 1) Fetch merged PRs (Search API)
-            const q = `repo:OWASP-BLT/BLT is:pr is:merged merged:>=${since}`;
+            const q = `org:${org} is:pr is:merged merged:>=${since}`;
             const mergedItems = await github.paginate(
               github.rest.search.issuesAndPullRequests,
               { q, per_page: 100 },
               (res) => res.data.items
             );
 
-            console.log("Total merged PRs fetched:", mergedItems.length);
-
             // 2) Extract contributors (NO pulls.get)
             const perAuthor = new Map();
 
             for (const it of mergedItems) {
-              if (!it || !it.user || !it.user.login) continue;
+              const login = it.user?.login;
+              if (!login || isBot(login)) continue;
               if (!it.pull_request) continue;
-              if (!it.repository_url) continue;
-
-              const login = it.user.login;
-              if (isBot(login)) continue;
 
               const mAt = it.closed_at;
               if (!mAt) continue;
@@ -107,13 +102,13 @@ jobs:
             async function priorMergedCountBefore(login) {
               const qPrior = `org:${org} is:pr is:merged author:${login} merged:<${since}`;
               const r = await github.request('GET /search/issues', { q: qPrior, per_page: 1 });
-              return (r.data.items || []).length;
+              return r.data.total_count || 0;
             }
 
             const firstTimers = [];
             for (const [login, data] of perAuthor.entries()) {
               const cnt = await priorMergedCountBefore(login);
-              if (cnt === 1) firstTimers.push(data);
+              if (cnt === 0) firstTimers.push(data);
             }
 
             // 4) Get user + sponsors (FIXED redirect handling)
@@ -125,13 +120,9 @@ jobs:
             async function sponsorsExists(login) {
               const url = `https://github.com/sponsors/${login}`;
               try {
-                const res = await fetch(url, {
-                  method: 'GET',
-                  redirect: 'follow'
-                });
-
+                const res = await fetch(url, { method: 'HEAD', redirect: 'manual' });
                 return {
-                  exists: res.ok,
+                  exists: (res.status && res.status < 400) || res.type === 'opaqueredirect',
                   url
                 };
               } catch {
@@ -163,10 +154,7 @@ jobs:
             let table = `## First-time Contributors (since ${since})\n\n`;
             table += `| Contributor | First PR | Sponsors |\n`;
             table += `|------------|----------|----------|\n`;
-            
-            if (contributors.length === 0) {
-              table += `| _No new contributors_ | - | - |\n`;
-            }
+
             for (const c of contributors) {
               const name = clean(c.name || c.login);
               const sponsor = c.sponsors.exists
