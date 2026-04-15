@@ -123,9 +123,13 @@ jobs:
             async function sponsorsExists(login) {
               const url = `https://github.com/sponsors/${login}`;
               try {
-                const res = await github.request(`HEAD ${url}`).catch(() => null);
+                const res = await fetch(url, {
+                  method: 'GET',
+                  redirect: 'follow'
+                });
+
                 return {
-                  exists: res && res.status && res.status < 400,
+                  exists: res.ok,
                   url
                 };
               } catch {
