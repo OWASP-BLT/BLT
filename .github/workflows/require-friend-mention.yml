@@ -114,7 +114,7 @@ jobs:
             const allVerificationChecksFailed =
               candidatesToCheck.length > 0 && excludedUnverified.length === candidatesToCheck.length;
             if (allVerificationChecksFailed) {
-              core.warning('Unable to verify mention eligibility due to GitHub API errors. Marking check result as failed so remediation steps still run.');
+              core.warning('Unable to verify mention eligibility due to GitHub API errors. Emitting failure outputs so remediation steps still run.');
             }
 
             core.setOutput('ok', String(filtered.length > 0));
@@ -186,7 +186,7 @@ jobs:
             const author = '${{ steps.analyze.outputs.author }}';
             const analysisError = '${{ steps.analyze.outputs.analysis_error }}';
             const apiFailureNotice = analysisError === 'api_verification_failed'
-              ? '⚠️ We could not verify mention eligibility due to temporary GitHub API errors. Please retry this workflow after a short wait.\n\n'
+              ? '⚠️ We could not verify mention eligibility due to GitHub API errors. Please retry this workflow.\n\n'
               : '';
 
             const commentMarker = '<!-- require-friend-mention -->';
