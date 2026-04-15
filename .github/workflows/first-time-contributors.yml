@@ -1,0 +1,205 @@
+name: Build first-time contributor in README(org-wide)
+
+on:
+  workflow_dispatch:
+    inputs:
+      org:
+        description: GitHub org to scan
+        default: OWASP-BLT
+        required: true
+      since:
+        description: Cutoff date (ISO, merged after this); default is April 2, 2026
+        default: "2026-04-02"
+        required: true
+  schedule:
+    - cron: "15 7 * * *"  # daily at 07:15 UTC
+
+concurrency:
+   group: ${{ github.workflow }}-${{ github.event_name }}
+   cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update first-time contributors in README
+        id: build
+        uses: actions/github-script@v7
+        env:
+          ORG: ${{ inputs.org || 'OWASP-BLT' }}
+          SINCE: ${{ inputs.since || '2026-04-02' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const org   = process.env.ORG   || 'OWASP-BLT';
+            const since = process.env.SINCE || '2026-04-02';
+
+            const bots = new Set([
+              'github-actions[bot]',
+              'dependabot[bot]',
+              'owasp-blt[bot]',
+              'coderabbitai[bot]'
+            ]);
+
+            function isBot(login) {
+              if (!login) return true;
+              const lower = login.toLowerCase();
+              return lower.endsWith('[bot]') || bots.has(lower);
+            }
+            
+            const clean = (s) =>
+              String(s || '')
+                .replace(/\|/g, '\\|')
+                .replace(/\n/g, ' ')
+                .trim();
+
+            // 1) Fetch merged PRs (Search API)
+            const q = `org:${org} is:pr is:merged merged:>=${since}`;
+            const mergedItems = await github.paginate(
+              github.rest.search.issuesAndPullRequests,
+              { q, per_page: 100 },
+              (res) => res.data.items
+            );
+
+            // 2) Extract contributors (NO pulls.get)
+            const perAuthor = new Map();
+
+            for (const it of mergedItems) {
+              const login = it.user?.login;
+              if (!login || isBot(login)) continue;
+              if (!it.pull_request) continue;
+
+              const mAt = it.closed_at;
+              if (!mAt) continue;
+
+              const repoFull = it.repository_url.split('/').slice(-2).join('/');
+              const [owner, repo] = repoFull.split('/');
+
+              const prev = perAuthor.get(login);
+              if (!prev || new Date(mAt) < new Date(prev.firstMergedAt)) {
+                perAuthor.set(login, {
+                  login,
+                  firstMergedAt: mAt,
+                  pr: {
+                    owner,
+                    repo,
+                    number: it.number,
+                    title: it.title,
+                    url: it.html_url,
+                    merged_at: mAt
+                  }
+                });
+              }
+            }
+
+            // 3) Filter true first-timers
+            async function priorMergedCountBefore(login) {
+              const qPrior = `org:${org} is:pr is:merged author:${login} merged:<${since}`;
+              const r = await github.request('GET /search/issues', { q: qPrior, per_page: 1 });
+              return r.data.total_count || 0;
+            }
+
+            const firstTimers = [];
+            for (const [login, data] of perAuthor.entries()) {
+              const cnt = await priorMergedCountBefore(login);
+              if (cnt === 0) firstTimers.push(data);
+            }
+
+            // 4) Get user + sponsors (FIXED redirect handling)
+            async function getUser(login) {
+              const r = await github.rest.users.getByUsername({ username: login });
+              return r.data || {};
+            }
+
+            async function sponsorsExists(login) {
+              const url = `https://github.com/sponsors/${login}`;
+              try {
+                const res = await fetch(url, { method: 'HEAD', redirect: 'manual' });
+                return {
+                  exists: (res.status && res.status < 400) || res.type === 'opaqueredirect',
+                  url
+                };
+              } catch {
+                return { exists: false, url };
+              }
+            }
+
+            // 5) Build contributors list
+            const contributors = [];
+            for (const ent of firstTimers) {
+              const u = await getUser(ent.login);
+              const sp = await sponsorsExists(ent.login);
+
+              contributors.push({
+                login: ent.login,
+                name: u.name || null,
+                profile_url: u.html_url || `https://github.com/${ent.login}`,
+                pr: ent.pr,
+                sponsors: sp
+              });
+            }
+
+            // Sort
+            contributors.sort((a, b) =>
+              new Date(a.pr.merged_at) - new Date(b.pr.merged_at)
+            );
+
+            // 6) Generate README section
+            let table = `## First-time Contributors (since ${since})\n\n`;
+            table += `| Contributor | First PR | Sponsors |\n`;
+            table += `|------------|----------|----------|\n`;
+
+            for (const c of contributors) {
+              const name = clean(c.name || c.login);
+              const sponsor = c.sponsors.exists
+                ? `[Yes](${c.sponsors.url})`
+                : `No`;
+
+              table += `| [${name}](${c.profile_url}) | [#${c.pr.number}](${c.pr.url}) | ${sponsor} |\n`;
+            }
+
+            // 7) Inject into README
+            const readmePath = 'README.md';
+            let readme = fs.existsSync(readmePath)
+              ? fs.readFileSync(readmePath, 'utf8')
+              : '';
+
+            const START = "<!-- FIRST_TIME_CONTRIBUTORS_START -->";
+            const END = "<!-- FIRST_TIME_CONTRIBUTORS_END -->";
+            const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const section = `${START}\n${table}\n${END}`;
+
+            let updated;
+            if (readme.includes(START) && readme.includes(END)) {
+              const escapedStart = escapeRegex(START);
+              const escapedEnd = escapeRegex(END);
+              const regex = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`, 'm');
+              updated = readme.replace(regex, section);
+            } else {
+              updated = readme + `\n\n${section}`;
+            }
+
+            // 8) Write only if changed
+            if (readme !== updated) {
+              fs.writeFileSync(readmePath, updated);
+              core.setOutput('changed', 'true');
+            } else {
+              core.setOutput('changed', 'false');
+            }
+
+            core.setOutput('count', String(contributors.length));
+
+      - name: Commit README
+        if: steps.build.outputs.changed == 'true'
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: "README.md"
+          message: "chore: update first-time contributors list [skip ci]"
+          default_author: github_actions

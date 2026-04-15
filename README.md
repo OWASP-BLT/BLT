@@ -303,6 +303,11 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 
 ---
 
+<!-- FIRST_TIME_CONTRIBUTORS_START -->
+_First-time contributors will be listed here automatically._
+<!-- FIRST_TIME_CONTRIBUTORS_END -->
+
+---
 ## 💬 Community & Support
 
 - 🌐 **Website**: [legacy.owaspblt.org](https://legacy.owaspblt.org)
