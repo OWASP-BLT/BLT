@@ -219,18 +219,18 @@ jobs:
             }
 
             if (message) {
-              const comments = await github.rest.issues.listComments({
+               const comments = await github.paginate(github.rest.issues.listComments, {
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
-                repo: context.repo.repo
+                repo: context.repo.repo,
+                per_page: 100
               });
-
-              const alreadyCommented = comments.data.some(c =>
+              const alreadyCommented = comments.some(c =>
                 c.user.type === "Bot" &&
                 c.body.includes("GitHub Sponsors profile")
               );
               if (alreadyCommented) return;
-              
+
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
