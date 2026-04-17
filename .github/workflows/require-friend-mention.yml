@@ -188,11 +188,17 @@ jobs:
             const apiFailureNotice = analysisError === 'api_verification_failed'
               ? '⚠️ We could not verify mention eligibility due to GitHub API errors. Please retry this workflow.\n\n'
               : '';
+            const commentTitle = analysisError === 'api_verification_failed'
+              ? '## ⚠️ Unable to Verify Friend Mention Eligibility\n\n'
+              : '## ❌ Friend Mention Required\n\n';
+            const commentIntro = analysisError === 'api_verification_failed'
+              ? `Hi @${author}! We found one or more @mentions in this PR, but could not verify whether any mentioned users qualify as an eligible **friend mention**.\n\n`
+              : `Hi @${author}! This PR is missing a required **friend mention** in the description.\n\n`;
 
             const commentMarker = '<!-- require-friend-mention -->';
             const commentBody = commentMarker + '\n' +
-              '## ❌ Friend Mention Required\n\n' +
-              `Hi @${author}! This PR is missing a required **friend mention** in the description.\n\n` +
+              commentTitle +
+              commentIntro +
               apiFailureNotice +
               '### What to do\n' +
               'Please edit your PR description to tag at least one friend using `@username` ' +
