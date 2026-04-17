@@ -8,15 +8,15 @@ on:
         default: OWASP-BLT
         required: true
       since:
-        description: Cutoff date (ISO, merged after this); default is April 2, 2026
+        description: Cutoff date (ISO, merged after this)
         default: "2026-04-02"
         required: true
   schedule:
-    - cron: "15 7 * * *"  # daily at 07:15 UTC
+    - cron: "15 7 * * *"
 
 concurrency:
-   group: ${{ github.workflow }}-${{ github.event_name }}
-   cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -31,14 +31,16 @@ jobs:
         id: build
         uses: actions/github-script@v7
         env:
-          ORG: ${{ inputs.org || 'OWASP-BLT' }}
-          SINCE: ${{ inputs.since || '2026-04-02' }}
+          ORG: ${{ github.event_name == 'workflow_dispatch' && inputs.org || 'OWASP-BLT' }}
+          SINCE: ${{ github.event_name == 'workflow_dispatch' && inputs.since || '2026-04-02' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const org   = process.env.ORG   || 'OWASP-BLT';
+
+            const org = process.env.ORG || 'OWASP-BLT';
             const since = process.env.SINCE || '2026-04-02';
+            const repo = 'BLT';
 
             const bots = new Set([
               'github-actions[bot]',
@@ -52,141 +54,230 @@ jobs:
               const lower = login.toLowerCase();
               return lower.endsWith('[bot]') || bots.has(lower);
             }
-            
-            const clean = (s) =>
-              String(s || '')
+
+            function clean(s) {
+              return String(s || '')
                 .replace(/\|/g, '\\|')
                 .replace(/\n/g, ' ')
                 .trim();
+            }
 
-            // 1) Fetch merged PRs (Search API)
-            const q = `org:${org} is:pr is:merged merged:>=${since}`;
-            const mergedItems = await github.paginate(
-              github.rest.search.issuesAndPullRequests,
-              { q, per_page: 100 },
-              (res) => res.data.items
+            const sinceDate = new Date(`${since}T00:00:00Z`);
+
+            // 1) Fetch merged PRs in OWASP-BLT/BLT after the cutoff date
+            const pulls = await github.paginate(
+              github.rest.pulls.list,
+              {
+                owner: org,
+                repo,
+                state: 'closed',
+                per_page: 100,
+                sort: 'updated',
+                direction: 'desc'
+              },
+              (res) => res.data
             );
 
-            // 2) Extract contributors (NO pulls.get)
+            // Stop early when older than cutoff
+            const mergedItems = [];
+            for (const pr of pulls) {
+              if (!pr.merged_at) continue;
+
+              if (new Date(pr.merged_at) < sinceDate) break;
+              mergedItems.push(pr);
+            }
+
+            // 2) For each author, keep their earliest merged PR after the cutoff
             const perAuthor = new Map();
 
             for (const it of mergedItems) {
-              const login = it.user?.login;
-              if (!login || isBot(login)) continue;
-              if (!it.pull_request) continue;
+              if (!it?.user?.login) continue;
 
-              const mAt = it.closed_at;
-              if (!mAt) continue;
+              const login = it.user.login;
+              if (isBot(login)) continue;
 
-              const repoFull = it.repository_url.split('/').slice(-2).join('/');
-              const [owner, repo] = repoFull.split('/');
+              const mergedAt = it.merged_at;
+              if (!mergedAt) continue;
 
               const prev = perAuthor.get(login);
-              if (!prev || new Date(mAt) < new Date(prev.firstMergedAt)) {
+              if (!prev || new Date(mergedAt) < new Date(prev.firstMergedAt)) {
                 perAuthor.set(login, {
                   login,
-                  firstMergedAt: mAt,
+                  firstMergedAt: mergedAt,
                   pr: {
-                    owner,
-                    repo,
                     number: it.number,
                     title: it.title,
                     url: it.html_url,
-                    merged_at: mAt
+                    merged_at: mergedAt
                   }
                 });
               }
             }
 
-            // 3) Filter true first-timers
+            // 3) Keep only contributors who had no merged PR before the cutoff
             async function priorMergedCountBefore(login) {
-              const qPrior = `org:${org} is:pr is:merged author:${login} merged:<${since}`;
-              const r = await github.request('GET /search/issues', { q: qPrior, per_page: 1 });
-              return r.data.total_count || 0;
+              const q = `org:${org} is:pr is:merged author:${login} merged:<${since}`;
+              try {
+                const r = await github.request('GET /search/issues', {
+                  q,
+                  per_page: 1
+                });
+                return r.data.total_count || 0;
+              } catch (err) {
+                console.log(`priorMergedCountBefore failed for ${login}: ${err.message}`);
+                return 1; // safe fallback: avoid false positives
+              }
             }
 
             const firstTimers = [];
             for (const [login, data] of perAuthor.entries()) {
               const cnt = await priorMergedCountBefore(login);
-              if (cnt === 0) firstTimers.push(data);
+              if (cnt === 0) {
+                firstTimers.push(data);
+              }
             }
 
-            // 4) Get user + sponsors (FIXED redirect handling)
+            // 4) Helpers
             async function getUser(login) {
-              const r = await github.rest.users.getByUsername({ username: login });
-              return r.data || {};
+              try {
+                const r = await github.rest.users.getByUsername({ username: login });
+                return r.data || {};
+              } catch (err) {
+                console.log(`getUser failed for ${login}: ${err.message}`);
+                return {};
+              }
             }
 
             async function sponsorsExists(login) {
               const url = `https://github.com/sponsors/${login}`;
               try {
-                const res = await fetch(url, { method: 'HEAD', redirect: 'manual' });
-                return {
-                  exists: (res.status && res.status < 400) || res.type === 'opaqueredirect',
-                  url
-                };
-              } catch {
+                const res = await fetch(url, {
+                  method: 'GET',
+                  redirect: 'follow'
+                });
+
+                const finalUrl = (res.url || '').toLowerCase();
+                const expected = `/sponsors/${login.toLowerCase()}`;
+
+                const exists =
+                  res.ok &&
+                  finalUrl.includes('/sponsors/') &&
+                  finalUrl.endsWith(expected);
+
+                return { exists, url };
+              } catch (err) {
+                console.log(`sponsorsExists failed for ${login}: ${err.message}`);
                 return { exists: false, url };
               }
             }
 
-            // 5) Build contributors list
-            const contributors = [];
-            for (const ent of firstTimers) {
-              const u = await getUser(ent.login);
-              const sp = await sponsorsExists(ent.login);
-
-              contributors.push({
-                login: ent.login,
-                name: u.name || null,
-                profile_url: u.html_url || `https://github.com/${ent.login}`,
-                pr: ent.pr,
-                sponsors: sp
-              });
-            }
-
-            // Sort
-            contributors.sort((a, b) =>
-              new Date(a.pr.merged_at) - new Date(b.pr.merged_at)
+            // 5) Build newly discovered contributors only
+            const newContributors = await Promise.all(
+              firstTimers.map(async (ent) => {
+                const u = await getUser(ent.login);
+                return {
+                  login: ent.login,
+                  name: u.name || ent.login,
+                  profile_url: u.html_url || `https://github.com/${ent.login}`,
+                  prNumber: String(ent.pr.number),
+                  prUrl: ent.pr.url
+                };
+              })
             );
 
-            // 6) Generate README section
+            // 6) Read README
+            const readmePath = 'README.md';
+            const readme = fs.existsSync(readmePath)
+              ? fs.readFileSync(readmePath, 'utf8')
+              : '';
+
+            // 7) Parse existing table rows exactly and preserve them
+            const existing = new Map();
+            const rowOrder = [];
+
+            const sectionMatch = readme.match(
+              /<!-- FIRST_TIME_CONTRIBUTORS_START -->([\s\S]*?)<!-- FIRST_TIME_CONTRIBUTORS_END -->/
+            );
+
+            if (sectionMatch) {
+              const lines = sectionMatch[1].split('\n');
+
+              for (const line of lines) {
+                if (!line.startsWith('| [')) continue;
+
+                const parts = line.split('|').map(s => s.trim());
+
+                const contributorCell = parts[1] || '';
+                const prCell = parts[2] || '';
+
+                const nameMatch = contributorCell.match(/\[(.*?)\]\((.*?)\)/);
+                const prMatch = prCell.match(/\[#(\d+)\]\((.*?)\)/);
+
+                if (!nameMatch || !prMatch) continue;
+
+                const name = nameMatch[1];
+                const profileUrl = nameMatch[2];
+                const login = profileUrl.split('/').pop();
+
+                if (!login) continue;
+
+                existing.set(login, {
+                  login,
+                  name,
+                  profile_url: profileUrl,
+                  prNumber: prMatch[1],
+                  prUrl: prMatch[2]
+                });
+
+                rowOrder.push(login);
+              }
+            }
+
+            // 8) Add only brand new contributors; keep old contributor/PR cells unchanged
+            for (const c of newContributors) {
+              if (!existing.has(c.login)) {
+                existing.set(c.login, c);
+                rowOrder.push(c.login);
+              }
+            }
+
+            // 9) Rebuild table: old rows preserved, only sponsor value refreshed
             let table = `## First-time Contributors (since ${since})\n\n`;
             table += `| Contributor | First PR | Sponsors |\n`;
             table += `|------------|----------|----------|\n`;
 
-            for (const c of contributors) {
-              const name = clean(c.name || c.login);
-              const sponsor = c.sponsors.exists
-                ? `[Yes](${c.sponsors.url})`
-                : `No`;
+            if (rowOrder.length === 0) {
+              table += `| _No new contributors_ | - | - |\n`;
+            } else {
+              for (const login of rowOrder) {
+                const c = existing.get(login);
+                const sp = await sponsorsExists(login);
 
-              table += `| [${name}](${c.profile_url}) | [#${c.pr.number}](${c.pr.url}) | ${sponsor} |\n`;
+                const name = clean(c.name || c.login);
+                const sponsor = sp.exists ? `[Yes](${sp.url})` : `No`;
+
+                table += `| [${name}](${c.profile_url}) | [#${c.prNumber}](${c.prUrl}) | ${sponsor} |\n`;
+              }
             }
 
-            // 7) Inject into README
-            const readmePath = 'README.md';
-            let readme = fs.existsSync(readmePath)
-              ? fs.readFileSync(readmePath, 'utf8')
-              : '';
-
-            const START = "<!-- FIRST_TIME_CONTRIBUTORS_START -->";
-            const END = "<!-- FIRST_TIME_CONTRIBUTORS_END -->";
-            const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // 10) Inject into README
+            const START = '<!-- FIRST_TIME_CONTRIBUTORS_START -->';
+            const END = '<!-- FIRST_TIME_CONTRIBUTORS_END -->';
+            const escapeRegex = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
             const section = `${START}\n${table}\n${END}`;
 
             let updated;
             if (readme.includes(START) && readme.includes(END)) {
-              const escapedStart = escapeRegex(START);
-              const escapedEnd = escapeRegex(END);
-              const regex = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`, 'm');
+              const regex = new RegExp(
+                `${escapeRegex(START)}[\\s\\S]*?${escapeRegex(END)}`
+              );
               updated = readme.replace(regex, section);
             } else {
               updated = readme + `\n\n${section}`;
             }
 
-            // 8) Write only if changed
+            // 11) Write only if changed
             if (readme !== updated) {
               fs.writeFileSync(readmePath, updated);
               core.setOutput('changed', 'true');
@@ -194,7 +285,7 @@ jobs:
               core.setOutput('changed', 'false');
             }
 
-            core.setOutput('count', String(contributors.length));
+            core.setOutput('count', String(rowOrder.length));
 
       - name: Commit README
         if: steps.build.outputs.changed == 'true'
