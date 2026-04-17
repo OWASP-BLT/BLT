@@ -166,3 +166,75 @@ jobs:
 
             // ── All gates passed ─────────────────────────────────────────────
             core.info(`PR #${pull_number} allowed (priorCount=${priorCount} <= 0, ${files.length} file(s) all deleted).`);
+
+            async function sponsorsExists(login) {
+              const url = `https://github.com/sponsors/${login}`;
+
+              try {
+                const res = await fetch(url, {
+                  method: 'GET',
+                  redirect: 'follow'
+                });
+
+                const finalUrl = (res.url || '').toLowerCase();
+
+                if (res.status === 200 && finalUrl.includes(`/sponsors/${login.toLowerCase()}`)) {
+                  return { exists: true, reason: "valid_page", url };
+                }
+
+                if (res.status === 404) {
+                  return { exists: false, reason: "not_found", url };
+                }
+
+                if (res.status === 200 && !finalUrl.includes('/sponsors/')) {
+                  return { exists: false, reason: "redirected", url };
+                }
+
+                return { exists: false, reason: "unknown_" + res.status, url };
+
+              } catch (err) {
+                core.warning(`Error checking sponsors page: ${err.message}`);
+                return { exists: false, reason: "error", url };
+              }
+            }
+
+            const username = context.payload.pull_request.user.login;
+            const result = await sponsorsExists(username);
+
+            let message;
+
+            if (!result.exists) {
+              message = [
+                `⚠️ @${username}, we couldn't verify a usable GitHub Sponsors profile for your account.`,
+                "",
+                "To receive the $1 campaign reward, please set up or complete your Sponsors profile:",
+                "https://github.com/sponsors",
+                "",
+                "Make sure:",
+                "• your profile is fully configured  ",
+                "• it is publicly accessible  ",
+                "",
+                "If you've already set it up, please check your settings and try again."
+              ].join('\n');
+            }
+
+            if (message) {
+               const comments = await github.paginate(github.rest.issues.listComments, {
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              });
+              const alreadyCommented = comments.some(c =>
+                c.user.type === "Bot" &&
+                c.body.includes("GitHub Sponsors profile")
+              );
+              if (alreadyCommented) return;
+
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+            }
