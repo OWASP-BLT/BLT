@@ -309,7 +309,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | Contributor | First PR | Sponsors |
 |------------|----------|----------|
 | [Mberic](https://github.com/Mberic) | [#6198](https://github.com/OWASP-BLT/BLT/pull/6198) | No |
-| [CHAIMAA EL JERRAR](https://github.com/Chaimaekit) | [#6201](https://github.com/OWASP-BLT/BLT/pull/6201) | [Yes](https://github.com/sponsors/Chaimaekit) |
+| [CHAIMAA EL JERRAR](https://github.com/Chaimaekit) | [#6201](https://github.com/OWASP-BLT/BLT/pull/6201) 💰 | [Yes](https://github.com/sponsors/Chaimaekit) |
 | [Samarth1907](https://github.com/Samarth1907) | [#6187](https://github.com/OWASP-BLT/BLT/pull/6187) | No |
 | [Rimjhim Kumari](https://github.com/rimjhim-codes) | [#6182](https://github.com/OWASP-BLT/BLT/pull/6182) | No |
 | [Swastik Kaushal](https://github.com/SwastikKaushal1) | [#6177](https://github.com/OWASP-BLT/BLT/pull/6177) | No |
@@ -318,9 +318,12 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [Penny](https://github.com/py-huang) | [#6150](https://github.com/OWASP-BLT/BLT/pull/6150) | No |
 | [Prachi Sharma](https://github.com/Prachi9506) | [#6149](https://github.com/OWASP-BLT/BLT/pull/6149) | No |
 | [Anukalp Pandey](https://github.com/anukalp2804) | [#6153](https://github.com/OWASP-BLT/BLT/pull/6153) | No |
-| [Aarush](https://github.com/Aarush289) | [#6137](https://github.com/OWASP-BLT/BLT/pull/6137) | [Yes](https://github.com/sponsors/Aarush289) |
+| [Aarush](https://github.com/Aarush289) | [#6137](https://github.com/OWASP-BLT/BLT/pull/6137) 💰 | [Yes](https://github.com/sponsors/Aarush289) |
 | [Krauz](https://github.com/krauzX) | [#6136](https://github.com/OWASP-BLT/BLT/pull/6136) | No |
 | [Wheat1407](https://github.com/dinnar1407-code) | [#6146](https://github.com/OWASP-BLT/BLT/pull/6146) | No |
+| [Dhruv Sharma](https://github.com/mystic-06) | [#6208](https://github.com/OWASP-BLT/BLT/pull/6208) 💰 | [Yes](https://github.com/sponsors/mystic-06) |
+| [Kash](https://github.com/one-kash) | [#6144](https://github.com/OWASP-BLT/BLT/pull/6144) 💰 | [Yes](https://github.com/sponsors/one-kash) |
+| [JitPatro](https://github.com/JitPatro) | [#6140](https://github.com/OWASP-BLT/BLT/pull/6140) | [Yes](https://github.com/sponsors/JitPatro) |
 
 <!-- FIRST_TIME_CONTRIBUTORS_END -->
 
