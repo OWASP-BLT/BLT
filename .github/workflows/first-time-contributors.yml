@@ -258,6 +258,7 @@ jobs:
                 const name = nameMatch[1];
                 const profileUrl = nameMatch[2];
                 const login = profileUrl.split('/').pop();
+                const parsed = parsePullFromUrl(prMatch[2]);
 
                 if (!login) continue;
 
