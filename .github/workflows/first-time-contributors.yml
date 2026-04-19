@@ -96,7 +96,7 @@ jobs:
                 payoutCommentCache.set(key, paid);
                 return paid;
               } catch (err) {
-                console.log(`isPaidPullRequest failed for ${owner}/${repo}#${number}: ${err.message}`);
+                console.error(`isPaidPullRequest failed for ${owner}/${repo}#${number}: ${err.message}`);
                 payoutCommentCache.set(key, false);
                 return false;
               }
