@@ -74,7 +74,7 @@ jobs:
               };
             }
 
-            const payoutCommentPattern = /Transaction ID:\s*ch_[A-Za-z0-9]+/i;
+            const payoutCommentPattern = /Transaction ID:\s*ch_[A-Za-z0-9]+/;
             const payoutCommentCache = new Map();
 
             async function isPaidPullRequest(owner, repo, number) {
@@ -96,7 +96,7 @@ jobs:
                 payoutCommentCache.set(key, paid);
                 return paid;
               } catch (err) {
-                console.error(`isPaidPullRequest failed for ${owner}/${repo}#${number}: ${err.message}`);
+                console.error(`isPaidPullRequest failed for ${owner}/${repo}#${number}`);
                 payoutCommentCache.set(key, false);
                 return false;
               }
