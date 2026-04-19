@@ -137,7 +137,7 @@ jobs:
               }
             }
 
-            Helpers
+            // Helpers
             async function getUser(login) {
               try {
                 const r = await github.rest.users.getByUsername({ username: login });
@@ -171,7 +171,7 @@ jobs:
               }
             }
 
-            Build newly discovered contributors only
+            // Build newly discovered contributors only
             const newContributors = await Promise.all(
               firstTimers.map(async (ent) => {
                 const u = await getUser(ent.login);
@@ -185,13 +185,13 @@ jobs:
               })
             );
 
-            Read README
+            // Read README
             const readmePath = 'README.md';
             const readme = fs.existsSync(readmePath)
               ? fs.readFileSync(readmePath, 'utf8')
               : '';
 
-            Parse existing table rows exactly and preserve them
+            // Parse existing table rows exactly and preserve them
             const existing = new Map();
             const rowOrder = [];
 
@@ -233,7 +233,7 @@ jobs:
               }
             }
 
-            Add only brand new contributors; keep old contributor/PR cells unchanged
+            // Add only brand new contributors; keep old contributor/PR cells unchanged
             for (const c of newContributors) {
               if (!existing.has(c.login)) {
                 existing.set(c.login, c);
@@ -241,7 +241,7 @@ jobs:
               }
             }
 
-            Rebuild table: old rows preserved, only sponsor value refreshed
+            // Rebuild table: old rows preserved, only sponsor value refreshed
             let table = `## First-time Contributors (since ${since})\n\n`;
             table += `| Contributor | First PR | Sponsors |\n`;
             table += `|------------|----------|----------|\n`;
@@ -260,7 +260,7 @@ jobs:
               }
             }
 
-            Inject into README
+            // Inject into README
             const START = '<!-- FIRST_TIME_CONTRIBUTORS_START -->';
             const END = '<!-- FIRST_TIME_CONTRIBUTORS_END -->';
             const escapeRegex = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -277,7 +277,7 @@ jobs:
               updated = readme + `\n\n${section}`;
             }
 
-            Write only if changed
+            // Write only if changed
             if (readme !== updated) {
               fs.writeFileSync(readmePath, updated);
               core.setOutput('changed', 'true');
