@@ -64,6 +64,44 @@ jobs:
                 .trim();
             }
 
+            function parsePullFromUrl(url) {
+              const m = String(url || '').match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i);
+              if (!m) return null;
+              return {
+                owner: m[1],
+                repo: m[2],
+                number: Number(m[3])
+              };
+            }
+
+            const payoutCommentPattern = /Transaction ID:\s*ch_[A-Za-z0-9]+/i;
+            const payoutCommentCache = new Map();
+
+            async function isPaidPullRequest(owner, repo, number) {
+              if (!owner || !repo || !number) return false;
+              const key = `${owner}/${repo}#${number}`;
+              if (payoutCommentCache.has(key)) return payoutCommentCache.get(key);
+              try {
+                const comments = await github.paginate(
+                  github.rest.issues.listComments,
+                  {
+                    owner,
+                    repo,
+                    issue_number: Number(number),
+                    per_page: 100
+                  },
+                  (res) => res.data
+                );
+                const paid = comments.some((c) => payoutCommentPattern.test(c.body || ''));
+                payoutCommentCache.set(key, paid);
+                return paid;
+              } catch (err) {
+                console.log(`isPaidPullRequest failed for ${owner}/${repo}#${number}: ${err.message}`);
+                payoutCommentCache.set(key, false);
+                return false;
+              }
+            }
+
             const sinceDate = new Date(`${since}T00:00:00Z`);
 
             const repos = (await github.paginate(
@@ -179,6 +217,8 @@ jobs:
                   login: ent.login,
                   name: u.name || ent.login,
                   profile_url: u.html_url || `https://github.com/${ent.login}`,
+                  prOwner: ent.pr.owner,
+                  prRepo: ent.pr.repo,
                   prNumber: String(ent.pr.number),
                   prUrl: ent.pr.url
                 };
@@ -225,6 +265,8 @@ jobs:
                   login,
                   name,
                   profile_url: profileUrl,
+                  prOwner: parsed?.owner || org,
+                  prRepo: parsed?.repo || repo,
                   prNumber: prMatch[1],
                   prUrl: prMatch[2]
                 });
@@ -252,11 +294,13 @@ jobs:
               for (const login of rowOrder) {
                 const c = existing.get(login);
                 const sp = await sponsorsExists(login);
+                const paid = await isPaidPullRequest(c.prOwner, c.prRepo, c.prNumber);
 
                 const name = clean(c.name || c.login);
                 const sponsor = sp.exists ? `[Yes](${sp.url})` : `No`;
+                const paidMarker = paid ? ' 💰' : '';
 
-                table += `| [${name}](${c.profile_url}) | [#${c.prNumber}](${c.prUrl}) | ${sponsor} |\n`;
+                table += `| [${name}](${c.profile_url}) | [#${c.prNumber}](${c.prUrl})${paidMarker} | ${sponsor} |\n`;
               }
             }
 
