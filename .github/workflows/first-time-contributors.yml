@@ -66,80 +66,78 @@ jobs:
 
             const sinceDate = new Date(`${since}T00:00:00Z`);
 
-            // 1) Fetch merged PRs in OWASP-BLT/BLT after the cutoff date
-            const pulls = await github.paginate(
-              github.rest.pulls.list,
+            const repos = (await github.paginate(
+              github.rest.repos.listForOrg,
               {
-                owner: org,
-                repo,
-                state: 'closed',
+                org,
                 per_page: 100,
-                sort: 'updated',
-                direction: 'desc'
+                type: 'all'
               },
               (res) => res.data
-            );
+            )).filter(r => !r.archived && !r.disabled);
 
-            // Stop early when older than cutoff
-            const mergedItems = [];
-            for (const pr of pulls) {
-              if (!pr.merged_at) continue;
+            const earliestMergedByAuthor = new Map();
 
-              if (new Date(pr.merged_at) < sinceDate) break;
-              mergedItems.push(pr);
-            }
+            for (const repoInfo of repos) {
+              const repoName = repoInfo.name;
+              console.log(`Scanning repo: ${repoName}`);
 
-            // 2) For each author, keep their earliest merged PR after the cutoff
-            const perAuthor = new Map();
-
-            for (const it of mergedItems) {
-              if (!it?.user?.login) continue;
-
-              const login = it.user.login;
-              if (isBot(login)) continue;
-
-              const mergedAt = it.merged_at;
-              if (!mergedAt) continue;
-
-              const prev = perAuthor.get(login);
-              if (!prev || new Date(mergedAt) < new Date(prev.firstMergedAt)) {
-                perAuthor.set(login, {
-                  login,
-                  firstMergedAt: mergedAt,
-                  pr: {
-                    number: it.number,
-                    title: it.title,
-                    url: it.html_url,
-                    merged_at: mergedAt
-                  }
-                });
-              }
-            }
-
-            // 3) Keep only contributors who had no merged PR before the cutoff
-            async function priorMergedCountBefore(login) {
-              const q = `org:${org} is:pr is:merged author:${login} merged:<${since}`;
+              let pulls;
               try {
-                const r = await github.request('GET /search/issues', {
-                  q,
-                  per_page: 1
-                });
-                return r.data.total_count || 0;
+                pulls = await github.paginate(
+                  github.rest.pulls.list,
+                  {
+                    owner: org,
+                    repo: repoName,
+                    state: 'closed',
+                    per_page: 100
+                  },
+                  (res) => res.data
+                );
               } catch (err) {
-                console.log(`priorMergedCountBefore failed for ${login}: ${err.message}`);
-                return 1; // safe fallback: avoid false positives
+                console.log(`Skipping repo ${repoName}: ${err.status || ''} ${err.message}`);
+                continue;
+              }
+
+              for (const pr of pulls) {
+                if (!pr?.user?.login) continue;
+                if (!pr.merged_at) continue;
+
+                const login = pr.user.login;
+                if (isBot(login)) continue;
+
+                const mergedAt = new Date(pr.merged_at);
+                const prev = earliestMergedByAuthor.get(login);
+
+                if (!prev || mergedAt < prev.mergedAt) {
+                  earliestMergedByAuthor.set(login, {
+                    login,
+                    mergedAt,
+                    pr: {
+                      owner: org,
+                      repo: repoName,
+                      number: pr.number,
+                      title: pr.title,
+                      url: pr.html_url,
+                      merged_at: pr.merged_at
+                    }
+                  });
+                }
               }
             }
 
             const firstTimers = [];
-            for (const [login, data] of perAuthor.entries()) {
-              const cnt = await priorMergedCountBefore(login);
-              if (cnt === 0) {
-                firstTimers.push(data);
+            for (const [login, rec] of earliestMergedByAuthor.entries()) {
+              if (rec.mergedAt >= sinceDate) {
+                firstTimers.push({
+                  login,
+                  firstMergedAt: rec.pr.merged_at,
+                  pr: rec.pr
+                });
               }
             }
 
-            // 4) Helpers
+            // Helpers
             async function getUser(login) {
               try {
                 const r = await github.rest.users.getByUsername({ username: login });
@@ -173,7 +171,7 @@ jobs:
               }
             }
 
-            // 5) Build newly discovered contributors only
+            // Build newly discovered contributors only
             const newContributors = await Promise.all(
               firstTimers.map(async (ent) => {
                 const u = await getUser(ent.login);
@@ -187,13 +185,13 @@ jobs:
               })
             );
 
-            // 6) Read README
+            // Read README
             const readmePath = 'README.md';
             const readme = fs.existsSync(readmePath)
               ? fs.readFileSync(readmePath, 'utf8')
               : '';
 
-            // 7) Parse existing table rows exactly and preserve them
+            // Parse existing table rows exactly and preserve them
             const existing = new Map();
             const rowOrder = [];
 
@@ -235,7 +233,7 @@ jobs:
               }
             }
 
-            // 8) Add only brand new contributors; keep old contributor/PR cells unchanged
+            // Add only brand new contributors; keep old contributor/PR cells unchanged
             for (const c of newContributors) {
               if (!existing.has(c.login)) {
                 existing.set(c.login, c);
@@ -243,7 +241,7 @@ jobs:
               }
             }
 
-            // 9) Rebuild table: old rows preserved, only sponsor value refreshed
+            // Rebuild table: old rows preserved, only sponsor value refreshed
             let table = `## First-time Contributors (since ${since})\n\n`;
             table += `| Contributor | First PR | Sponsors |\n`;
             table += `|------------|----------|----------|\n`;
@@ -262,7 +260,7 @@ jobs:
               }
             }
 
-            // 10) Inject into README
+            // Inject into README
             const START = '<!-- FIRST_TIME_CONTRIBUTORS_START -->';
             const END = '<!-- FIRST_TIME_CONTRIBUTORS_END -->';
             const escapeRegex = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -279,7 +277,7 @@ jobs:
               updated = readme + `\n\n${section}`;
             }
 
-            // 11) Write only if changed
+            // Write only if changed
             if (readme !== updated) {
               fs.writeFileSync(readmePath, updated);
               core.setOutput('changed', 'true');
