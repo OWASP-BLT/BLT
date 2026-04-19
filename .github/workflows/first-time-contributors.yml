@@ -74,7 +74,7 @@ jobs:
               };
             }
 
-            const payoutCommentPattern = /Transaction ID:\s*ch_[A-Za-z0-9]+/;
+            const payoutCommentPattern = /Transaction ID:\s*ch_[A-Za-z0-9_]+/;
             const payoutCommentCache = new Map();
 
             async function isPaidPullRequest(owner, repo, number) {
