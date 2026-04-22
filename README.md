@@ -324,6 +324,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [Dhruv Sharma](https://github.com/mystic-06) | [#6208](https://github.com/OWASP-BLT/BLT/pull/6208) 💰 | [Yes](https://github.com/sponsors/mystic-06) |
 | [Kash](https://github.com/one-kash) | [#6144](https://github.com/OWASP-BLT/BLT/pull/6144) 💰 | [Yes](https://github.com/sponsors/one-kash) |
 | [JitPatro](https://github.com/JitPatro) | [#6140](https://github.com/OWASP-BLT/BLT/pull/6140) 💰 | [Yes](https://github.com/sponsors/JitPatro) |
+| [shivam Singh](https://github.com/shiva119127) | [#3](https://github.com/OWASP-BLT/BLT-Start/pull/3) | No |
 
 <!-- FIRST_TIME_CONTRIBUTORS_END -->
 
