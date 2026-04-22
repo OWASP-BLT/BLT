@@ -27,9 +27,14 @@ In return, we commit to:
 - Once the issue is fixed, we will release a patch. We may or may not publicly disclose the vulnerability depending on the severity and affected users. If users are affected, we will do our best to contact them.
 - If you wish to be credited for the discovery, please let us know in your report. You may also choose to remain anonymous.
 
-## Bug Bounties
+## Vulnerability Disclosure Program 
+OWASP BLT operates a Vulnerability Disclosure Program (VDP). Please note the following regarding compensation and recognition:
 
-Currently, we do not offer bounties for security vulnerability reports. To find out if we offer bounties in the future, please check the BLT project on the [BLT homepage](https://legacy.owaspblt.org).
+- Non-Monetary: We do not offer financial rewards (bounties) for vulnerability reports at this time.
+
+- Recognition: If you wish to be credited for a valid discovery, please let us know in your report. We are happy to provide public attribution (e.g., in the security advisory or release notes) for researchers who follow this policy.
+
+- Safe Harbor: We will not take legal action against researchers who discover and report vulnerabilities in good faith while adhering to the guidelines in this document.
 
 ## Vulnerability Handling Process - (if a valid security issue is found)
 
