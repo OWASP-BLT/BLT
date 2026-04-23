@@ -2572,68 +2572,6 @@ class Kudos(models.Model):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
 
 
-class OsshCommunity(models.Model):
-    CATEGORY_CHOICES = [
-        ("forum", "Forum"),
-        ("community", "Community"),
-        ("mentorship", "Mentorship Program"),
-    ]
-
-    name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(blank=True, null=True)
-    website = models.URLField(unique=True, help_text="Direct link to the community")
-    source = models.CharField(max_length=100, help_text="Source API (GitHub, Dev.to, etc.)")
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="community")
-    external_id = models.CharField(
-        max_length=255, blank=True, null=True, unique=True, help_text="ID from external source"
-    )
-    tags = models.ManyToManyField(Tag, related_name="communities", blank=True)
-    metadata = models.JSONField(default=dict, help_text="Additional API-specific metadata")
-    contributors_count = models.IntegerField(default=0, help_text="Approximate number of contributors")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.category})"
-
-
-class OsshDiscussionChannel(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True, null=True)
-    source = models.CharField(max_length=100, help_text="Source API (Discord, Slack etc)")
-    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
-    member_count = models.PositiveIntegerField(default=0)
-    invite_url = models.URLField(blank=True, null=True)
-    logo_url = models.URLField(blank=True, null=True)
-    tags = models.ManyToManyField(Tag, blank=True, related_name="channels")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.name
-
-
-class OsshArticle(models.Model):
-    title = models.CharField(max_length=255)
-    author = models.CharField(max_length=255)
-    author_profile_image = models.URLField(max_length=500, blank=True, null=True)
-    description = models.TextField()
-    publication_date = models.DateTimeField()
-    source = models.CharField(max_length=255, help_text="Source API (DEV Community, LinkedIn etc)")
-    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
-    url = models.URLField(
-        max_length=1000, blank=True, null=True
-    )  # DEV.to urls often cross the default 200 character limit
-    tags = models.ManyToManyField(Tag, related_name="articles", blank=True)
-    cover_image = models.URLField(max_length=1000, blank=True, null=True)
-    reading_time_minutes = models.PositiveIntegerField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.title} - {self.source}"
-
-
 class ManagementCommandLog(models.Model):
     command_name = models.CharField(max_length=255)
     last_run = models.DateTimeField(auto_now=True)

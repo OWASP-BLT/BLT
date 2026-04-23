@@ -58,9 +58,6 @@ from website.models import (
     Notification,
     Organization,
     OrganizationAdmin,
-    OsshArticle,
-    OsshCommunity,
-    OsshDiscussionChannel,
     Payment,
     Points,
     PRAnalysisReport,
@@ -986,7 +983,6 @@ admin.site.register(Activity)
 admin.site.register(PRAnalysisReport)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
-admin.site.register(OsshCommunity)
 admin.site.register(Lecture)
 admin.site.register(LectureStatus)
 admin.site.register(Course)
@@ -1101,21 +1097,6 @@ class ManagementCommandLogAdmin(admin.ModelAdmin):
     date_hierarchy = "last_run"
 
 
-class OsshArticleAdmin(admin.ModelAdmin):
-    list_display = ("title", "author", "source", "publication_date", "created_at")
-    list_filter = ("source", "publication_date", "created_at")
-    search_fields = ("title", "author", "description")
-    date_hierarchy = "publication_date"
-    filter_horizontal = ("tags",)
-
-
-class OsshDiscussionChannelAdmin(admin.ModelAdmin):
-    list_display = ("name", "source", "member_count", "created_at")
-    list_filter = ("source", "created_at")
-    search_fields = ("name", "description", "external_id")
-    filter_horizontal = ("tags",)
-
-
 class ReminderSettingsAdmin(admin.ModelAdmin):
     list_display = ("user", "reminder_time", "timezone", "is_active", "last_reminder_sent")
     list_filter = ("is_active", "timezone")
@@ -1169,8 +1150,6 @@ admin.site.register(HackathonSponsor, HackathonSponsorAdmin)
 admin.site.register(IpReport, IpReportAdmin)
 admin.site.register(Kudos, KudosAdmin)
 admin.site.register(ManagementCommandLog, ManagementCommandLogAdmin)
-admin.site.register(OsshArticle, OsshArticleAdmin)
-admin.site.register(OsshDiscussionChannel, OsshDiscussionChannelAdmin)
 admin.site.register(ReminderSettings, ReminderSettingsAdmin)
 admin.site.register(StakingEntry, StakingEntryAdmin)
 admin.site.register(StakingPool, StakingPoolAdmin)

@@ -22,7 +22,6 @@ from website.models import (
     JoinRequest,
     Organization,
     OrganizationAdmin,
-    OsshCommunity,
     Payment,
     Project,
     SecurityIncident,
@@ -339,18 +338,6 @@ class ModelStrMethodTests(TestCase):
         result = str(contribution)
         # Should be truncated to 50 chars
         self.assertLessEqual(len(result.split(" (")[0]), 50)
-
-    def test_ossh_community_str(self):
-        """Test OsshCommunity __str__ method."""
-        community = OsshCommunity.objects.create(
-            name="Open Source Security Hub",
-            website="https://ossh.example.com",
-            source="GitHub",
-            category="community",
-        )
-        result = str(community)
-        self.assertIn("Open Source Security Hub", result)
-        self.assertIn("community", result)
 
     def test_security_incident_str(self):
         """Test SecurityIncident __str__ method."""
