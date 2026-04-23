@@ -325,6 +325,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [Kash](https://github.com/one-kash) | [#6144](https://github.com/OWASP-BLT/BLT/pull/6144) 💰 | [Yes](https://github.com/sponsors/one-kash) |
 | [JitPatro](https://github.com/JitPatro) | [#6140](https://github.com/OWASP-BLT/BLT/pull/6140) 💰 | [Yes](https://github.com/sponsors/JitPatro) |
 | [shivam Singh](https://github.com/shiva119127) | [#3](https://github.com/OWASP-BLT/BLT-Start/pull/3) | No |
+| [Sanidhya Shishodia](https://github.com/dev-sanidhya) | [#62](https://github.com/OWASP-BLT/BLT-GSOC/pull/62) | No |
 
 <!-- FIRST_TIME_CONTRIBUTORS_END -->
 
