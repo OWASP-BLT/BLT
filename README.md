@@ -363,3 +363,11 @@ This project is licensed under the **AGPL-3.0 License** - see the [LICENSE.md](L
   <strong>⭐ Star this repository if you find it helpful!</strong><br>
   Made with ❤️ by the OWASP BLT Community
 </p>
+
+## 💰 Bounty Contribution
+
+- **Task:** Education Cleanup
+- **Reward:** $1
+- **Source:** GitHub-Bounty
+- **Date:** 2026-04-27
+
