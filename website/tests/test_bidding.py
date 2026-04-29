@@ -179,21 +179,52 @@ class ChangeBidStatusTests(TestCase):
             status="Open",
         )
 
-    def test_unauthenticated_post_succeeds(self):
-        """Unauthenticated POST to change_bid_status currently returns 200.
+    def test_unauthenticated_post_is_rejected(self):
+        """Unauthenticated POST to change_bid_status should be rejected."""
+        response = self.client.post(
+            reverse("change_bid_status"),
+            json.dumps({"id": self.bid.id}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+        data = response.json()
+        self.assertFalse(data["success"])
+        self.bid.refresh_from_db()
+        self.assertEqual(self.bid.status, "Open")
 
-        Note: change_bid_status does not have @login_required yet.
-        """
+    def test_authenticated_changes_status(self):
+        """Authenticated POST should change bid status to Selected."""
+        self.client.login(username="bidder", password="testpass")
         response = self.client.post(
             reverse("change_bid_status"),
             json.dumps({"id": self.bid.id}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.bid.refresh_from_db()
+        self.assertEqual(self.bid.status, "Selected")
 
-    def test_authenticated_changes_status(self):
-        """Authenticated POST should change bid status to Selected."""
-        self.client.login(username="bidder", password="testpass")
+    def test_authenticated_non_owner_cannot_change_status(self):
+        """Authenticated users should not be able to select someone else's bid."""
+        other_user = User.objects.create_user(username="other", password="testpass")
+        self.client.login(username="other", password="testpass")
+        response = self.client.post(
+            reverse("change_bid_status"),
+            json.dumps({"id": self.bid.id}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+        data = response.json()
+        self.assertFalse(data["success"])
+        self.bid.refresh_from_db()
+        self.assertEqual(self.bid.status, "Open")
+
+    def test_superuser_can_change_status(self):
+        """Superusers should be able to select any bid."""
+        admin = User.objects.create_superuser(username="admin", password="testpass")
+        self.client.login(username="admin", password="testpass")
         response = self.client.post(
             reverse("change_bid_status"),
             json.dumps({"id": self.bid.id}),

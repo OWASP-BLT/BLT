@@ -895,13 +895,19 @@ def generate_bid_image(request, bid_amount):
 
 def change_bid_status(request):
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            return JsonResponse({"success": False, "error": "Authentication required"}, status=403)
         try:
             data = json.loads(request.body)
             bid_id = data.get("id")
             bid = Bid.objects.get(id=bid_id)
+            if not (request.user.is_superuser or bid.user == request.user):
+                return JsonResponse({"success": False, "error": "Permission denied"}, status=403)
             bid.status = "Selected"
             bid.save()
             return JsonResponse({"success": True})
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
         except Bid.DoesNotExist:
             return JsonResponse({"success": False, "error": "Bid not found"})
     return HttpResponse(status=405)
@@ -1789,14 +1795,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                             github_username = user_profile.github_url.rstrip("/").split("/")[-1]
                                             sponsors_url = f"https://github.com/sponsors/{github_username}"
                                             f.write(
-                                                f"- **💖 GitHub Sponsors:** [Sponsor]({sponsors_url}) (or [Profile]({user_profile.github_url}))\n"
+                                                f"- **?? GitHub Sponsors:** [Sponsor]({sponsors_url}) (or [Profile]({user_profile.github_url}))\n"
                                             )
                                         if user_profile.btc_address:
-                                            f.write(f"- **🟠 BTC Address:** {user_profile.btc_address}\n")
+                                            f.write(f"- **?? BTC Address:** {user_profile.btc_address}\n")
                                         if user_profile.bch_address:
-                                            f.write(f"- **💚 BCH Address:** {user_profile.bch_address}\n")
+                                            f.write(f"- **?? BCH Address:** {user_profile.bch_address}\n")
                                         if user_profile.eth_address:
-                                            f.write(f"- **💎 ETH Address:** {user_profile.eth_address}\n")
+                                            f.write(f"- **?? ETH Address:** {user_profile.eth_address}\n")
 
                                     f.write(f"\n**Report Date:** {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
@@ -2218,7 +2224,7 @@ class IssueView(DetailView):
 
         self.object = get_object_or_404(Issue, id=issue_id)
 
-        # 🔒 Private / hidden issue protection
+        # ?? Private / hidden issue protection
         if self.object.is_hidden:
             if not request.user.is_authenticated:
                 raise Http404("Issue not found")
@@ -2228,7 +2234,7 @@ class IssueView(DetailView):
             if not allowed:
                 raise Http404("Issue not found")
 
-        # ✅ Only reach here if allowed
+        # ? Only reach here if allowed
         ipdetails = IP()
         ipdetails.user = request.user.username if request.user.is_authenticated else None
         ipdetails.address = get_client_ip(request)
@@ -3286,7 +3292,7 @@ class GitHubIssueBadgeView(APIView):
         Views (30d) | Linked PR | PR Status | Bounty
         """
 
-        # Card dimensions – single row of 4 columns
+        # Card dimensions ? single row of 4 columns
         card_w = 580
         header_h = 38
         row_h = 46
