@@ -1,6 +1,5 @@
 <div class="flex w-full h-full">
-    {% include "education/includes/course_sidebar.html" %}
-    <div class="flex-1 p-8 lg:ml-72">
+    <div class="flex-1 p-8">
         <div class="w-full mx-auto">
             {% if request.user == course.instructor.user %}
                 <a href="{% url 'course_content_management' course.id %}">
