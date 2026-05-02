@@ -311,7 +311,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [Mberic](https://github.com/Mberic) | [#6198](https://github.com/OWASP-BLT/BLT/pull/6198) | No |
 | [CHAIMAA EL JERRAR](https://github.com/Chaimaekit) | [#6201](https://github.com/OWASP-BLT/BLT/pull/6201) 💰 | [Yes](https://github.com/sponsors/Chaimaekit) |
 | [Samarth1907](https://github.com/Samarth1907) | [#6187](https://github.com/OWASP-BLT/BLT/pull/6187) | No |
-| [Rimjhim Kumari](https://github.com/rimjhim-codes) | [#6182](https://github.com/OWASP-BLT/BLT/pull/6182) | No |
+| [Rimjhim Kumari](https://github.com/rimjhim-codes) | [#6182](https://github.com/OWASP-BLT/BLT/pull/6182) | [Yes](https://github.com/sponsors/rimjhim-codes) |
 | [Swastik Kaushal](https://github.com/SwastikKaushal1) | [#6177](https://github.com/OWASP-BLT/BLT/pull/6177) | No |
 | [Neel pandya](https://github.com/Neel-Pandya) | [#6163](https://github.com/OWASP-BLT/BLT/pull/6163) | No |
 | [藍-Ai](https://github.com/Ai-chan-0411) | [#6161](https://github.com/OWASP-BLT/BLT/pull/6161) | No |
