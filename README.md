@@ -327,6 +327,8 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [shivam Singh](https://github.com/shiva119127) | [#3](https://github.com/OWASP-BLT/BLT-Start/pull/3) | No |
 | [Sanidhya Shishodia](https://github.com/dev-sanidhya) | [#62](https://github.com/OWASP-BLT/BLT-GSOC/pull/62) | No |
 | [santoslgl01-web](https://github.com/santoslgl01-web) | [#6215](https://github.com/OWASP-BLT/BLT/pull/6215) | No |
+| [Harshal Sawant](https://github.com/c0d3h01) | [#85](https://github.com/OWASP-BLT/BLT-Jobs/pull/85) | [Yes](https://github.com/sponsors/c0d3h01) |
+| [Ontiomacer](https://github.com/Ontiomacer) | [#301](https://github.com/OWASP-BLT/BLT-Leaf/pull/301) | No |
 
 <!-- FIRST_TIME_CONTRIBUTORS_END -->
 
