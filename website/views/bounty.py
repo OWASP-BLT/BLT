@@ -54,6 +54,10 @@ def bounty_payout(request):
             logger.warning("Invalid numeric fields in request")
             return JsonResponse({"status": "error", "message": "Invalid numeric fields"}, status=400)
 
+        if bounty_amount <= 0:
+            logger.warning("Invalid bounty amount in request")
+            return JsonResponse({"status": "error", "message": "Bounty amount must be greater than zero"}, status=400)
+
         repo_name = data["repo"]
         owner_name = data["owner"]
         contributor_username = data["contributor_username"]

@@ -183,6 +183,31 @@ class BountyPayoutTestCase(TestCase):
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
     @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_bounty_payout_rejects_non_positive_amount(self):
+        """Test that zero or negative bounty payments are rejected."""
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 0,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        response_data = response.json()
+        self.assertEqual(response_data["status"], "error")
+        self.assertIn("greater than zero", response_data["message"])
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
     def test_bounty_payout_issue_not_found(self):
         """Test that non-existent issue is handled."""
         payload = {

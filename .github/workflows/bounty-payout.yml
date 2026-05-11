@@ -94,19 +94,23 @@ jobs:
 
       - name: Send bounty data to BLT
         if: steps.check-issues.outputs['has-bounty'] == 'true'
-        continue-on-error: true
         env:
           ISSUE_NUMBER: ${{ steps.check-issues.outputs.issue-number }}
           BOUNTY_AMOUNT: ${{ steps.check-issues.outputs.bounty-amount }}
           CONTRIBUTOR_USERNAME: ${{ steps.check-issues.outputs.contributor-username }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           BLT_API_TOKEN: ${{ secrets.BLT_API_TOKEN }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owasp.org' }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owaspblt.org' }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7.1.0 https://github.com/actions/github-script/commit/f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const response = await fetch(`${process.env.API_BASE_URL}/bounty_payout/`, {
+            if (!process.env.BLT_API_TOKEN) {
+              throw new Error('BLT_API_TOKEN secret is required to process bounty payouts');
+            }
+
+            const apiBaseUrl = process.env.API_BASE_URL.replace(/\/+$/, '');
+            const response = await fetch(`${apiBaseUrl}/bounty_payout/`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
