@@ -329,6 +329,13 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [santoslgl01-web](https://github.com/santoslgl01-web) | [#6215](https://github.com/OWASP-BLT/BLT/pull/6215) | No |
 | [Harshal Sawant](https://github.com/c0d3h01) | [#85](https://github.com/OWASP-BLT/BLT-Jobs/pull/85) | [Yes](https://github.com/sponsors/c0d3h01) |
 | [Ontiomacer](https://github.com/Ontiomacer) | [#301](https://github.com/OWASP-BLT/BLT-Leaf/pull/301) | No |
+| [Rcloud](https://github.com/Rcloudso) | [#6373](https://github.com/OWASP-BLT/BLT/pull/6373) | No |
+| [Pawan Kumar Singh](https://github.com/pawankalhansh) | [#6372](https://github.com/OWASP-BLT/BLT/pull/6372) | [Yes](https://github.com/sponsors/pawankalhansh) |
+| [Varun Arora](https://github.com/varora02) | [#6371](https://github.com/OWASP-BLT/BLT/pull/6371) | No |
+| [Draxilion](https://github.com/Draxilion) | [#6370](https://github.com/OWASP-BLT/BLT/pull/6370) | No |
+| [Faye seun](https://github.com/CloudFaye) | [#6368](https://github.com/OWASP-BLT/BLT/pull/6368) | No |
+| [AgentGoose32](https://github.com/AgentGoose32) | [#6223](https://github.com/OWASP-BLT/BLT/pull/6223) | No |
+| [Prabhat Upadhyay](https://github.com/Cypher-CP0) | [#6218](https://github.com/OWASP-BLT/BLT/pull/6218) | No |
 
 <!-- FIRST_TIME_CONTRIBUTORS_END -->
 
