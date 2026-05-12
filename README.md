@@ -330,7 +330,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [Harshal Sawant](https://github.com/c0d3h01) | [#85](https://github.com/OWASP-BLT/BLT-Jobs/pull/85) | [Yes](https://github.com/sponsors/c0d3h01) |
 | [Ontiomacer](https://github.com/Ontiomacer) | [#301](https://github.com/OWASP-BLT/BLT-Leaf/pull/301) | No |
 | [Rcloud](https://github.com/Rcloudso) | [#6373](https://github.com/OWASP-BLT/BLT/pull/6373) | No |
-| [Pawan Kumar Singh](https://github.com/pawankalhansh) | [#6372](https://github.com/OWASP-BLT/BLT/pull/6372) | [Yes](https://github.com/sponsors/pawankalhansh) |
+| [Pawan Kumar Singh](https://github.com/pawankalhansh) | [#6372](https://github.com/OWASP-BLT/BLT/pull/6372) 💰 | [Yes](https://github.com/sponsors/pawankalhansh) |
 | [Varun Arora](https://github.com/varora02) | [#6371](https://github.com/OWASP-BLT/BLT/pull/6371) | No |
 | [Draxilion](https://github.com/Draxilion) | [#6370](https://github.com/OWASP-BLT/BLT/pull/6370) | No |
 | [Faye seun](https://github.com/CloudFaye) | [#6368](https://github.com/OWASP-BLT/BLT/pull/6368) | No |
