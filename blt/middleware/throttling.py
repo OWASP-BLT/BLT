@@ -7,6 +7,8 @@ from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
+from website.utils import get_client_ip
+
 logger = logging.getLogger("throttling_middleware")
 
 
@@ -124,18 +126,12 @@ class ThrottlingMiddleware:
 
     def get_client_ip(self, request):
         """Extract client IP from request."""
+        ip = get_client_ip(request)
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0].strip()
-            # Handle empty string after strip
-            if not ip:
-                ip = request.META.get("REMOTE_ADDR")
-        else:
-            ip = request.META.get("REMOTE_ADDR")
 
         # Log IP extraction for debugging
         if x_forwarded_for:
-            logger.debug("Extracted IP from X-Forwarded-For: %s (original: %s)", ip, x_forwarded_for)
+            logger.debug("Resolved client IP: %s (X-Forwarded-For: %s)", ip, x_forwarded_for)
         else:
             logger.debug("Using REMOTE_ADDR for IP: %s", ip)
 

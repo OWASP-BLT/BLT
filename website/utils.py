@@ -9,7 +9,7 @@ import socket
 import time
 from collections import deque
 from datetime import datetime
-from ipaddress import ip_address
+from ipaddress import ip_address, ip_network
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
 try:
@@ -92,14 +92,49 @@ def validate_file_type(request, file_field_name, allowed_extensions, allowed_mim
     return True, None
 
 
+def _normalise_proxy_setting(value):
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    return list(value or [])
+
+
+def _trusted_proxy_networks():
+    configured = _normalise_proxy_setting(getattr(settings, "TRUSTED_PROXY_IPS", []))
+    configured += _normalise_proxy_setting(getattr(settings, "TRUSTED_PROXY_CIDRS", []))
+
+    networks = []
+    for item in configured:
+        try:
+            networks.append(ip_network(item, strict=False))
+        except ValueError:
+            logger.warning("Ignoring invalid trusted proxy setting: %s", _sanitize_log(item))
+    return networks
+
+
+def _remote_addr_is_trusted_proxy(remote_addr):
+    if not remote_addr:
+        return False
+    try:
+        remote_ip = ip_address(remote_addr)
+    except ValueError:
+        return False
+    return any(remote_ip in network for network in _trusted_proxy_networks())
+
+
 def get_client_ip(request):
-    """Extract the client's IP address from the request."""
+    """Extract the client IP, trusting X-Forwarded-For only from configured proxies."""
+    remote_addr = request.META.get("REMOTE_ADDR")
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
+
+    if x_forwarded_for and _remote_addr_is_trusted_proxy(remote_addr):
+        forwarded_ip = x_forwarded_for.split(",")[0].strip()
+        try:
+            ip_address(forwarded_ip)
+            return forwarded_ip
+        except ValueError:
+            logger.warning("Ignoring invalid X-Forwarded-For client IP: %s", _sanitize_log(forwarded_ip))
+
+    return remote_addr
 
 
 def get_email_from_domain(domain_name):

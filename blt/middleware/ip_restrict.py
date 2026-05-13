@@ -10,6 +10,7 @@ from django.db.transaction import TransactionManagementError
 from django.http import HttpResponseForbidden
 
 from website.models import IP, Blocked
+from website.utils import get_client_ip
 
 MAX_COUNT = 2147483647
 
@@ -194,7 +195,7 @@ class IPRestrictMiddleware:
         Asynchronous version of the middleware call method
         """
         # Get client information
-        ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
+        ip = get_client_ip(request) or ""
         agent = request.META.get("HTTP_USER_AGENT", "").strip()
 
         # Check cache for blocked items
@@ -234,7 +235,7 @@ class IPRestrictMiddleware:
         Synchronous version of the middleware logic
         """
         # Get client information
-        ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
+        ip = get_client_ip(request) or ""
         agent = request.META.get("HTTP_USER_AGENT", "").strip()
 
         # Check cache for blocked items
