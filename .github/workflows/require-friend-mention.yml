@@ -111,9 +111,10 @@ jobs:
               .filter(result => result.checkErrored)
               .map(result => result.username);
 
-            if (candidatesToCheck.length > 0 && excludedUnverified.length === candidatesToCheck.length) {
-              core.setFailed('Unable to verify mention eligibility due to GitHub API errors. Please retry.');
-              return;
+            const allVerificationChecksFailed =
+              candidatesToCheck.length > 0 && excludedUnverified.length === candidatesToCheck.length;
+            if (allVerificationChecksFailed) {
+              core.warning('Unable to verify mention eligibility due to GitHub API errors. Emitting failure outputs so remediation steps still run.');
             }
 
             core.setOutput('ok', String(filtered.length > 0));
@@ -122,6 +123,7 @@ jobs:
             core.setOutput('excluded_contributors', excludedContributors.join(','));
             core.setOutput('excluded_unverified', excludedUnverified.join(','));
             core.setOutput('ignored_candidates', ignoredCandidates.join(','));
+            core.setOutput('analysis_error', allVerificationChecksFailed ? 'api_verification_failed' : '');
             core.info(`Friend mentions found: ${filtered.join(',') || '(none)'}`);
             core.info(`Mentions excluded due to prior merged PRs under owner scope: ${excludedContributors.join(',') || '(none)'}`);
             core.info(`Mentions excluded due to verification errors: ${excludedUnverified.join(',') || '(none)'}`);
@@ -182,11 +184,22 @@ jobs:
             const repo  = context.repo.repo;
             const issue_number = context.payload.pull_request.number;
             const author = '${{ steps.analyze.outputs.author }}';
+            const analysisError = '${{ steps.analyze.outputs.analysis_error }}';
+            const apiFailureNotice = analysisError === 'api_verification_failed'
+              ? '⚠️ We could not verify mention eligibility due to GitHub API errors. Please retry this workflow.\n\n'
+              : '';
+            const commentTitle = analysisError === 'api_verification_failed'
+              ? '## ⚠️ Unable to Verify Friend Mention Eligibility\n\n'
+              : '## ❌ Friend Mention Required\n\n';
+            const commentIntro = analysisError === 'api_verification_failed'
+              ? `Hi @${author}! We found one or more @mentions in this PR, but could not verify whether any mentioned users qualify as an eligible **friend mention**.\n\n`
+              : `Hi @${author}! This PR is missing a required **friend mention** in the description.\n\n`;
 
             const commentMarker = '<!-- require-friend-mention -->';
             const commentBody = commentMarker + '\n' +
-              '## ❌ Friend Mention Required\n\n' +
-              `Hi @${author}! This PR is missing a required **friend mention** in the description.\n\n` +
+              commentTitle +
+              commentIntro +
+              apiFailureNotice +
               '### What to do\n' +
               'Please edit your PR description to tag at least one friend using `@username` ' +
               '(someone other than yourself who has not had a merged pull request under this repository owner before).\n\n' +
@@ -288,7 +301,11 @@ jobs:
       - name: Fail check when friend mention is missing
         if: ${{ steps.analyze.outputs.ok == 'false' }}
         run: |
-          echo "No valid eligible `@mention` found in PR description. Please tag a friend who has not previously had a merged pull request under this repository owner (e.g., `@someone`)." >&2
+          if [ "${{ steps.analyze.outputs.analysis_error }}" = "api_verification_failed" ]; then
+            echo "Unable to verify friend mention eligibility because GitHub API checks failed. Please retry this workflow run." >&2
+          else
+            echo "No valid eligible `@mention` found in PR description. Please tag a friend who has not previously had a merged pull request under this repository owner (e.g., `@someone`)." >&2
+          fi
           exit 1
 
       - name: Summary
