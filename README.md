@@ -311,7 +311,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [Mberic](https://github.com/Mberic) | [#6198](https://github.com/OWASP-BLT/BLT/pull/6198) | No |
 | [CHAIMAA EL JERRAR](https://github.com/Chaimaekit) | [#6201](https://github.com/OWASP-BLT/BLT/pull/6201) 💰 | [Yes](https://github.com/sponsors/Chaimaekit) |
 | [Samarth1907](https://github.com/Samarth1907) | [#6187](https://github.com/OWASP-BLT/BLT/pull/6187) | No |
-| [Rimjhim Kumari](https://github.com/rimjhim-codes) | [#6182](https://github.com/OWASP-BLT/BLT/pull/6182) | [Yes](https://github.com/sponsors/rimjhim-codes) |
+| [Rimjhim Kumari](https://github.com/rimjhim-codes) | [#6182](https://github.com/OWASP-BLT/BLT/pull/6182) 💰 | [Yes](https://github.com/sponsors/rimjhim-codes) |
 | [Swastik Kaushal](https://github.com/SwastikKaushal1) | [#6177](https://github.com/OWASP-BLT/BLT/pull/6177) | No |
 | [Neel pandya](https://github.com/Neel-Pandya) | [#6163](https://github.com/OWASP-BLT/BLT/pull/6163) | No |
 | [藍-Ai](https://github.com/Ai-chan-0411) | [#6161](https://github.com/OWASP-BLT/BLT/pull/6161) | No |
@@ -327,7 +327,7 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 | [shivam Singh](https://github.com/shiva119127) | [#3](https://github.com/OWASP-BLT/BLT-Start/pull/3) | No |
 | [Sanidhya Shishodia](https://github.com/dev-sanidhya) | [#62](https://github.com/OWASP-BLT/BLT-GSOC/pull/62) | No |
 | [santoslgl01-web](https://github.com/santoslgl01-web) | [#6215](https://github.com/OWASP-BLT/BLT/pull/6215) | No |
-| [Harshal Sawant](https://github.com/c0d3h01) | [#85](https://github.com/OWASP-BLT/BLT-Jobs/pull/85) | [Yes](https://github.com/sponsors/c0d3h01) |
+| [Harshal Sawant](https://github.com/c0d3h01) | [#85](https://github.com/OWASP-BLT/BLT-Jobs/pull/85) 💰 | [Yes](https://github.com/sponsors/c0d3h01) |
 | [Ontiomacer](https://github.com/Ontiomacer) | [#301](https://github.com/OWASP-BLT/BLT-Leaf/pull/301) | No |
 | [Rcloud](https://github.com/Rcloudso) | [#6373](https://github.com/OWASP-BLT/BLT/pull/6373) | No |
 | [Pawan Kumar Singh](https://github.com/pawankalhansh) | [#6372](https://github.com/OWASP-BLT/BLT/pull/6372) 💰 | [Yes](https://github.com/sponsors/pawankalhansh) |
