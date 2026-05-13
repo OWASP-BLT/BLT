@@ -87,12 +87,9 @@ def enroll(request, course_id):
 
 
 def view_course(request, course_id):
-    template = "education/view_course.html"
-    course = get_object_or_404(Course, id=course_id)
-    context = {
-        "course": course,
-    }
-    return render(request, template, context)
+    # Template deleted — education functionality moved to new repo.
+    # Redirect to the study_course view instead.
+    return redirect("study_course", course_id=course_id)
 
 
 @login_required(login_url="/accounts/login")
