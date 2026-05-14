@@ -3249,14 +3249,14 @@ files = [
 
 [[package]]
 name = "pyzipper"
-version = "0.3.6"
+version = "0.4.0"
 description = "AES encryption for zipfile."
 optional = false
 python-versions = ">=3.4"
 groups = ["main"]
 files = [
-    {file = "pyzipper-0.3.6-py2.py3-none-any.whl", hash = "sha256:6d097f465bfa47796b1494e12ea65d1478107d38e13bc56f6e58eedc4f6c1a87"},
-    {file = "pyzipper-0.3.6.tar.gz", hash = "sha256:0adca90a00c36a93fbe49bfa8c5add452bfe4ef85a1b8e3638739dd1c7b26bfc"},
+    {file = "pyzipper-0.4.0-py3-none-any.whl", hash = "sha256:aa7b8a0fe741d67aac36ead85f6e735af107b72f84e0775f2ed565fc0d3a2f02"},
+    {file = "pyzipper-0.4.0.tar.gz", hash = "sha256:a4b96afcac04c5589d5abdc6158dd362166374e3cc6810aa441e65f8a17cb9e3"},
 ]
 
 [package.dependencies]
@@ -4242,4 +4242,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "e2f8f3b5dc85ed459585ae5137659e23ca57733c59c93ac0f8aabd0c163ecdc2"
+content-hash = "e4d793d63dc4a3a165b796f7f93064691899bff8eb3daf09a3a1af363b230ed1"
